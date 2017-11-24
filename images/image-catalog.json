@@ -1,0 +1,198 @@
+{
+  "images": [
+    {
+      "single-kernel": "False",
+      "description": "Ubuntu Trusty x86_64 - login as ubuntu",
+      "virtualization-type": "hvm",
+      "url": "https://cloud-images.ubuntu.com/trusty/current/trusty-server-cloudimg-amd64-disk1.img",
+      "hypervisors-supported": [
+        "kvm"
+      ],
+      "recipe": "ubuntu-image",
+      "created-date": "10-19-17",
+      "contact": "ben.howard@ubuntu.com",
+      "version": "Ubuntu Trusty",
+      "architecture": "x86_64",
+      "os": "ubuntu-trusty",
+      "image-format": "qcow2"
+    },
+    {
+      "single-kernel": "False",
+      "description": "Ubuntu Xenial x86_64 - login as ubuntu",
+      "virtualization-type": "hvm",
+      "url": "https://cloud-images.ubuntu.com/xenial/current/xenial-server-cloudimg-amd64-disk1.img",
+      "hypervisors-supported": [
+        "kvm"
+      ],
+      "recipe": "ubuntu-image",
+      "created-date": "10-23-17",
+      "contact": "ben.howard@ubuntu.com",
+      "version": "Ubuntu Xenial",
+      "architecture": "x86_64",
+      "os": "ubuntu-xenial",
+      "image-format": "qcow2"
+    },
+    {
+      "single-kernel": "False",
+      "description": "Ubuntu Zesty x86_64 - login as ubuntu",
+      "virtualization-type": "hvm",
+      "url": "https://cloud-images.ubuntu.com/zesty/current/zesty-server-cloudimg-amd64.img",
+      "hypervisors-supported": [
+        "kvm"
+      ],
+      "recipe": "ubuntu-image",
+      "created-date": "20-10-17",
+      "contact": "ubuntu-cloud@lists.ubuntu.com",
+      "version": "Ubuntu Zesty",
+      "architecture": "x86_64",
+      "os": "ubuntu-zesty",
+      "image-format": "qcow2"
+    },
+    {
+      "single-kernel": "False",
+      "description": "Ubuntu Artful x86_64 - login as ubuntu",
+      "virtualization-type": "hvm",
+      "url": "https://cloud-images.ubuntu.com/artful/current/artful-server-cloudimg-amd64.img",
+      "hypervisors-supported": [
+        "kvm"
+      ],
+      "recipe": "ubuntu-image",
+      "created-date": "10-23-17",
+      "contact": "ubuntu-cloud@lists.ubuntu.com",
+      "version": "Ubuntu Artful",
+      "architecture": "x86_64",
+      "os": "ubuntu-artful",
+      "image-format": "qcow2"
+    },
+    {
+      "single-kernel": "False",
+      "description": "Fedora Atomic 27 - login as fedora",
+      "virtualization-type": "hvm",
+      "url": "https://download.fedoraproject.org/pub/fedora/linux/releases/27/CloudImages/x86_64/images/Fedora-Atomic-27-1.6.x86_64.raw.xz",
+      "hypervisors-supported": [
+        "kvm"
+      ],
+      "recipe": "fedora-image",
+      "created-date": "11-05-17",
+      "contact": "cloud@lists.fedoraproject.org",
+      "version": "Fedora Atomic 27",
+      "architecture": "x86_64",
+      "os": "fedora-atomic-27",
+      "image-format": "img"
+    },
+    {
+      "single-kernel": "False",
+      "description": "Fedora 27 x86_64 - login as fedora",
+      "virtualization-type": "hvm",
+      "url": "https://download.fedoraproject.org/pub/fedora/linux/releases/27/CloudImages/x86_64/images/Fedora-Cloud-Base-27-1.6.x86_64.raw.xz ",
+      "hypervisors-supported": [
+        "kvm"
+      ],
+      "recipe": "fedora-image",
+      "created-date": "11-05-17",
+      "contact": "cloud@lists.fedoraproject.org",
+      "version": "Fedora 27",
+      "architecture": "x86_64",
+      "os": "fedora-27",
+      "image-format": "img"
+    },
+    {
+      "single-kernel": "False",
+      "description": "Debian Testing (Weekly Build) x86_64 - login as debian",
+      "virtualization-type": "hvm",
+      "url": "http://cdimage.debian.org/cdimage/openstack/testing/debian-testing-openstack-amd64.qcow2",
+      "hypervisors-supported": [
+        "kvm"
+      ],
+      "recipe": "debian-image",
+      "created-date": "11-09-15",
+      "contact": "debian-cloud@lists.debian.org",
+      "version": "Debian Testing",
+      "architecture": "x86_64",
+      "os": "debian-testing",
+      "image-format": "qcow2"
+    },
+    {
+      "single-kernel": "False",
+      "description": "CentOS 7 x86_64 - login as centos",
+      "virtualization-type": "hvm",
+      "url": "http://cloud.centos.org/centos/7/images/CentOS-7-x86_64-GenericCloud.raw.tar.gz",
+      "hypervisors-supported": [
+        "kvm"
+      ],
+      "recipe": "centos-image",
+      "created-date": "11-01-17",
+      "contact": "centos-virt@centos.org",
+      "version": "CentOS 7",
+      "architecture": "x86_64",
+      "os": "centos-7",
+      "image-format": "img"
+    },
+    {
+      "single-kernel": "False",
+      "description": "CentOS Atomic Host 7 - login as centos",
+      "virtualization-type": "hvm",                           
+      "url": "https://cloud.centos.org/centos/7/atomic/images/CentOS-Atomic-Host-7-GenericCloud.qcow2.xz",
+      "hypervisors-supported": [
+        "kvm"
+      ],
+      "recipe": "centos-image",
+      "created-date": "11-09-17",
+      "contact": "centos-virt@centos.org",
+      "version": "CentOS Atomic 7",
+      "architecture": "x86_64",
+      "os": "centos-atomic-7",
+      "image-format": "qcow2"
+    },
+    {
+      "single-kernel": "False",
+      "description": "CoreOS stable x86_64 - login as core",
+      "virtualization-type": "hvm",
+      "url": "http://stable.release.core-os.net/amd64-usr/current/coreos_production_openstack_image.img.bz2",
+      "hypervisors-supported": [
+        "kvm"
+      ],
+      "recipe": "coreos-image",
+      "created-date": "02-15-17",
+      "contact": "----",
+      "version": "CoreOS stable",
+      "architecture": "x86_64",
+      "os": "coreos-stable",
+      "image-format": "qcow2"
+    },
+    {
+      "single-kernel": "False",
+      "description": "CoreOS beta x86_64 - login as core",
+      "virtualization-type": "hvm",
+      "url": "http://beta.release.core-os.net/amd64-usr/current/coreos_production_openstack_image.img.bz2",
+      "hypervisors-supported": [
+        "kvm"
+      ],
+      "recipe": "coreos-image",
+      "created-date": "02-15-17",
+      "contact": "----",
+      "version": "CoreOS beta",
+      "architecture": "x86_64",
+      "os": "coreos-beta",
+      "image-format": "qcow2"
+    },
+    {
+      "single-kernel": "False",
+      "description": "CoreOS alpha x86_64 - login as core",
+      "virtualization-type": "hvm",
+      "url": "http://alpha.release.core-os.net/amd64-usr/current/coreos_production_openstack_image.img.bz2",
+      "hypervisors-supported": [
+        "kvm"
+      ],
+      "recipe": "coreos-image",
+      "created-date": "02-15-17",
+      "contact": "----",
+      "version": "CoreOS alpha",
+      "architecture": "x86_64",
+      "os": "coreos-alpha",
+      "image-format": "qcow2"
+    }
+  ],
+  "version": "sjones4-11-24-17"
+}
+
