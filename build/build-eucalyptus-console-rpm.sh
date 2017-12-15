@@ -34,7 +34,7 @@ REQUIRE_EUCA=(
     "http://downloads.eucalyptus.com/software/eucalyptus/4.4/rhel/7Server/x86_64/python-pylibmc-debuginfo-1.2.3-6.1.el7.x86_64.rpm"
 )
 set -ex
-RPMBUILD=$(mktemp -td "rpmbuild.XXXXXXXXXX")
+RPMBUILD=${RPMBUILD:-$(mktemp -td "rpmbuild.XXXXXXXXXX")}
 
 # dependencies
 yum erase -y 'eucaconsole-*'
@@ -83,12 +83,16 @@ rpmbuild \
     --define "_topdir ${RPMBUILD}" \
     --define 'tarball_basedir eucaconsole' \
     --define 'dist el7' \
-    --define "build_id ${RPM_VERSION}${EUCA_LIBS_GIT_SHORT}." \
+    --define "build_id ${RPM_VERSION}${EUCA_CON_GIT_SHORT}." \
     -ba "${RPMBUILD}/SPECS/eucaconsole.spec"
 
 find "${RPMBUILD}/SRPMS/"
 
 find "${RPMBUILD}/RPMS/"
+
+if [ ! -z "${RPM_OUT}" ] && [ -d "${RPM_OUT}" ] ; then
+    cp -pv "${RPMBUILD}/RPMS"/*/*.rpm "${RPM_OUT}"
+fi
 
 echo "Build complete"
 

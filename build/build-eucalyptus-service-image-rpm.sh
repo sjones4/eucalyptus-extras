@@ -36,7 +36,7 @@ REQUIRE=(
     "yum-utils"
 )
 set -ex
-RPMBUILD=$(mktemp -td "rpmbuild.XXXXXXXXXX")
+RPMBUILD=${RPMBUILD:-$(mktemp -td "rpmbuild.XXXXXXXXXX")}
 if [ -z "${EUCALYPTUS_BUILD_REPO_IP}" ] ; then
   EUCALYPTUS_BUILD_REPO_IP=$(curl "http://169.254.169.254/latest/meta-data/local-ipv4")
   [ ! -z "${EUCALYPTUS_BUILD_REPO_IP}" ] || ( echo "Could not detect ip" && exit 1 )
@@ -228,6 +228,10 @@ systemctl stop libvirtd
 find "${RPMBUILD}/SRPMS/"
 
 find "${RPMBUILD}/RPMS/"
+
+if [ ! -z "${RPM_OUT}" ] && [ -d "${RPM_OUT}" ] ; then
+    cp -pv "${RPMBUILD}/RPMS"/*/*.rpm "${RPM_OUT}"
+fi
 
 echo "Build complete"
 

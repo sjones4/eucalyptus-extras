@@ -14,7 +14,7 @@ REQUIRE=(
     "yum-utils"
 )
 set -ex
-RPMBUILD=$(mktemp -td "rpmbuild.XXXXXXXXXX")
+RPMBUILD=${RPMBUILD:-$(mktemp -td "rpmbuild.XXXXXXXXXX")}
 
 # dependencies
 yum erase -y 'eucaconsole-*'
@@ -58,6 +58,10 @@ rpmbuild \
 find "${RPMBUILD}/SRPMS/"
 
 find "${RPMBUILD}/RPMS/"
+
+if [ ! -z "${RPM_OUT}" ] && [ -d "${RPM_OUT}" ] ; then
+    cp -pv "${RPMBUILD}/RPMS"/*/*.rpm "${RPM_OUT}"
+fi
 
 echo "Build complete"
 
