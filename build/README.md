@@ -34,6 +34,8 @@ USE_CPU_PASSTHROUGH="1"
 
 the build for the service image will be slow without nested virtualization.
 
+The recommended instance type to use for building is **_m3.2xlarge_**. If not building the service image then a smaller instance type would suffice.
+
 Build Scripts
 ------
 To build rpms for the latest code in 4.4 branches run:
