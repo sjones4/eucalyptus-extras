@@ -1,5 +1,9 @@
 #!/bin/bash
 # Build all eucalyptus rpms for the 4.4 series
+set -e
+
+# dependencies
+yum -y install "httpd" # create /var/www/
 
 # config
 export RPMBUILD=$(mktemp -td "rpmbuild.XXXXXXXXXX")

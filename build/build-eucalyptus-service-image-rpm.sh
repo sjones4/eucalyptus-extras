@@ -36,6 +36,15 @@ REQUIRE=(
     "yum-utils"
 )
 set -ex
+
+# dependencies
+rm -rf /var/www/eucalyptus-packages.??????????
+yum erase -y 'eucalyptus-*' 'load-balancer-servo'
+
+yum -y install "${REQUIRE[@]}"
+
+yum -y groupinstall development
+
 RPMBUILD=${RPMBUILD:-$(mktemp -td "rpmbuild.XXXXXXXXXX")}
 if [ -z "${EUCALYPTUS_BUILD_REPO_IP}" ] ; then
   EUCALYPTUS_BUILD_REPO_IP=$(curl "http://169.254.169.254/latest/meta-data/local-ipv4")
@@ -45,14 +54,6 @@ if [ -z "${EUCALYPTUS_BUILD_REPO_DIR}" ] ; then
   EUCALYPTUS_BUILD_REPO_DIR=$(mktemp -td --tmpdir="/var/www/" "eucalyptus-packages.XXXXXXXXXX")
   chmod 755 "${EUCALYPTUS_BUILD_REPO_DIR}"
 fi
-
-# dependencies
-rm -rf /var/www/eucalyptus-packages.??????????
-yum erase -y 'eucalyptus-*' 'load-balancer-servo'
-
-yum -y install "${REQUIRE[@]}"
-
-yum -y groupinstall development
 
 # clone repositories
 [ ! -d "eucalyptus-imaging-worker" ] || rm -rf "eucalyptus-imaging-worker"
