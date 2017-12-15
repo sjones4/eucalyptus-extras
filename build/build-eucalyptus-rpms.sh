@@ -44,8 +44,8 @@ REQUIRE_EUCA=(
     "http://downloads.eucalyptus.com/software/eucalyptus/4.4/rhel/7Server/x86_64/woden-1.0-0.11.M9.el7.1.noarch.rpm"
     "http://downloads.eucalyptus.com/software/eucalyptus/4.4/rhel/7Server/x86_64/XmlSchema-1.4.7-11.el7.noarch.rpm"
 )
-RPMBUILD="$(pwd)/rpmbuild"
 set -ex
+RPMBUILD=$(mktemp -td "rpmbuild.XXXXXXXXXX")
 
 # dependencies
 yum erase -y 'eucalyptus-*'
@@ -71,8 +71,6 @@ git clone --depth 1 --branch "${EUCA_RPM_BRANCH}" "${EUCA_RPM_REPO}"
 # setup rpmbuild
 mkdir -p "${RPMBUILD}/SPECS"
 mkdir -p "${RPMBUILD}/SOURCES"
-[ ! -d "${RPMBUILD}/RPMS" ] || rm -rf "${RPMBUILD}/RPMS"
-[ ! -d "${RPMBUILD}/SRPMS" ] || rm -rf "${RPMBUILD}/SRPMS"
 
 [ ! -f "${RPMBUILD}/SPECS/eucalyptus.spec" ] || rm -f \
   "${RPMBUILD}/SPECS/eucalyptus.spec"
@@ -122,12 +120,12 @@ rpmbuild \
     --define "_topdir ${RPMBUILD}" \
     --define 'tarball_basedir eucalyptus' \
     --define 'dist el7' \
-    --define "build_id ${RPM_VERSION}${EUCA_LIBS_GIT_SHORT}." \
+    --define "build_id ${RPM_VERSION}${EUCA_GIT_SHORT}." \
     -ba "${RPMBUILD}/SPECS/eucalyptus.spec"
 
-find rpmbuild/SRPMS/
+find "${RPMBUILD}/SRPMS/"
 
-find rpmbuild/RPMS/
+find "${RPMBUILD}/RPMS/"
 
 echo "Build complete"
 

@@ -57,8 +57,6 @@ git clone --depth 1 --branch "${EUCA_CON_RPM_BRANCH}" "${EUCA_CON_RPM_REPO}"
 # setup rpmbuild
 mkdir -p "${RPMBUILD}/SPECS"
 mkdir -p "${RPMBUILD}/SOURCES"
-[ ! -d "${RPMBUILD}/RPMS" ] || rm -rf "${RPMBUILD}/RPMS"
-[ ! -d "${RPMBUILD}/SRPMS" ] || rm -rf "${RPMBUILD}/SRPMS"
 
 [ ! -f "${RPMBUILD}/SPECS/eucaconsole.spec" ] || rm -f \
   "${RPMBUILD}/SPECS/eucaconsole.spec"

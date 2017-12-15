@@ -13,8 +13,8 @@ REQUIRE=(
     "selinux-policy-devel"
     "yum-utils"
 )
-RPMBUILD="$(pwd)/rpmbuild"
 set -ex
+RPMBUILD=$(mktemp -td "rpmbuild.XXXXXXXXXX")
 
 # dependencies
 yum erase -y 'eucalyptus-*'
@@ -30,8 +30,6 @@ git clone --depth 1 --branch "${EUCA_SE_BRANCH}" "${EUCA_SE_REPO}"
 # setup rpmbuild
 mkdir -p "${RPMBUILD}/SPECS"
 mkdir -p "${RPMBUILD}/SOURCES"
-[ ! -d "${RPMBUILD}/RPMS" ] || rm -rf "${RPMBUILD}/RPMS"
-[ ! -d "${RPMBUILD}/SRPMS" ] || rm -rf "${RPMBUILD}/SRPMS"
 
 [ ! -f "${RPMBUILD}/SPECS/eucalyptus-selinux.spec" ] || rm -f \
   "${RPMBUILD}/SPECS/eucalyptus-selinux.spec"
@@ -57,9 +55,9 @@ rpmbuild \
     --define "dist .${RPM_VERSION}${EUCA_SE_GIT_SHORT}.el7" \
     -ba "${RPMBUILD}/SPECS/eucalyptus-selinux.spec"
 
-find rpmbuild/SRPMS/
+find "${RPMBUILD}/SRPMS/"
 
-find rpmbuild/RPMS/
+find "${RPMBUILD}/RPMS/"
 
 echo "Build complete"
 
