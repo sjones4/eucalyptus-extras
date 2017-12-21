@@ -73,4 +73,44 @@ total 490936
 -rw-r--r--. 1 root root     84004 Dec 15 11:10 load-balancer-servo-1.4.1-0.20171215git1ddf676.el7.noarch.rpm
 ```
 
+Docker Image
+------
+These build scripts are available in a docker image for use building rpms or intermediate artifacts:
+
+```
+  docker pull sjones4/eucalyptus-builder:44
+```
+
+To build the eucalyptus java dependencies rpm you would use:
+
+```
+  mkdir -p eucalyptus/rpms
+  docker run --rm \
+    --env RPM_OUT=/eucalyptus/rpms \
+    -v "$(pwd)"/eucalyptus:/eucalyptus \
+    sjones4/eucalyptus-builder:4.4 \
+    build-eucalyptus-cloud-libs-rpm.sh
+```
+
+To build eucalyptus software using an existing checkout you would use:
+
+```
+  git clone --depth 1 \
+    --branch devel-4.4 \
+    https://github.com/sjones4/eucalyptus.git
+  pushd eucalyptus/clc
+  git clone --depth 1 \
+    --branch devel-4.4 \
+    https://github.com/sjones4/eucalyptus-cloud-libs.git lib
+  touch .nogit
+  popd
+  docker run --rm \
+    -v "$(pwd)"/eucalyptus:/eucalyptus \
+    -w /eucalyptus \
+    sjones4/eucalyptus-builder:4.4 \
+    bash -c "./configure --prefix=/ --with-axis2c=/usr/lib64/axis2c && make"
+```
+
+
+
 

@@ -1,0 +1,81 @@
+#!/bin/bash
+# Build eucalyptus-java-deps rpm on CentOS/RHEL 7
+
+# config
+MODE="${1:-build}" # setup build build-only
+VERSION="4.4"
+EUCA_LIBS_BRANCH="devel-${VERSION}"
+EUCA_LIBS_REPO="https://github.com/sjones4/eucalyptus-cloud-libs.git"
+EUCA_LIBS_PATH="${EUCA_LIBS_PATH:-${PWD}/eucalyptus-cloud-libs}"
+REQUIRE=(
+    "git"
+    "yum-utils"
+    "wget"
+    "curl-devel"
+    "gengetopt"
+)
+set -ex
+
+# dependencies
+if [ "${MODE}" != "build-only" ] ; then
+  yum erase -y 'eucalyptus-*'
+
+  yum -y install epel-release # for gengetopt
+
+  yum -y install "${REQUIRE[@]}"
+
+  yum -y groupinstall development
+fi
+
+[ "${MODE}" != "setup" ] || exit 0
+
+# clone repositories
+if [ "${MODE}" != "build-only" ] ; then
+  [ ! -d "eucalyptus-cloud-libs" ] || rm -rf "eucalyptus-cloud-libs"
+  git clone --depth 1 --branch "${EUCA_LIBS_BRANCH}" "${EUCA_LIBS_REPO}"
+fi
+
+# setup rpmbuild
+RPMBUILD=${RPMBUILD:-$(mktemp -td "rpmbuild.XXXXXXXXXX")}
+mkdir -p "${RPMBUILD}/SPECS"
+mkdir -p "${RPMBUILD}/SOURCES"
+
+[ ! -f "${RPMBUILD}/SPECS/eucalyptus-java-deps.spec" ] || rm -f \
+  "${RPMBUILD}/SPECS/eucalyptus-java-deps.spec"
+ln -fs "${EUCA_LIBS_PATH}/eucalyptus-java-deps.spec" \
+  "${RPMBUILD}/SPECS"
+
+# generate source tars, get commit info
+pushd "${EUCA_LIBS_PATH}"
+EUCA_LIBS_GIT_SHORT=$(git rev-parse --short HEAD)
+autoconf
+popd
+
+tar -cvJf "${RPMBUILD}/SOURCES/eucalyptus-cloud-libs.tar.xz" \
+    -C $(dirname "${EUCA_LIBS_PATH}") \
+    --exclude ".git*" \
+    --exclude "tests" \
+    --exclude "*.spec" \
+    "eucalyptus-cloud-libs"
+
+# build rpms
+RPM_VERSION="$(date -u +%Y%m%d)git"
+RPM_BUILD_ID="${RPM_BUILD_ID:-${RPM_VERSION}${EUCA_LIBS_GIT_SHORT}}"
+
+rpmbuild \
+    --define "_topdir ${RPMBUILD}" \
+    --define 'tarball_basedir eucalyptus-cloud-libs' \
+    --define 'dist el7' \
+    --define "build_id ${RPM_BUILD_ID}." \
+    -ba "${RPMBUILD}/SPECS/eucalyptus-java-deps.spec"
+
+find "${RPMBUILD}/SRPMS/"
+
+find "${RPMBUILD}/RPMS/"
+
+if [ ! -z "${RPM_OUT}" ] && [ -d "${RPM_OUT}" ] ; then
+    cp -pv "${RPMBUILD}/RPMS"/*/*.rpm "${RPM_OUT}"
+fi
+
+echo "Build complete"
+

@@ -2,13 +2,11 @@
 # Build eucalyptus rpms on CentOS/RHEL 7
 
 # config
+MODE="${1:-build}" # setup build build-only
 VERSION="4.4"
-EUCA_BRANCH="devel-${VERSION}"
-EUCA_REPO="https://github.com/sjones4/eucalyptus.git"
-EUCA_LIBS_BRANCH="devel-${VERSION}"
-EUCA_LIBS_REPO="https://github.com/sjones4/eucalyptus-cloud-libs.git"
-EUCA_RPM_BRANCH="maint-${VERSION}"
-EUCA_RPM_REPO="https://github.com/eucalyptus/eucalyptus-rpmspec.git"
+EUCA_BRANCH="${EUCA_BRANCH:-devel-${VERSION}}"
+EUCA_REPO="${EUCA_REPO:-https://github.com/sjones4/eucalyptus.git}"
+EUCA_PATH="${EUCA_PATH:-${PWD}/eucalyptus}"
 REQUIRE=(
     "git"
     "yum-utils"
@@ -28,6 +26,7 @@ REQUIRE=(
     "m2crypto"
     "openssl-devel"
     "python-devel"
+    "python-setuptools"
     "xalan-j2"
     "xalan-j2-xsltc"
 )
@@ -45,83 +44,67 @@ REQUIRE_EUCA=(
     "http://downloads.eucalyptus.com/software/eucalyptus/4.4/rhel/7Server/x86_64/XmlSchema-1.4.7-11.el7.noarch.rpm"
 )
 set -ex
-RPMBUILD=${RPMBUILD:-$(mktemp -td "rpmbuild.XXXXXXXXXX")}
 
 # dependencies
-yum erase -y 'eucalyptus-*'
+if [ "${MODE}" != "build-only" ] ; then
+  yum erase -y 'eucalyptus-*'
 
-yum -y install epel-release # for gengetopt
+  yum -y install epel-release # for gengetopt
 
-yum -y install "${REQUIRE[@]}"
+  yum -y install "${REQUIRE[@]}"
 
-yum -y groupinstall development
+  yum -y groupinstall development
 
-yum -y install "${REQUIRE_EUCA[@]}" || yum -y upgrade "${REQUIRE_EUCA[@]}"
+  yum -y install "${REQUIRE_EUCA[@]}" || yum -y upgrade "${REQUIRE_EUCA[@]}"
+fi
+
+[ "${MODE}" != "setup" ] || exit 0
 
 # clone repositories
-[ ! -d "eucalyptus" ] || rm -rf "eucalyptus"
-git clone --depth 1 --branch "${EUCA_BRANCH}" "${EUCA_REPO}"
-
-[ ! -d "eucalyptus-cloud-libs" ] || rm -rf "eucalyptus-cloud-libs"
-git clone --depth 1 --branch "${EUCA_LIBS_BRANCH}" "${EUCA_LIBS_REPO}"
-
-[ ! -d "eucalyptus-rpmspec" ] || rm -rf "eucalyptus-rpmspec"
-git clone --depth 1 --branch "${EUCA_RPM_BRANCH}" "${EUCA_RPM_REPO}"
+if [ "${MODE}" != "build-only" ] ; then
+  [ ! -d "eucalyptus" ] || rm -rf "eucalyptus"
+  git clone --depth 1 --branch "${EUCA_BRANCH}" "${EUCA_REPO}"
+fi
 
 # setup rpmbuild
+RPMBUILD=${RPMBUILD:-$(mktemp -td "rpmbuild.XXXXXXXXXX")}
 mkdir -p "${RPMBUILD}/SPECS"
 mkdir -p "${RPMBUILD}/SOURCES"
 
 [ ! -f "${RPMBUILD}/SPECS/eucalyptus.spec" ] || rm -f \
   "${RPMBUILD}/SPECS/eucalyptus.spec"
-ln -fs "$(pwd)/eucalyptus-rpmspec/eucalyptus.spec" \
-  "${RPMBUILD}/SPECS"
+ln -fs "${EUCA_PATH}/eucalyptus.spec" "${RPMBUILD}/SPECS"
 
-[ ! -f "${RPMBUILD}/SPECS/eucalyptus-java-deps.spec" ] || rm -f \
-  "${RPMBUILD}/SPECS/eucalyptus-java-deps.spec"
-ln -fs "$(pwd)/eucalyptus-cloud-libs/eucalyptus-java-deps.spec" \
-  "${RPMBUILD}/SPECS"
+# setup deps rpm for group build
+if [ -f "${RPMBUILD}"/RPMS/noarch/eucalyptus-java-deps-*.noarch.rpm ] ; then
+  yum -y install "${RPMBUILD}"/RPMS/noarch/eucalyptus-java-deps-*.noarch.rpm
+fi
 
 # generate source tars, get commit info
-pushd eucalyptus
+pushd "${EUCA_PATH}"
 EUCA_GIT_SHORT=$(git rev-parse --short HEAD)
 autoconf
 popd
 tar -cvJf "${RPMBUILD}/SOURCES/eucalyptus.tar.xz" \
+    -C $(dirname "${EUCA_PATH}") \
     --exclude ".git*" \
     --exclude "clc/lib" \
     --exclude "build-info.properties" \
     "eucalyptus"
 
-pushd eucalyptus-cloud-libs
-EUCA_LIBS_GIT_SHORT=$(git rev-parse --short HEAD)
-autoconf
-popd
-tar -cvJf "${RPMBUILD}/SOURCES/eucalyptus-cloud-libs.tar.xz" \
-    --exclude ".git*" \
-    --exclude "tests" \
-    --exclude "*.spec" \
-    "eucalyptus-cloud-libs"
-
 # build rpms
+RPM_DIST="${RPM_DIST:-el7}"
 RPM_VERSION="$(date -u +%Y%m%d)git"
-
-rpmbuild \
-    --define "_topdir ${RPMBUILD}" \
-    --define 'tarball_basedir eucalyptus-cloud-libs' \
-    --define 'dist el7' \
-    --define "build_id ${RPM_VERSION}${EUCA_LIBS_GIT_SHORT}." \
-    -ba "${RPMBUILD}/SPECS/eucalyptus-java-deps.spec"
-
-yum install -y \
-    "${RPMBUILD}/RPMS/noarch/"eucalyptus-java-deps-*.noarch.rpm
+RPM_BUILD_ID="${RPM_BUILD_ID:-${RPM_VERSION}${EUCA_GIT_SHORT}}"
 
 rpmbuild \
     --define "_topdir ${RPMBUILD}" \
     --define 'tarball_basedir eucalyptus' \
-    --define 'dist el7' \
-    --define "build_id ${RPM_VERSION}${EUCA_GIT_SHORT}." \
+    --define "dist ${RPM_DIST}" \
+    --define "build_id ${RPM_BUILD_ID}." \
     -ba "${RPMBUILD}/SPECS/eucalyptus.spec"
+
+yum erase -y 'eucalyptus-*'
 
 find "${RPMBUILD}/SRPMS/"
 
