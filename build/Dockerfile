@@ -14,6 +14,6 @@ RUN chown --recursive root:root /root/bin/*.sh \
 
 ENV PATH=/root/bin:$PATH \
     RPM_OUT="/eucalyptus/rpms"
-WORKDIR /eucalyptus
 VOLUME /eucalyptus
+WORKDIR /eucalyptus
 
