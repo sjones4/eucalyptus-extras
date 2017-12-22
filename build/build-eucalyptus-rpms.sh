@@ -27,6 +27,7 @@ REQUIRE=(
     "openssl-devel"
     "python-devel"
     "python-setuptools"
+    "rpm-sign"
     "xalan-j2"
     "xalan-j2-xsltc"
 )

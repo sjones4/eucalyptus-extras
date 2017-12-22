@@ -2,6 +2,7 @@
 # Build eucalyptus selinux rpm on CentOS/RHEL 7
 
 # config
+MODE="${1:-build}" # setup build build-only
 EUCA_SE_BRANCH="master"
 EUCA_SE_REPO="https://github.com/eucalyptus/eucalyptus-selinux.git"
 REQUIRE=(
@@ -14,20 +15,26 @@ REQUIRE=(
     "yum-utils"
 )
 set -ex
-RPMBUILD=${RPMBUILD:-$(mktemp -td "rpmbuild.XXXXXXXXXX")}
 
 # dependencies
-yum erase -y 'eucalyptus-*'
+if [ "${MODE}" != "build-only" ] ; then
+  yum erase -y 'eucalyptus-*'
 
-yum -y install "${REQUIRE[@]}"
+  yum -y install "${REQUIRE[@]}"
 
-yum -y groupinstall development
+  yum -y groupinstall development
+fi
+
+[ "${MODE}" != "setup" ] || exit 0
 
 # clone repositories
-[ ! -d "eucalyptus-selinux" ] || rm -rf "eucalyptus-selinux"
-git clone --depth 1 --branch "${EUCA_SE_BRANCH}" "${EUCA_SE_REPO}"
+if [ "${MODE}" != "build-only" ] ; then
+  [ ! -d "eucalyptus-selinux" ] || rm -rf "eucalyptus-selinux"
+  git clone --depth 1 --branch "${EUCA_SE_BRANCH}" "${EUCA_SE_REPO}"
+fi
 
 # setup rpmbuild
+RPMBUILD=${RPMBUILD:-$(mktemp -td "rpmbuild.XXXXXXXXXX")}
 mkdir -p "${RPMBUILD}/SPECS"
 mkdir -p "${RPMBUILD}/SOURCES"
 
@@ -48,11 +55,13 @@ tar -cvJf "${RPMBUILD}/SOURCES/eucalyptus-selinux-${EUCA_SE_VERSION}.tar.xz" \
     "eucalyptus-selinux"
 
 # build rpms
+RPM_DIST="${RPM_DIST:-el7}"
 RPM_VERSION="$(date -u +%Y%m%d)git"
+RPM_BUILD_ID="${RPM_BUILD_ID:-${RPM_VERSION}${EUCA_GIT_SHORT}}"
 
 rpmbuild \
     --define "_topdir ${RPMBUILD}" \
-    --define "dist .${RPM_VERSION}${EUCA_SE_GIT_SHORT}.el7" \
+    --define "dist .${RPM_BUILD_ID}.${RPM_DIST}" \
     -ba "${RPMBUILD}/SPECS/eucalyptus-selinux.spec"
 
 find "${RPMBUILD}/SRPMS/"

@@ -59,13 +59,14 @@ tar -cvJf "${RPMBUILD}/SOURCES/eucalyptus-cloud-libs.tar.xz" \
     "eucalyptus-cloud-libs"
 
 # build rpms
+RPM_DIST="${RPM_DIST:-el7}"
 RPM_VERSION="$(date -u +%Y%m%d)git"
 RPM_BUILD_ID="${RPM_BUILD_ID:-${RPM_VERSION}${EUCA_LIBS_GIT_SHORT}}"
 
 rpmbuild \
     --define "_topdir ${RPMBUILD}" \
     --define 'tarball_basedir eucalyptus-cloud-libs' \
-    --define 'dist el7' \
+    --define "dist ${RPM_DIST}" \
     --define "build_id ${RPM_BUILD_ID}." \
     -ba "${RPMBUILD}/SPECS/eucalyptus-java-deps.spec"
 
