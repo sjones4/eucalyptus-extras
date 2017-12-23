@@ -55,6 +55,7 @@ tar -cvJf "${RPMBUILD}/SOURCES/eucalyptus-selinux-${EUCA_SE_VERSION}.tar.xz" \
     "eucalyptus-selinux"
 
 # build rpms
+RPMBUILD_OPTS="${RPMBUILD_OPTS}"
 RPM_DIST="${RPM_DIST:-el7}"
 RPM_VERSION="$(date -u +%Y%m%d)git"
 RPM_BUILD_ID="${RPM_BUILD_ID:-${RPM_VERSION}${EUCA_SE_GIT_SHORT}}"
@@ -62,6 +63,7 @@ RPM_BUILD_ID="${RPM_BUILD_ID:-${RPM_VERSION}${EUCA_SE_GIT_SHORT}}"
 rpmbuild \
     --define "_topdir ${RPMBUILD}" \
     --define "dist .${RPM_BUILD_ID}.${RPM_DIST}" \
+    ${RPMBUILD_OPTS} \
     -ba "${RPMBUILD}/SPECS/eucalyptus-selinux.spec"
 
 find "${RPMBUILD}/SRPMS/"
