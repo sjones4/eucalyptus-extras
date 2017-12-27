@@ -4,27 +4,25 @@
 # config
 MODE="${1:-build}" # setup build build-only
 VERSION="4.4"
+YUM_OPTS="${YUM_OPTS:--y}"
 EUCA_LIBS_BRANCH="devel-${VERSION}"
 EUCA_LIBS_REPO="https://github.com/sjones4/eucalyptus-cloud-libs.git"
 EUCA_LIBS_PATH="${EUCA_LIBS_PATH:-${PWD}/eucalyptus-cloud-libs}"
 REQUIRE=(
+    "autoconf"
     "git"
-    "yum-utils"
-    "wget"
-    "curl-devel"
-    "gengetopt"
+    "rpm-build"
+    "yum"
 )
 set -ex
 
 # dependencies
 if [ "${MODE}" != "build-only" ] ; then
-  yum erase -y 'eucalyptus-*'
+  yum ${YUM_OPTS} erase 'eucalyptus-*'
 
-  yum -y install epel-release # for gengetopt
+  yum ${YUM_OPTS} install epel-release # for gengetopt
 
-  yum -y install "${REQUIRE[@]}"
-
-  yum -y groupinstall development
+  yum ${YUM_OPTS} install "${REQUIRE[@]}"
 fi
 
 [ "${MODE}" != "setup" ] || exit 0

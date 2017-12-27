@@ -3,26 +3,26 @@
 
 # config
 MODE="${1:-build}" # setup build build-only
+YUM_OPTS="${YUM_OPTS:--y}"
 EUCA_SE_BRANCH="master"
 EUCA_SE_REPO="https://github.com/eucalyptus/eucalyptus-selinux.git"
 REQUIRE=(
+    "autoconf"
     "git"
     "libselinux-utils"
+    "make"
     "policycoreutils"
     "rpmdevtools" # for spectool
     "selinux-policy-base"
     "selinux-policy-devel"
-    "yum-utils"
 )
 set -ex
 
 # dependencies
 if [ "${MODE}" != "build-only" ] ; then
-  yum erase -y 'eucalyptus-*'
+  yum ${YUM_OPTS} erase 'eucalyptus-*'
 
-  yum -y install "${REQUIRE[@]}"
-
-  yum -y groupinstall development
+  yum ${YUM_OPTS} install "${REQUIRE[@]}"
 fi
 
 [ "${MODE}" != "setup" ] || exit 0

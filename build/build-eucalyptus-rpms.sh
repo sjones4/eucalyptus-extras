@@ -4,18 +4,19 @@
 # config
 MODE="${1:-build}" # setup build build-only
 VERSION="4.4"
+YUM_OPTS="${YUM_OPTS:--y}"
 EUCA_BRANCH="${EUCA_BRANCH:-devel-${VERSION}}"
 EUCA_REPO="${EUCA_REPO:-https://github.com/sjones4/eucalyptus.git}"
 EUCA_PATH="${EUCA_PATH:-${PWD}/eucalyptus}"
 REQUIRE=(
-    "git"
-    "yum-utils"
-    "wget"
     "ant"
     "ant-apache-regexp"
     "apache-ivy"
+    "autoconf"
     "curl-devel"
+    "gcc"
     "gengetopt"
+    "git"
     "java-1.8.0-openjdk-devel"
     "jpackage-utils"
     "json-c-devel"
@@ -23,11 +24,12 @@ REQUIRE=(
     "libvirt-devel"
     "libxml2-devel"
     "libxslt-devel"
+    "make"
     "m2crypto"
     "openssl-devel"
     "python-devel"
     "python-setuptools"
-    "rpm-sign"
+    "swig"
     "xalan-j2"
     "xalan-j2-xsltc"
 )
@@ -48,15 +50,13 @@ set -ex
 
 # dependencies
 if [ "${MODE}" != "build-only" ] ; then
-  yum erase -y 'eucalyptus-*'
+  yum ${YUM_OPTS} erase 'eucalyptus-*'
 
-  yum -y install epel-release # for gengetopt
+  yum ${YUM_OPTS} install epel-release # for gengetopt
 
-  yum -y install "${REQUIRE[@]}"
+  yum ${YUM_OPTS} install "${REQUIRE[@]}"
 
-  yum -y groupinstall development
-
-  yum -y install "${REQUIRE_EUCA[@]}" || yum -y upgrade "${REQUIRE_EUCA[@]}"
+  yum ${YUM_OPTS} install "${REQUIRE_EUCA[@]}" || yum ${YUM_OPTS} upgrade "${REQUIRE_EUCA[@]}"
 fi
 
 [ "${MODE}" != "setup" ] || exit 0
@@ -78,7 +78,7 @@ ln -fs "${EUCA_PATH}/eucalyptus.spec" "${RPMBUILD}/SPECS"
 
 # setup deps rpm for group build
 if [ -f "${RPMBUILD}"/RPMS/noarch/eucalyptus-java-deps-*.noarch.rpm ] ; then
-  yum -y install "${RPMBUILD}"/RPMS/noarch/eucalyptus-java-deps-*.noarch.rpm
+  yum ${YUM_OPTS} install "${RPMBUILD}"/RPMS/noarch/eucalyptus-java-deps-*.noarch.rpm
 fi
 
 # generate source tars, get commit info
@@ -107,7 +107,7 @@ rpmbuild \
     ${RPMBUILD_OPTS} \
     -ba "${RPMBUILD}/SPECS/eucalyptus.spec"
 
-yum erase -y 'eucalyptus-*'
+yum ${YUM_OPTS} erase 'eucalyptus-*'
 
 find "${RPMBUILD}/SRPMS/"
 

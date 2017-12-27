@@ -3,26 +3,26 @@
 
 # config
 MODE="${1:-build}" # setup build build-only
+YUM_OPTS="${YUM_OPTS:--y}"
 EUCA_CON_SE_BRANCH="master"
 EUCA_CON_SE_REPO="https://github.com/eucalyptus/eucaconsole-selinux.git"
 REQUIRE=(
+    "autoconf"
     "git"
     "libselinux-utils"
+    "make"
     "policycoreutils"
     "rpmdevtools" # for spectool
     "selinux-policy-base"
     "selinux-policy-devel"
-    "yum-utils"
 )
 set -ex
 
 # dependencies
 if [ "${MODE}" != "build-only" ] ; then
-  yum erase -y 'eucaconsole-*'
+  yum ${YUM_OPTS} erase 'eucaconsole-*'
 
-  yum -y install "${REQUIRE[@]}"
-
-  yum -y groupinstall development
+  yum ${YUM_OPTS} install "${REQUIRE[@]}"
 fi
 
 [ "${MODE}" != "setup" ] || exit 0

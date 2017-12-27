@@ -4,12 +4,14 @@
 # config
 MODE="${1:-build}" # setup build build-only
 VERSION="4.4"
+YUM_OPTS="${YUM_OPTS:--y}"
 EUCA_CON_BRANCH="devel-${VERSION}"
 EUCA_CON_REPO="https://github.com/sjones4/eucaconsole.git"
 REQUIRE=(
+    "autoconf"
+    "gettext"
     "git"
-    "yum-utils"
-    "wget"
+    "make"
     "m2crypto"
     "openssl-devel"
     "pycryptopp"
@@ -23,6 +25,7 @@ REQUIRE=(
     "python-nose"
     "python-pygments"
     "python-pyramid"
+    "python-setuptools"
     "python-simplejson"
     "python-wtforms"
     "python2-boto"
@@ -36,15 +39,13 @@ set -ex
 
 # dependencies
 if [ "${MODE}" != "build-only" ] ; then
-  yum erase -y 'eucaconsole-*'
+  yum ${YUM_OPTS} erase 'eucaconsole-*'
 
-  yum install -y "epel-release"
+  yum ${YUM_OPTS} install "epel-release"
 
-  yum -y install "${REQUIRE[@]}"
+  yum ${YUM_OPTS} install "${REQUIRE[@]}"
 
-  yum -y groupinstall "development"
-
-  yum -y install "${REQUIRE_EUCA[@]}" || yum -y upgrade "${REQUIRE_EUCA[@]}"
+  yum ${YUM_OPTS} install "${REQUIRE_EUCA[@]}" || yum ${YUM_OPTS} upgrade "${REQUIRE_EUCA[@]}"
 fi
 
 [ "${MODE}" != "setup" ] || exit 0

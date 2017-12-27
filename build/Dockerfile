@@ -2,20 +2,21 @@ FROM centos:7
 
 ADD [ "build-*.sh", "/root/bin/" ]
 
+ENV PATH=/root/bin:$PATH \
+    RPM_OUT="/eucalyptus/rpms"
+
 RUN chown --recursive root:root /root/bin/*.sh \
  && chmod 755 /root/bin/*.sh \
  && mkdir --parents /eucalyptus \
  && chown --recursive root:root /eucalyptus \
- && /root/bin/build-eucalyptus-cloud-libs-rpm.sh setup \
- && /root/bin/build-eucalyptus-rpms.sh setup \
- && /root/bin/build-eucalyptus-selinux-rpm.sh setup \
- && /root/bin/build-eucalyptus-console-rpm.sh setup \
- && /root/bin/build-eucalyptus-console-selinux-rpm.sh setup \
- && yum -y clean all \
- && rm -rf /var/cache/yum
+ && build-eucalyptus-cloud-libs-rpm.sh setup \
+ && build-eucalyptus-rpms.sh setup \
+ && build-eucalyptus-selinux-rpm.sh setup \
+ && build-eucalyptus-console-rpm.sh setup \
+ && build-eucalyptus-console-selinux-rpm.sh setup \
+ && yum -y install rpm-sign \
+ && yum -y clean all
 
-ENV PATH=/root/bin:$PATH \
-    RPM_OUT="/eucalyptus/rpms"
 VOLUME /eucalyptus
 WORKDIR /eucalyptus
 
