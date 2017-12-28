@@ -5,8 +5,8 @@
 MODE="${1:-build}" # setup build build-only
 VERSION="4.4"
 YUM_OPTS="${YUM_OPTS:--y}"
-EUCA_LIBS_BRANCH="devel-${VERSION}"
-EUCA_LIBS_REPO="https://github.com/sjones4/eucalyptus-cloud-libs.git"
+EUCA_LIBS_BRANCH="${EUCA_LIBS_BRANCH:-devel-${VERSION}}"
+EUCA_LIBS_REPO="${EUCA_LIBS_REPO:-https://github.com/sjones4/eucalyptus-cloud-libs.git}"
 EUCA_LIBS_PATH="${EUCA_LIBS_PATH:-${PWD}/eucalyptus-cloud-libs}"
 REQUIRE=(
     "autoconf"

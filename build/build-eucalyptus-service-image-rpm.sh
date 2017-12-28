@@ -5,47 +5,51 @@
 # http://downloads.eucalyptus.com/software/eucalyptus/4.4/rhel/7Server/x86_64/
 #
 # To build using git snapshot rpms copy to EUCALYPTUS_BUILD_REPO_DIR
-# and they will be included in repository.
+# and they will be included in repository (or build using predefined
+# RPMBUILD)
 #
 # If building on an instance ensure cpu passthrough is enabled:
 #   cat /sys/module/kvm_intel/parameters/nested
 #   USE_CPU_PASSTHROUGH="1"
 
 # config
-EUCA_IW_BRANCH="maint-0.2"
-EUCA_IW_REPO="https://github.com/eucalyptus/eucalyptus-imaging-worker.git"
-EUCA_LBS_BRANCH="maint-1.4"
-EUCA_LBS_REPO="https://github.com/eucalyptus/load-balancer-servo.git"
-EUCA_SIM_BRANCH="maint-3"
-EUCA_SIM_REPO="https://github.com/eucalyptus/eucalyptus-service-image"
-EUCALYPTUS_MIRROR="http://downloads.eucalyptus.com/software/eucalyptus/4.4/rhel/7/x86_64/"
+MODE="${1:-build}" # setup build build-only
+YUM_OPTS="${YUM_OPTS:--y}"
+EUCA_SIM_BRANCH="${EUCA_SIM_BRANCH:-maint-3}"
+EUCA_SIM_REPO="${EUCA_SIM_REPO:-https://github.com/sjones4/eucalyptus-service-image.git}"
 EUCALYPTUS_BUILD_REPO_DIR="${EUCALYPTUS_BUILD_REPO_DIR:-""}"
 EUCALYPTUS_BUILD_REPO_IP=${EUCALYPTUS_BUILD_REPO_IP:-""}
-EUCA2OOLS_MIRROR="http://downloads.eucalyptus.com/software/euca2ools/3.3/rhel/7/x86_64/"
+EUCALYPTUS_MIRROR="${EUCALYPTUS_MIRROR:-http://downloads.eucalyptus.com/software/eucalyptus/4.4/rhel/7/x86_64/}"
+EUCA2OOLS_MIRROR="${EUCA2OOLS_MIRROR:-http://downloads.eucalyptus.com/software/euca2ools/3.3/rhel/7/x86_64/}"
 REQUIRE=(
+    "autoconf"
     "createrepo"
     "git"
     "httpd"
     "libguestfs-tools-c" # for virt-sparsify virt-sysprep
     "libvirt-daemon-config-network"
+    "make"
     "python-devel"
-    "python-setuptools"
+    "python-prettytable"
+    "rpm-build"
     "rpmdevtools" # for spectool
-    "systemd"
     "virt-install"
     "yum-utils"
 )
 set -ex
 
 # dependencies
-rm -rf /var/www/eucalyptus-packages.??????????
-yum erase -y 'eucalyptus-*' 'load-balancer-servo'
+if [ "${MODE}" != "build-only" ] ; then
+  rm -rf /var/www/eucalyptus-packages.??????????
 
-yum -y install "${REQUIRE[@]}"
+  yum ${YUM_OPTS} erase 'eucalyptus-*' 'load-balancer-servo'
 
-yum -y groupinstall development
+  yum ${YUM_OPTS} install "${REQUIRE[@]}"
+fi
 
-RPMBUILD=${RPMBUILD:-$(mktemp -td "rpmbuild.XXXXXXXXXX")}
+[ "${MODE}" != "setup" ] || exit 0
+
+#
 if [ -z "${EUCALYPTUS_BUILD_REPO_IP}" ] ; then
   EUCALYPTUS_BUILD_REPO_IP=$(curl "http://169.254.169.254/latest/meta-data/local-ipv4")
   [ ! -z "${EUCALYPTUS_BUILD_REPO_IP}" ] || ( echo "Could not detect ip" && exit 1 )
@@ -56,83 +60,29 @@ if [ -z "${EUCALYPTUS_BUILD_REPO_DIR}" ] ; then
 fi
 
 # clone repositories
-[ ! -d "eucalyptus-imaging-worker" ] || rm -rf "eucalyptus-imaging-worker"
-git clone --depth 1 --branch "${EUCA_IW_BRANCH}" "${EUCA_IW_REPO}"
-
-[ ! -d "load-balancer-servo" ] || rm -rf "load-balancer-servo"
-git clone --depth 1 --branch "${EUCA_LBS_BRANCH}" "${EUCA_LBS_REPO}"
-
-[ ! -d "eucalyptus-service-image" ] || rm -rf "eucalyptus-service-image"
-git clone --depth 1 --branch "${EUCA_SIM_BRANCH}" "${EUCA_SIM_REPO}"
-
-# conf, get commit info
-pushd "eucalyptus-imaging-worker"
-EUCA_IW_GIT_SHORT=$(git rev-parse --short HEAD)
-popd
-
-pushd "load-balancer-servo"
-EUCA_LBS_GIT_SHORT=$(git rev-parse --short HEAD)
-popd
-
-pushd "eucalyptus-service-image"
-EUCA_SIM_GIT_SHORT=$(git rev-parse --short HEAD)
-EUCA_SIM_VERSION=$(spectool -l "eucalyptus-service-image.spec" | grep -oP 'eucalyptus-service-image-\K[.0-9]*(?=.tar.xz)')
-autoconf
-popd
+if [ "${MODE}" != "build-only" ] ; then
+  [ ! -d "eucalyptus-service-image" ] || rm -rf "eucalyptus-service-image"
+  git clone --depth 1 --branch "${EUCA_SIM_BRANCH}" "${EUCA_SIM_REPO}"
+fi
 
 # setup rpmbuild
+RPMBUILD=${RPMBUILD:-$(mktemp -td "rpmbuild.XXXXXXXXXX")}
 mkdir -p "${RPMBUILD}/SPECS"
 mkdir -p "${RPMBUILD}/SOURCES"
-
-[ ! -f "${RPMBUILD}/SPECS/eucalyptus-imaging-worker.spec" ] || rm -f \
-  "${RPMBUILD}/SPECS/eucalyptus-imaging-worker.spec"
-ln -fs "$(pwd)/eucalyptus-imaging-worker/eucalyptus-imaging-worker.spec" \
-  "${RPMBUILD}/SPECS"
-
-[ ! -f "${RPMBUILD}/SPECS/load-balancer-servo.spec" ] || rm -f \
-  "${RPMBUILD}/SPECS/load-balancer-servo.spec"
-ln -fs "$(pwd)/load-balancer-servo/load-balancer-servo.spec" \
-  "${RPMBUILD}/SPECS"
 
 [ ! -f "${RPMBUILD}/SPECS/eucalyptus-service-image.spec" ] || rm -f \
   "${RPMBUILD}/SPECS/eucalyptus-service-image.spec"
 ln -fs "$(pwd)/eucalyptus-service-image/eucalyptus-service-image.spec" \
   "${RPMBUILD}/SPECS"
 
-# update kickstart create for service package repository as 
-# eucalyptus-service-image-release.rpm is not available
-head -n -3 "eucalyptus-service-image/eucalyptus-service-image.ks.in" | \
-  grep -v eucalyptus-service-image-release > \
-  "eucalyptus-service-image/eucalyptus-service-image.ks.in.new"
-cat >> "eucalyptus-service-image/eucalyptus-service-image.ks.in.new" << HERE
-
-# Configure service packages repository
-cat > /etc/yum.repos.d/eucalyptus-service-image.repo << EOF
-[eucalyptus-service-image]
-name=Eucalyptus Service Image Packages - $basearch
-baseurl=file:///var/lib/eucalyptus-service-image/packages
-enabled=1
-gpgcheck=0
-skip_if_unavailable=1
-EOF
-HERE
-tail -n 3 "eucalyptus-service-image/eucalyptus-service-image.ks.in" >> \
-  "eucalyptus-service-image/eucalyptus-service-image.ks.in.new"
-mv -f "eucalyptus-service-image/eucalyptus-service-image.ks.in.new" \
-  "eucalyptus-service-image/eucalyptus-service-image.ks.in"
+# get commit info
+pushd "eucalyptus-service-image"
+EUCA_SIM_GIT_SHORT=$(git rev-parse --short HEAD)
+EUCA_SIM_VERSION=$(spectool -l "eucalyptus-service-image.spec" | grep -oP 'eucalyptus-service-image-\K[.0-9]*(?=.tar.xz)')
+autoconf
+popd
 
 # generate source tars
-tar -cvJf "${RPMBUILD}/SOURCES/eucalyptus-imaging-worker.tar.xz" \
-    --exclude ".git*" \
-    --exclude "eucalyptus-imaging-worker.spec" \
-    "eucalyptus-imaging-worker"
-
-cp "load-balancer-servo/load-balancer-servo.tmpfiles" "${RPMBUILD}/SOURCES/"
-tar -cvJf "${RPMBUILD}/SOURCES/load-balancer-servo.tar.xz" \
-    --exclude ".git*" \
-    --exclude "load-balancer-servo.spec" \
-    "load-balancer-servo"
-
 tar -cvJf "${RPMBUILD}/SOURCES/eucalyptus-service-image-${EUCA_SIM_VERSION}.tar.xz" \
     --transform "s|^eucalyptus-service-image|eucalyptus-service-image-${EUCA_SIM_VERSION}|" \
     --exclude ".git*" \
@@ -140,19 +90,10 @@ tar -cvJf "${RPMBUILD}/SOURCES/eucalyptus-service-image-${EUCA_SIM_VERSION}.tar.
     "eucalyptus-service-image"
 
 # build rpms
+RPMBUILD_OPTS="${RPMBUILD_OPTS}"
+RPM_DIST="${RPM_DIST:-el7}"
 RPM_VERSION="$(date -u +%Y%m%d)git"
-
-rpmbuild \
-    --define "_topdir ${RPMBUILD}" \
-    --define "tarball_basedir eucalyptus-imaging-worker" \
-    --define "dist .${RPM_VERSION}${EUCA_IW_GIT_SHORT}.el7" \
-    -ba "${RPMBUILD}/SPECS/eucalyptus-imaging-worker.spec"
-
-rpmbuild \
-    --define "_topdir ${RPMBUILD}" \
-    --define "tarball_basedir load-balancer-servo" \
-    --define "dist .${RPM_VERSION}${EUCA_LBS_GIT_SHORT}.el7" \
-    -ba "${RPMBUILD}/SPECS/load-balancer-servo.spec"
+RPM_BUILD_ID="${RPM_BUILD_ID:-${RPM_VERSION}${EUCA_SIM_GIT_SHORT}}"
 
 # build local repository for use in service image build
 mkdir -p "${EUCALYPTUS_BUILD_REPO_DIR}"
@@ -220,8 +161,9 @@ export EUCA_SIM_CONFIGURE_OPTS="
 
 rpmbuild \
     --define "_topdir ${RPMBUILD}" \
-    --define "dist .${RPM_VERSION}${EUCA_SIM_GIT_SHORT}.el7" \
+    --define "dist .${RPM_BUILD_ID}.${RPM_DIST}" \
     --define "configure_opts ${EUCA_SIM_CONFIGURE_OPTS//$'\n'/ }" \
+    ${RPMBUILD_OPTS} \
     -ba "${RPMBUILD}/SPECS/eucalyptus-service-image.spec"
 
 systemctl stop libvirtd

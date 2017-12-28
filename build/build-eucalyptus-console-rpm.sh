@@ -5,8 +5,8 @@
 MODE="${1:-build}" # setup build build-only
 VERSION="4.4"
 YUM_OPTS="${YUM_OPTS:--y}"
-EUCA_CON_BRANCH="devel-${VERSION}"
-EUCA_CON_REPO="https://github.com/sjones4/eucaconsole.git"
+EUCA_CON_BRANCH="${EUCA_CON_BRANCH:-devel-${VERSION}}"
+EUCA_CON_REPO="${EUCA_CON_REPO:-https://github.com/sjones4/eucaconsole.git}"
 REQUIRE=(
     "autoconf"
     "gettext"
@@ -29,7 +29,9 @@ REQUIRE=(
     "python-simplejson"
     "python-wtforms"
     "python2-boto"
+    "rpm-build"
     "rpmdevtools" # for spectool
+    "yum"
 )
 REQUIRE_EUCA=(
     "http://downloads.eucalyptus.com/software/eucalyptus/4.4/rhel/7Server/x86_64/python-pylibmc-1.2.3-6.1.el7.x86_64.rpm"
@@ -63,7 +65,7 @@ mkdir -p "${RPMBUILD}/SOURCES"
 
 [ ! -f "${RPMBUILD}/SPECS/eucaconsole.spec" ] || rm -f \
   "${RPMBUILD}/SPECS/eucaconsole.spec"
-ln -fs "$(pwd)/eucaconsole/rpmspec/eucaconsole.spec" \
+ln -fs "$(pwd)/eucaconsole/rpm/eucaconsole.spec" \
   "${RPMBUILD}/SPECS"
 
 # generate source tars, get commit info
@@ -74,9 +76,9 @@ tar -cvJf "${RPMBUILD}/SOURCES/eucaconsole.tar.xz" \
     --exclude ".git*" \
     "eucaconsole"
 
-for EUCA_CON_SOURCE in $(spectool -l "eucaconsole/rpmspec/eucaconsole.spec" | awk '{print $2}' | grep -v '%')
+for EUCA_CON_SOURCE in $(spectool -l "eucaconsole/rpm/eucaconsole.spec" | awk '{print $2}' | grep -v '%')
 do
-  cp "eucaconsole/rpmspec/${EUCA_CON_SOURCE}" "${RPMBUILD}/SOURCES/"
+  cp "eucaconsole/rpm/${EUCA_CON_SOURCE}" "${RPMBUILD}/SOURCES/"
 done
 
 # build rpms

@@ -29,9 +29,11 @@ REQUIRE=(
     "openssl-devel"
     "python-devel"
     "python-setuptools"
+    "rpm-build"
     "swig"
     "xalan-j2"
     "xalan-j2-xsltc"
+    "yum"
 )
 REQUIRE_EUCA=(
     "http://downloads.eucalyptus.com/software/eucalyptus/4.4/rhel/7Server/x86_64/annogen-0.1.0-8.el7.noarch.rpm"
@@ -74,7 +76,7 @@ mkdir -p "${RPMBUILD}/SOURCES"
 
 [ ! -f "${RPMBUILD}/SPECS/eucalyptus.spec" ] || rm -f \
   "${RPMBUILD}/SPECS/eucalyptus.spec"
-ln -fs "${EUCA_PATH}/eucalyptus.spec" "${RPMBUILD}/SPECS"
+ln -fs "${EUCA_PATH}/rpm/eucalyptus.spec" "${RPMBUILD}/SPECS"
 
 # setup deps rpm for group build
 if [ -f "${RPMBUILD}"/RPMS/noarch/eucalyptus-java-deps-*.noarch.rpm ] ; then

@@ -1,6 +1,6 @@
 FROM centos:7
 
-ADD [ "build-*.sh", "/root/bin/" ]
+ADD [ "build-*.sh", "rpm-*.sh", "/root/bin/" ]
 
 ENV PATH=/root/bin:$PATH \
     RPM_OUT="/eucalyptus/rpms"

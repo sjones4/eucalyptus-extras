@@ -1,5 +1,5 @@
 #!/bin/bash
-# Build all eucalyptus rpms for the 4.4 series
+# Build eucalyptus service image rpms for the 4.4 series
 set -e
 
 # dependencies
@@ -13,15 +13,12 @@ chmod 755 "${EUCALYPTUS_BUILD_REPO_DIR}"
 
 # build
 mkdir -pv "${RPM_OUT}"
-./build-eucalyptus-console-rpm.sh
-./build-eucalyptus-console-selinux-rpm.sh
 ./build-eucalyptus-cloud-libs-rpm.sh
 ./build-eucalyptus-rpms.sh
 ./build-eucalyptus-selinux-rpm.sh
 ./build-eucalyptus-sim-imaging-worker-rpm.sh
 ./build-eucalyptus-sim-load-balancer-servo-rpm.sh
 ./build-eucalyptus-service-image-rpm.sh
-./build-eucalyptus-sosreport-plugins-rpm.sh
 
 #
 rm -rf "${RPMBUILD}"

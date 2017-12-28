@@ -2,14 +2,15 @@
 # Build eucalyptus sosreport plugins rpm on CentOS/RHEL 7
 
 # config
-EUCA_SOS_BRANCH="maint-0.5"
-EUCA_SOS_REPO="https://github.com/eucalyptus/eucalyptus-sosreport-plugins"
+EUCA_SOS_BRANCH="${EUCA_SOS_BRANCH:-maint-0.5}"
+EUCA_SOS_REPO="${EUCA_SOS_REPO:-https://github.com/eucalyptus/eucalyptus-sosreport-plugins}"
 REQUIRE=(
     "git"
     "python2-devel"
     "python-setuptools"
+    "rpm-build"
     "rpmdevtools" # for spectool
-    "yum-utils"
+    "yum"
 )
 set -ex
 RPMBUILD=${RPMBUILD:-$(mktemp -td "rpmbuild.XXXXXXXXXX")}
