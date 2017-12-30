@@ -8,6 +8,7 @@ yum -y install "httpd" # create /var/www/
 # config
 export RPMBUILD=${RPMBUILD:-$(mktemp -td "rpmbuild.XXXXXXXXXX")}
 export RPM_OUT="${RPM_OUT:-${PWD}/rpms}"
+export RPM_VERSION="${RPM_VERSION:-$(date -u +%Y%m%d%H%M)}"
 export EUCALYPTUS_BUILD_REPO_DIR=$(mktemp -td --tmpdir="/var/www/" "eucalyptus-packages.XXXXXXXXXX")
 chmod 755 "${EUCALYPTUS_BUILD_REPO_DIR}"
 

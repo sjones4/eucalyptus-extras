@@ -45,12 +45,12 @@ tar -cvJf "${RPMBUILD}/SOURCES/eucalyptus-sosreport-plugins.tar.xz" \
     "eucalyptus-sosreport-plugins"
 
 # build rpms
-RPM_VERSION="$(date -u +%Y%m%d)git"
+RPM_VERSION="${RPM_VERSION:-$(date -u +%Y%m%d%H%M)}"
 
 rpmbuild \
     --define "_topdir ${RPMBUILD}" \
     --define "tarball_basedir eucalyptus-sosreport-plugins" \
-    --define "dist .${RPM_VERSION}${EUCA_SOS_GIT_SHORT}.el7" \
+    --define "dist .${RPM_VERSION}git${EUCA_SOS_GIT_SHORT}.el7" \
     -ba "${RPMBUILD}/SPECS/eucalyptus-sos-plugins.spec"
 
 find "${RPMBUILD}/SRPMS/"

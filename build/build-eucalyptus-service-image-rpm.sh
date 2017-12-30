@@ -92,8 +92,8 @@ tar -cvJf "${RPMBUILD}/SOURCES/eucalyptus-service-image-${EUCA_SIM_VERSION}.tar.
 # build rpms
 RPMBUILD_OPTS="${RPMBUILD_OPTS}"
 RPM_DIST="${RPM_DIST:-el7}"
-RPM_VERSION="$(date -u +%Y%m%d)git"
-RPM_BUILD_ID="${RPM_BUILD_ID:-${RPM_VERSION}${EUCA_SIM_GIT_SHORT}}"
+RPM_VERSION="${RPM_VERSION:-$(date -u +%Y%m%d%H%M)}"
+RPM_BUILD_ID="${RPM_BUILD_ID:-${RPM_VERSION}git${EUCA_SIM_GIT_SHORT}}"
 
 # build local repository for use in service image build
 mkdir -p "${EUCALYPTUS_BUILD_REPO_DIR}"
@@ -167,6 +167,9 @@ rpmbuild \
     -ba "${RPMBUILD}/SPECS/eucalyptus-service-image.spec"
 
 systemctl stop libvirtd
+
+[ ! -f "${EUCALYPTUS_BUILD_REPO_YUM_CONF}" ] || \
+  rm -fv "${EUCALYPTUS_BUILD_REPO_YUM_CONF}"
 
 find "${RPMBUILD}/SRPMS/"
 
