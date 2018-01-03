@@ -14,7 +14,7 @@ RUN chown --recursive root:root /root/bin/*.sh \
  && build-eucalyptus-selinux-rpm.sh setup \
  && build-eucalyptus-console-rpm.sh setup \
  && build-eucalyptus-console-selinux-rpm.sh setup \
- && yum -y install rpm-sign \
+ && yum -y install curl gnupg2 rpm-sign which yajl \
  && yum -y clean all
 
 VOLUME /eucalyptus
