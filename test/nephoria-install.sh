@@ -20,7 +20,8 @@ set -ex
 
 sudo -n yum install -y \
   gcc git java-1.8.0-openjdk-devel libffi-devel openssl-devel patch \
-  python-devel python-setuptools python-virtualenv readline-devel
+  python-devel python-setuptools python-virtualenv readline-devel \
+  libyaml
 
 pushd "${NEPHORIA_BASE}"
 
