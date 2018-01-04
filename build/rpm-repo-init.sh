@@ -13,6 +13,7 @@ REPO_DIR="${1:-/var/www/eucalyptus-repos/${REPO_PATH}}"
 REPO_HTTP_CONF="${REPO_HTTP_CONF:-/etc/httpd/conf.d/eucalyptus-repos.conf}"
 REPO_EXCLUDES="${REPO_EXCLUDES:-eucaconsole*,eucanetd*,load-balancer-servo*,eucalyptus,eucalyptus-admin-tools,eucalyptus-axis2c-common,eucalyptus-blockdev-utils,eucalyptus-cc,eucalyptus-cloud,eucalyptus-common-java,eucalyptus-common-java-libs,eucalyptus-imaging-toolkit,eucalyptus-imaging-worker,eucalyptus-java-deps,eucalyptus-nc,eucalyptus-release,eucalyptus-sc,eucalyptus-selinux,eucalyptus-service-image,eucalyptus-walrus}"
 REPO_IP="${REPO_IP:-$(hostname -I 2>/dev/null | awk '{print $1}')}"
+REPO_UPDATE_RPM_VERSIONS=${REPO_UPDATE_RPM_VERSIONS:-1}
 
 # checks
 which createrepo &> /dev/null
@@ -27,11 +28,12 @@ if [ $? -ne 0 ] ; then
   exit 1
 fi
 
+REPO_UPDATE=""
 if [ -d "${REPO_DIR}" ] ; then
   REPO_FILES=$(ls "${REPO_DIR}")
   if [ ! -z "${REPO_FILES}" ] ; then
-    echo "repository directory ${REPO_DIR} exists and is not empty, will not initialize"
-    exit 1
+    echo "repository directory ${REPO_DIR} exists and is not empty, will refresh"
+    REPO_UPDATE="1"
   fi
 fi
 
@@ -58,6 +60,14 @@ reposync \
   --repoid=mirror-${YUM_RAND} \
   --config="${YUM_TEMP}" \
   --download_path="${REPO_DIR}"
+if [ ! -z "${REPO_UPDATE}" ] ; then
+  echo "Removing old packages from ${REPO_DIR}"
+  repomanage \
+    --old \
+    --nocheck \
+    --keep=${REPO_UPDATE_RPM_VERSIONS} \
+    "${REPO_DIR}" | xargs -r rm -fv
+fi
 echo "Building repository metadata"
 createrepo "${REPO_DIR}"
 
