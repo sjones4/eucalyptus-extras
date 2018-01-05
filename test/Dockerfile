@@ -2,7 +2,7 @@ FROM centos:7
 
 RUN yum -y install epel-release \
  && yum -y install make gcc git libffi-devel openssl-devel patch \
-    python-devel python2-pip readline-devel libyaml \
+    python-devel python2-pip readline-devel libyaml-devel \
  && pip install --upgrade pip setuptools \
  && cd /root \
  && git clone --depth 1 https://github.com/eucalyptus/adminapi.git \
@@ -16,7 +16,7 @@ RUN yum -y install epel-release \
  && rm -rf adminapi nephoria \
  && pip uninstall -y setuptools pip \
  && yum -y erase make gcc git python-setuptools perl openssl-devel \
-    python-devel readline-devel *-headers patch \
+    python-devel readline-devel libyaml-devel *-headers patch \
  && yum -y clean all
 
 ENV PATH=/root/bin:$PATH
