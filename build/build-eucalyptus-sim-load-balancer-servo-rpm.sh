@@ -38,7 +38,7 @@ mkdir -p "${RPMBUILD}/SOURCES"
 
 [ ! -f "${RPMBUILD}/SPECS/load-balancer-servo.spec" ] || rm -f \
   "${RPMBUILD}/SPECS/load-balancer-servo.spec"
-ln -fs "$(pwd)/load-balancer-servo/load-balancer-servo.spec" \
+cp -fv "$(pwd)/load-balancer-servo/load-balancer-servo.spec" \
   "${RPMBUILD}/SPECS"
 
 # generate source tars, get commit info

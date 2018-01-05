@@ -65,7 +65,7 @@ mkdir -p "${RPMBUILD}/SOURCES"
 
 [ ! -f "${RPMBUILD}/SPECS/eucaconsole.spec" ] || rm -f \
   "${RPMBUILD}/SPECS/eucaconsole.spec"
-ln -fs "$(pwd)/eucaconsole/rpm/eucaconsole.spec" \
+cp -fv "$(pwd)/eucaconsole/rpm/eucaconsole.spec" \
   "${RPMBUILD}/SPECS"
 
 # generate source tars, get commit info

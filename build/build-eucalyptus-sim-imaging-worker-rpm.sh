@@ -37,7 +37,7 @@ mkdir -p "${RPMBUILD}/SOURCES"
 
 [ ! -f "${RPMBUILD}/SPECS/eucalyptus-imaging-worker.spec" ] || rm -f \
   "${RPMBUILD}/SPECS/eucalyptus-imaging-worker.spec"
-ln -fs "$(pwd)/eucalyptus-imaging-worker/eucalyptus-imaging-worker.spec" \
+cp -fv "$(pwd)/eucalyptus-imaging-worker/eucalyptus-imaging-worker.spec" \
   "${RPMBUILD}/SPECS"
 
 # generate source tars, get commit info

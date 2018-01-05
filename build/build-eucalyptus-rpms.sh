@@ -76,7 +76,7 @@ mkdir -p "${RPMBUILD}/SOURCES"
 
 [ ! -f "${RPMBUILD}/SPECS/eucalyptus.spec" ] || rm -f \
   "${RPMBUILD}/SPECS/eucalyptus.spec"
-ln -fs "${EUCA_PATH}/rpm/eucalyptus.spec" "${RPMBUILD}/SPECS"
+cp -fv "${EUCA_PATH}/rpm/eucalyptus.spec" "${RPMBUILD}/SPECS"
 
 # setup deps rpm for group build
 if [ -f "${RPMBUILD}"/RPMS/noarch/eucalyptus-java-deps-*.noarch.rpm ] ; then

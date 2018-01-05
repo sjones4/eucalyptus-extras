@@ -42,7 +42,7 @@ mkdir -p "${RPMBUILD}/SOURCES"
 
 [ ! -f "${RPMBUILD}/SPECS/eucalyptus-selinux.spec" ] || rm -f \
   "${RPMBUILD}/SPECS/eucalyptus-selinux.spec"
-ln -fs "$(pwd)/eucalyptus-selinux/eucalyptus-selinux.spec" \
+cp -fv "$(pwd)/eucalyptus-selinux/eucalyptus-selinux.spec" \
   "${RPMBUILD}/SPECS"
 
 # generate source tars, get commit info

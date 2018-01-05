@@ -42,7 +42,7 @@ mkdir -p "${RPMBUILD}/SOURCES"
 
 [ ! -f "${RPMBUILD}/SPECS/eucaconsole-selinux.spec" ] || rm -f \
   "${RPMBUILD}/SPECS/eucaconsole-selinux.spec"
-ln -fs "$(pwd)/eucaconsole-selinux/eucaconsole-selinux.spec" \
+cp -fv "$(pwd)/eucaconsole-selinux/eucaconsole-selinux.spec" \
   "${RPMBUILD}/SPECS"
 
 # generate source tars, get commit info

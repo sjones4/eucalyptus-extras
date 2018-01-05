@@ -32,7 +32,7 @@ mkdir -p "${RPMBUILD}/SOURCES"
 
 [ ! -f "${RPMBUILD}/SPECS/eucalyptus-sos-plugins.spec" ] || rm -f \
   "${RPMBUILD}/SPECS/eucalyptus-sos-plugins.spec"
-ln -fs "$(pwd)/eucalyptus-sosreport-plugins/eucalyptus-sos-plugins.spec" \
+cp -fv "$(pwd)/eucalyptus-sosreport-plugins/eucalyptus-sos-plugins.spec" \
   "${RPMBUILD}/SPECS"
 
 # generate source tars, get commit info

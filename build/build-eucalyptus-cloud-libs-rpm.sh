@@ -40,7 +40,7 @@ mkdir -p "${RPMBUILD}/SOURCES"
 
 [ ! -f "${RPMBUILD}/SPECS/eucalyptus-java-deps.spec" ] || rm -f \
   "${RPMBUILD}/SPECS/eucalyptus-java-deps.spec"
-ln -fs "${EUCA_LIBS_PATH}/eucalyptus-java-deps.spec" \
+cp -fv "${EUCA_LIBS_PATH}/eucalyptus-java-deps.spec" \
   "${RPMBUILD}/SPECS"
 
 # generate source tars, get commit info

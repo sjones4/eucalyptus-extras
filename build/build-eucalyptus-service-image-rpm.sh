@@ -72,7 +72,7 @@ mkdir -p "${RPMBUILD}/SOURCES"
 
 [ ! -f "${RPMBUILD}/SPECS/eucalyptus-service-image.spec" ] || rm -f \
   "${RPMBUILD}/SPECS/eucalyptus-service-image.spec"
-ln -fs "$(pwd)/eucalyptus-service-image/eucalyptus-service-image.spec" \
+cp -fv "$(pwd)/eucalyptus-service-image/eucalyptus-service-image.spec" \
   "${RPMBUILD}/SPECS"
 
 # get commit info
