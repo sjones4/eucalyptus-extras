@@ -15,12 +15,15 @@ RUN yum -y install epel-release \
  && berks install --berksfile /calyptos/eucalyptus-cookbook/Berksfile \
  && rm -rf /root/calyptos /root/.cache \
  && pip uninstall -y setuptools pip \
+ && /opt/chefdk/embedded/bin/gem uninstall -a dep_selector \
+ && /opt/chefdk/embedded/bin/gem uninstall -a dep-selector-libgecode \
  && yum -y erase gcc make patch python-devel python-setuptools openssl-devel libyaml-devel *-headers \
  && yum -y clean all
 
 ENV PATH=/calyptos/bin:$PATH
 
-ADD [ "calyptos", "/calyptos/bin/" ]
+ADD [ "calyptos", "host-*.sh", "/calyptos/bin/" ]
+ADD [ "templates", "/calyptos/templates/" ]
 
 RUN chown --recursive root:root /calyptos \
  && chmod 755 /calyptos/bin/*
