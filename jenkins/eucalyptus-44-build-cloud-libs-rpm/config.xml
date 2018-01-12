@@ -1,0 +1,116 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<project>
+  <actions/>
+  <description></description>
+  <keepDependencies>false</keepDependencies>
+  <properties>
+    <hudson.plugins.buildblocker.BuildBlockerProperty plugin="build-blocker-plugin@1.7.3">
+      <useBuildBlocker>false</useBuildBlocker>
+      <blockLevel>GLOBAL</blockLevel>
+      <scanQueueFor>DISABLED</scanQueueFor>
+      <blockingJobs></blockingJobs>
+    </hudson.plugins.buildblocker.BuildBlockerProperty>
+    <jenkins.model.BuildDiscarderProperty>
+      <strategy class="hudson.tasks.LogRotator">
+        <daysToKeep>-1</daysToKeep>
+        <numToKeep>10</numToKeep>
+        <artifactDaysToKeep>-1</artifactDaysToKeep>
+        <artifactNumToKeep>-1</artifactNumToKeep>
+      </strategy>
+    </jenkins.model.BuildDiscarderProperty>
+    <com.coravy.hudson.plugins.github.GithubProjectProperty plugin="github@1.28.1">
+      <projectUrl>https://github.com/sjones4/eucalyptus-cloud-libs/</projectUrl>
+      <displayName></displayName>
+    </com.coravy.hudson.plugins.github.GithubProjectProperty>
+    <hudson.model.ParametersDefinitionProperty>
+      <parameterDefinitions>
+        <hudson.model.StringParameterDefinition>
+          <name>CLOUD_LIBS_GIT_REPO</name>
+          <description></description>
+          <defaultValue>https://github.com/sjones4/eucalyptus-cloud-libs.git</defaultValue>
+        </hudson.model.StringParameterDefinition>
+        <hudson.model.StringParameterDefinition>
+          <name>CLOUD_LIBS_GIT_BRANCH</name>
+          <description></description>
+          <defaultValue>devel-4.4</defaultValue>
+        </hudson.model.StringParameterDefinition>
+      </parameterDefinitions>
+    </hudson.model.ParametersDefinitionProperty>
+  </properties>
+  <scm class="hudson.plugins.git.GitSCM" plugin="git@3.6.4">
+    <configVersion>2</configVersion>
+    <userRemoteConfigs>
+      <hudson.plugins.git.UserRemoteConfig>
+        <url>$CLOUD_LIBS_GIT_REPO</url>
+      </hudson.plugins.git.UserRemoteConfig>
+    </userRemoteConfigs>
+    <branches>
+      <hudson.plugins.git.BranchSpec>
+        <name>$CLOUD_LIBS_GIT_BRANCH</name>
+      </hudson.plugins.git.BranchSpec>
+    </branches>
+    <doGenerateSubmoduleConfigurations>false</doGenerateSubmoduleConfigurations>
+    <submoduleCfg class="list"/>
+    <extensions>
+      <hudson.plugins.git.extensions.impl.RelativeTargetDirectory>
+        <relativeTargetDir>eucalyptus-cloud-libs</relativeTargetDir>
+      </hudson.plugins.git.extensions.impl.RelativeTargetDirectory>
+      <hudson.plugins.git.extensions.impl.PruneStaleBranch/>
+    </extensions>
+  </scm>
+  <canRoam>true</canRoam>
+  <disabled>false</disabled>
+  <blockBuildWhenDownstreamBuilding>false</blockBuildWhenDownstreamBuilding>
+  <blockBuildWhenUpstreamBuilding>false</blockBuildWhenUpstreamBuilding>
+  <triggers/>
+  <concurrentBuild>false</concurrentBuild>
+  <builders>
+    <hudson.tasks.Shell>
+      <command># rpm output setup
+[ ! -d rpms ] || rm -rf rpms
+mkdir -v rpms
+chmod 777 rpms
+
+# build
+if [ &quot;true&quot; = &quot;${EUCALYPTUS_GLOBAL_DOCKER_PULLS:-true}&quot; ] ; then
+  docker pull sjones4/eucalyptus-builder:4.4
+fi
+docker run --rm \
+  --env RPM_DIST=${EUCALYPTUS_GLOBAL_RPM_DIST:-el7} \
+  --env RPM_OUT=/eucalyptus/rpms \
+  -v &quot;$(pwd)&quot;:/eucalyptus \
+  -w /eucalyptus \
+  sjones4/eucalyptus-builder:4.4 \
+  build-eucalyptus-cloud-libs-rpm.sh build-only</command>
+    </hudson.tasks.Shell>
+    <hudson.tasks.Shell>
+      <command># sign rpms
+if [ ! -z &quot;${EUCALYPTUS_GLOBAL_DEV_GPG_KEY+x}&quot; ] ; then
+  docker run --rm \
+    --env GPG_KEY=&quot;${EUCALYPTUS_GLOBAL_DEV_GPG_KEY}&quot; \
+    -v &quot;$(pwd)&quot;:/eucalyptus \
+    -w /eucalyptus/rpms \
+    sjones4/eucalyptus-builder:4.4 \
+    rpm-sign.sh
+fi  </command>
+    </hudson.tasks.Shell>
+  </builders>
+  <publishers>
+    <hudson.tasks.ArtifactArchiver>
+      <artifacts>rpms/*</artifacts>
+      <allowEmptyArchive>false</allowEmptyArchive>
+      <onlyIfSuccessful>true</onlyIfSuccessful>
+      <fingerprint>false</fingerprint>
+      <defaultExcludes>true</defaultExcludes>
+      <caseSensitive>true</caseSensitive>
+    </hudson.tasks.ArtifactArchiver>
+  </publishers>
+  <buildWrappers>
+    <hudson.plugins.timestamper.TimestamperBuildWrapper plugin="timestamper@1.8.9"/>
+    <EnvInjectPasswordWrapper plugin="envinject@2.1.5">
+      <injectGlobalPasswords>true</injectGlobalPasswords>
+      <maskPasswordParameters>true</maskPasswordParameters>
+      <passwordEntries/>
+    </EnvInjectPasswordWrapper>
+  </buildWrappers>
+</project>

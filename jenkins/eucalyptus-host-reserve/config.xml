@@ -1,0 +1,175 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<project>
+  <actions/>
+  <description></description>
+  <keepDependencies>false</keepDependencies>
+  <properties>
+    <hudson.plugins.buildblocker.BuildBlockerProperty plugin="build-blocker-plugin@1.7.3">
+      <useBuildBlocker>false</useBuildBlocker>
+      <blockLevel>GLOBAL</blockLevel>
+      <scanQueueFor>DISABLED</scanQueueFor>
+      <blockingJobs></blockingJobs>
+    </hudson.plugins.buildblocker.BuildBlockerProperty>
+    <jenkins.model.BuildDiscarderProperty>
+      <strategy class="hudson.tasks.LogRotator">
+        <daysToKeep>-1</daysToKeep>
+        <numToKeep>20</numToKeep>
+        <artifactDaysToKeep>-1</artifactDaysToKeep>
+        <artifactNumToKeep>-1</artifactNumToKeep>
+      </strategy>
+    </jenkins.model.BuildDiscarderProperty>
+    <com.coravy.hudson.plugins.github.GithubProjectProperty plugin="github@1.28.1">
+      <projectUrl>https://github.com/sjones4/eucalyptus-extras/</projectUrl>
+      <displayName></displayName>
+    </com.coravy.hudson.plugins.github.GithubProjectProperty>
+    <hudson.model.ParametersDefinitionProperty>
+      <parameterDefinitions>
+        <hudson.model.StringParameterDefinition>
+          <name>HOST_COUNT</name>
+          <description></description>
+          <defaultValue>1</defaultValue>
+        </hudson.model.StringParameterDefinition>
+        <hudson.model.ChoiceParameterDefinition>
+          <name>HOST_PARAM_CPU</name>
+          <description></description>
+          <choices class="java.util.Arrays$ArrayList">
+            <a class="string-array">
+              <string>4</string>
+              <string>8</string>
+              <string>16</string>
+              <string>32</string>
+            </a>
+          </choices>
+        </hudson.model.ChoiceParameterDefinition>
+        <hudson.model.ChoiceParameterDefinition>
+          <name>HOST_PARAM_MEM</name>
+          <description></description>
+          <choices class="java.util.Arrays$ArrayList">
+            <a class="string-array">
+              <string>16</string>
+              <string>32</string>
+              <string>64</string>
+              <string>128</string>
+            </a>
+          </choices>
+        </hudson.model.ChoiceParameterDefinition>
+      </parameterDefinitions>
+    </hudson.model.ParametersDefinitionProperty>
+  </properties>
+  <scm class="hudson.scm.NullSCM"/>
+  <canRoam>true</canRoam>
+  <disabled>false</disabled>
+  <blockBuildWhenDownstreamBuilding>false</blockBuildWhenDownstreamBuilding>
+  <blockBuildWhenUpstreamBuilding>false</blockBuildWhenUpstreamBuilding>
+  <triggers/>
+  <concurrentBuild>false</concurrentBuild>
+  <builders>
+    <hudson.plugins.copyartifact.CopyArtifact plugin="copyartifact@1.39">
+      <project>eucalyptus-host-config</project>
+      <filter>hosts.txt</filter>
+      <target>hosts</target>
+      <excludes></excludes>
+      <selector class="hudson.plugins.copyartifact.StatusBuildSelector">
+        <stable>true</stable>
+      </selector>
+      <flatten>true</flatten>
+      <doNotFingerprintArtifacts>true</doNotFingerprintArtifacts>
+    </hudson.plugins.copyartifact.CopyArtifact>
+    <hudson.tasks.Shell>
+      <command># ssh key setup
+SSH_KEY_DIR=$(mktemp -dt ssh.XXXXXXXX)
+SSH_KEY_FILE=&quot;${SSH_KEY_DIR}/id_rsa&quot;
+SSH_KNOWNHOSTS=&quot;${SSH_KEY_DIR}/known_hosts&quot;
+function cleanup {
+  echo &quot;Performing cleanup&quot;
+  [ ! -d &quot;${SSH_KEY_DIR}&quot; ] || rm -rf &quot;${SSH_KEY_DIR}&quot;
+}
+trap cleanup EXIT
+echo &quot;-----BEGIN RSA PRIVATE KEY-----&quot; &gt; &quot;${SSH_KEY_FILE}&quot;
+echo ${EUCALYPTUS_GLOBAL_SSH_KEY} | sed &quot;s/ /\n/g&quot; &gt;&gt; &quot;${SSH_KEY_FILE}&quot;
+echo &quot;-----END RSA PRIVATE KEY-----&quot; &gt;&gt; &quot;${SSH_KEY_FILE}&quot;
+chmod 600 &quot;${SSH_KEY_FILE}&quot;
+ssh-keygen -y -f &quot;${SSH_KEY_FILE}&quot; &gt; &quot;${SSH_KEY_DIR}/id_rsa.pub&quot;
+
+if [ &quot;true&quot; = &quot;${EUCALYPTUS_GLOBAL_DOCKER_PULLS:-true}&quot; ] ; then
+  echo &quot;Pulling latest calyptos docker image&quot;
+  docker pull sjones4/calyptos:4.4
+fi
+
+echo &quot;Calculating param string&quot;
+HOST_PARAMS=&quot;CPU&quot;
+while [ ${HOST_PARAM_CPU} -ge 4 ] ; do
+  HOST_PARAMS=&quot;${HOST_PARAMS}X&quot;
+  HOST_PARAM_CPU=$((HOST_PARAM_CPU / 2))
+done
+HOST_PARAMS=&quot;${HOST_PARAMS}:DISKX:MEM&quot;
+while [ ${HOST_PARAM_MEM} -ge 16 ] ; do
+  HOST_PARAMS=&quot;${HOST_PARAMS}X&quot;
+  HOST_PARAM_MEM=$((HOST_PARAM_MEM / 2))
+done
+HOST_PARAMS=&quot;${HOST_PARAMS}:USEX&quot;
+echo &quot;Host params ${HOST_PARAMS}&quot;
+
+echo &quot;Host status&quot;
+docker run --rm \
+  -v &quot;${SSH_KEY_DIR}&quot;:/root/.ssh \
+  -v $(pwd)/hosts:/calyptos/hosts \
+  -w /calyptos/hosts \
+  sjones4/calyptos:4.4 host-status.sh
+
+echo &quot;Reserving ${HOST_COUNT} host(s)&quot;
+docker run --rm \
+  -v &quot;${SSH_KEY_DIR}&quot;:/root/.ssh \
+  -v $(pwd)/hosts:/calyptos/hosts \
+  -w /calyptos/hosts \
+  sjones4/calyptos:4.4 host-reserve.sh \
+  ${BUILD_USER_ID}-${BUILD_ID} ${BUILD_USER_EMAIL} ${HOST_COUNT} ${HOST_PARAMS} \
+  &gt; hosts/reserved_hosts.txt &amp;&amp; \
+  echo &quot;${BUILD_USER_ID}-${BUILD_ID}&quot; &gt; hosts/reservation_id.txt
+
+
+
+if [ $? -ne 0 ] ; then
+ [ ! -f hosts/reserved_hosts.txt ] || rm -fv hosts/reserved_hosts.txt
+ [ ! -f hosts/reserved_host_names.txt ] || rm -fv hosts/reserved_host_names.txt
+ [ ! -f hosts/reserved_public_ip_ranges.txt ] || rm -fv hosts/reserved_public_ip_ranges.txt
+ [ ! -f hosts/reserved_private_ip_ranges.txt ] || rm -fv hosts/reserved_private_ip_ranges.txt
+ [ ! -f hosts/reservation_id.txt ] || rm -fv hosts/reservation_id.txt
+else
+ grep -f hosts/reserved_hosts.txt hosts/hosts.txt | cut -d _ -f 2 &gt; hosts/reserved_host_names.txt
+ grep -f hosts/reserved_hosts.txt hosts/hosts.txt | cut -d _ -f 3 &gt; hosts/reserved_public_ip_ranges.txt
+ grep -f hosts/reserved_hosts.txt hosts/hosts.txt | cut -d _ -f 4 &gt; hosts/reserved_private_ip_ranges.txt
+fi</command>
+    </hudson.tasks.Shell>
+  </builders>
+  <publishers>
+    <hudson.tasks.ArtifactArchiver>
+      <artifacts>hosts/res*.txt</artifacts>
+      <allowEmptyArchive>false</allowEmptyArchive>
+      <onlyIfSuccessful>false</onlyIfSuccessful>
+      <fingerprint>false</fingerprint>
+      <defaultExcludes>true</defaultExcludes>
+      <caseSensitive>true</caseSensitive>
+    </hudson.tasks.ArtifactArchiver>
+    <hudson.plugins.parameterizedtrigger.BuildTrigger plugin="parameterized-trigger@2.35.2">
+      <configs>
+        <hudson.plugins.parameterizedtrigger.BuildTriggerConfig>
+          <configs class="empty-list"/>
+          <projects>eucalyptus-host-status</projects>
+          <condition>ALWAYS</condition>
+          <triggerWithNoParameters>true</triggerWithNoParameters>
+          <triggerFromChildProjects>false</triggerFromChildProjects>
+        </hudson.plugins.parameterizedtrigger.BuildTriggerConfig>
+      </configs>
+    </hudson.plugins.parameterizedtrigger.BuildTrigger>
+  </publishers>
+  <buildWrappers>
+    <hudson.plugins.timestamper.TimestamperBuildWrapper plugin="timestamper@1.8.9"/>
+    <EnvInjectPasswordWrapper plugin="envinject@2.1.5">
+      <injectGlobalPasswords>true</injectGlobalPasswords>
+      <maskPasswordParameters>true</maskPasswordParameters>
+      <passwordEntries/>
+    </EnvInjectPasswordWrapper>
+    <org.jenkinsci.plugins.builduser.BuildUser plugin="build-user-vars-plugin@1.5"/>
+  </buildWrappers>
+</project>

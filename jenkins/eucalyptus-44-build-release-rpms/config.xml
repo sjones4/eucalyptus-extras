@@ -1,0 +1,148 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<project>
+  <actions/>
+  <description></description>
+  <keepDependencies>false</keepDependencies>
+  <properties>
+    <hudson.plugins.buildblocker.BuildBlockerProperty plugin="build-blocker-plugin@1.7.3">
+      <useBuildBlocker>false</useBuildBlocker>
+      <blockLevel>GLOBAL</blockLevel>
+      <scanQueueFor>DISABLED</scanQueueFor>
+      <blockingJobs></blockingJobs>
+    </hudson.plugins.buildblocker.BuildBlockerProperty>
+    <jenkins.model.BuildDiscarderProperty>
+      <strategy class="hudson.tasks.LogRotator">
+        <daysToKeep>-1</daysToKeep>
+        <numToKeep>10</numToKeep>
+        <artifactDaysToKeep>-1</artifactDaysToKeep>
+        <artifactNumToKeep>-1</artifactNumToKeep>
+      </strategy>
+    </jenkins.model.BuildDiscarderProperty>
+    <hudson.model.ParametersDefinitionProperty>
+      <parameterDefinitions>
+        <hudson.model.StringParameterDefinition>
+          <name>BUILD_LABEL</name>
+          <description>e.g. rc1</description>
+          <defaultValue></defaultValue>
+        </hudson.model.StringParameterDefinition>
+      </parameterDefinitions>
+    </hudson.model.ParametersDefinitionProperty>
+  </properties>
+  <scm class="hudson.scm.NullSCM"/>
+  <canRoam>true</canRoam>
+  <disabled>false</disabled>
+  <blockBuildWhenDownstreamBuilding>false</blockBuildWhenDownstreamBuilding>
+  <blockBuildWhenUpstreamBuilding>false</blockBuildWhenUpstreamBuilding>
+  <triggers/>
+  <concurrentBuild>false</concurrentBuild>
+  <builders>
+    <hudson.tasks.Shell>
+      <command># clean last build work / output
+[ ! -d rpmbuild/RPMS ] || rm -rf rpmbuild/RPMS
+[ ! -d rpms ]          || rm -rf rpms
+
+EUCALYPTUS_REPO_DIRS=(
+  &quot;eucaconsole&quot;
+  &quot;eucaconsole-selinux&quot;
+  &quot;eucalyptus-cloud-libs&quot;
+  &quot;eucalyptus&quot;
+  &quot;eucalyptus-selinux&quot;
+)
+for EUCALYPTUS_REPO_DIR in &quot;${EUCALYPTUS_REPO_DIRS[@]}&quot;; do
+  [ ! -d &quot;${EUCALYPTUS_REPO_DIR}&quot; ] || rm -rf &quot;${EUCALYPTUS_REPO_DIR}&quot;
+done
+
+# create rpmbuild dirs
+[ -d rpmbuild/BUILD ]       || mkdir -pv rpmbuild/BUILD
+[ -d rpmbuild/BUILDROOT ]   || mkdir -pv rpmbuild/BUILDROOT
+[ -d rpmbuild/SPECS ]       || mkdir -pv rpmbuild/SPECS
+[ -d rpmbuild/SOURCE ]      || mkdir -pv rpmbuild/SOURCES
+[ -d rpmbuild/SRPMS ]       || mkdir -pv rpmbuild/SRPMS
+[ -d rpmbuild/RPMS/noarch ] || mkdir -pv rpmbuild/RPMS/noarch
+[ -d rpmbuild/RPMS/x86_64 ] || mkdir -pv rpmbuild/RPMS/x86_64
+
+# rpm output setup
+mkdir -vm 777 rpms
+
+# clone repositories
+git clone --depth 1 --branch devel-4.4 https://github.com/sjones4/eucaconsole.git
+git clone --depth 1 --branch master    https://github.com/eucalyptus/eucaconsole-selinux.git
+git clone --depth 1 --branch devel-4.4 https://github.com/sjones4/eucalyptus-cloud-libs.git
+git clone --depth 1 --branch devel-4.4 https://github.com/sjones4/eucalyptus.git
+git clone --depth 1 --branch master    https://github.com/eucalyptus/eucalyptus-selinux.git
+
+# build
+if [ &quot;true&quot; = &quot;${EUCALYPTUS_GLOBAL_DOCKER_PULLS:-true}&quot; ] ; then
+  docker pull sjones4/eucalyptus-builder:4.4
+fi
+
+export RPM_DIST=&quot;${EUCALYPTUS_GLOBAL_RPM_DIST:-el7}&quot;
+if [ ! -z &quot;${BUILD_LABEL}&quot; ] ; then
+  export RPM_BUILD_ID=&quot;${BUILD_ID}.${BUILD_LABEL}&quot;
+else
+  export RPM_BUILD_ID=&quot;${BUILD_ID}&quot;
+fi
+EUCALYPTUS_BUILD_SCRIPTS=(
+  &quot;build-eucalyptus-console-rpm.sh&quot;
+  &quot;build-eucalyptus-console-selinux-rpm.sh&quot;
+  &quot;build-eucalyptus-cloud-libs-rpm.sh&quot;
+  &quot;build-eucalyptus-rpms.sh&quot;
+  &quot;build-eucalyptus-selinux-rpm.sh&quot;
+)
+for EUCALYPTUS_BUILD_SCRIPT in &quot;${EUCALYPTUS_BUILD_SCRIPTS[@]}&quot; ; do
+  docker run --rm \
+    --env RPM_DIST \
+    --env RPM_BUILD_ID \
+    --env RPM_OUT=/eucalyptus/rpms \
+    --env RPMBUILD=/eucalyptus/rpmbuild \
+    -v &quot;$(pwd)&quot;:/eucalyptus \
+    -w /eucalyptus \
+    sjones4/eucalyptus-builder:4.4 \
+    &quot;${EUCALYPTUS_BUILD_SCRIPT}&quot; build-only
+done
+
+# log versions / commits
+LOG_FILE=&quot;build-audit.log&quot;
+[ ! -f &quot;${LOG_FILE}&quot; ] || rm -f &quot;${LOG_FILE}&quot;
+
+docker images sjones4/eucalyptus-builder | tee &quot;${LOG_FILE}&quot;
+
+# log sources
+for EUCALYPTUS_REPO_DIR in &quot;${EUCALYPTUS_REPO_DIRS[@]}&quot;; do
+  printf &apos;%-22s&apos; &quot;${EUCALYPTUS_REPO_DIR}&quot; | tee &quot;${LOG_FILE}&quot;
+  git --git-dir=&quot;${EUCALYPTUS_REPO_DIR}/.git&quot; log --max-count=1 --pretty=oneline --no-decorate | tee &quot;${LOG_FILE}&quot;
+done
+
+cat &quot;${LOG_FILE}&quot;</command>
+    </hudson.tasks.Shell>
+    <hudson.tasks.Shell>
+      <command># sign rpms
+[ ! -z &quot;${GPG_KEY+x}&quot; ] || exit 1
+docker run --rm \
+  --env GPG_KEY \
+  -v &quot;$(pwd)&quot;:/eucalyptus \
+  -w /eucalyptus/rpms \
+  sjones4/eucalyptus-builder:4.4 \
+  rpm-sign.sh
+  </command>
+    </hudson.tasks.Shell>
+  </builders>
+  <publishers>
+    <hudson.tasks.ArtifactArchiver>
+      <artifacts>rpms/*</artifacts>
+      <allowEmptyArchive>false</allowEmptyArchive>
+      <onlyIfSuccessful>true</onlyIfSuccessful>
+      <fingerprint>false</fingerprint>
+      <defaultExcludes>true</defaultExcludes>
+      <caseSensitive>true</caseSensitive>
+    </hudson.tasks.ArtifactArchiver>
+  </publishers>
+  <buildWrappers>
+    <hudson.plugins.timestamper.TimestamperBuildWrapper plugin="timestamper@1.8.9"/>
+    <EnvInjectPasswordWrapper plugin="envinject@2.1.5">
+      <injectGlobalPasswords>true</injectGlobalPasswords>
+      <maskPasswordParameters>true</maskPasswordParameters>
+      <passwordEntries/>
+    </EnvInjectPasswordWrapper>
+  </buildWrappers>
+</project>
