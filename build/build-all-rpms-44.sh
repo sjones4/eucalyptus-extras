@@ -2,6 +2,15 @@
 # Build all eucalyptus rpms for the 4.4 series
 set -e
 
+if [ "${1:-}" = "setupenv" ] ; then
+  cat > "${HOME}/.autom4te.cfg" <<"AUTOCONF"
+begin-language: "Autoconf-without-aclocal-m4"
+args: --no-cache
+end-language: "Autoconf-without-aclocal-m4"
+AUTOCONF
+  exit 0
+fi
+
 # dependencies
 yum -y install "httpd" # create /var/www/
 
