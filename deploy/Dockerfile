@@ -22,7 +22,7 @@ RUN yum -y install epel-release \
 
 ENV PATH=/calyptos/bin:$PATH
 
-ADD [ "calyptos", "host-*.sh", "/calyptos/bin/" ]
+ADD [ "calyptos", "host-*.sh", "template-*.sh", "/calyptos/bin/" ]
 ADD [ "templates", "/calyptos/templates/" ]
 
 RUN chown --recursive root:root /calyptos \
