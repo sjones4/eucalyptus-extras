@@ -9,6 +9,7 @@ RUN chown --recursive root:root /root/bin/*.sh \
  && chmod 755 /root/bin/*.sh \
  && mkdir --parents /eucalyptus \
  && chown --recursive root:root /eucalyptus \
+ && build-all-rpms-44.sh setupenv \
  && build-eucalyptus-cloud-libs-rpm.sh setup \
  && build-eucalyptus-rpms.sh setup \
  && build-eucalyptus-selinux-rpm.sh setup \
