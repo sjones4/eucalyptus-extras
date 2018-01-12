@@ -22,28 +22,28 @@ default_attributes:
       services.imaging.worker.ntp_server: ETP_NTP_SERVER
       services.loadbalancing.worker.ntp_server: ETP_NTP_SERVER
     topology:
-      clc: [ ETP_HOST0 ]
+      clc: [ ETP_HOST0_IP ]
       objectstorage:
         providerclient: walrus
-        walrusbackend: [ ETP_HOST0 ]
-      user-facing: [ ETP_HOST0 ]
+        walrusbackend: [ ETP_HOST0_IP ]
+      user-facing: [ ETP_HOST0_IP ]
       clusters:
         one:
           storage-backend: overlay
-          cc: [ ETP_HOST0 ]
-          sc: [ ETP_HOST0 ]
-          nodes: [ ETP_HOST0 ]
+          cc: [ ETP_HOST0_IP ]
+          sc: [ ETP_HOST0_IP ]
+          nodes: [ ETP_HOST0_IP ]
     nc:
       max-cores: 32
       cache-size: 50000
       work-size: 250000
     network:
       mode: EDGE
-      InstanceDnsServers: [ ETP_HOST0 ]
-      PublicIps: [ 'ETP_PUBLIC_IP_RANGE' ]
+      InstanceDnsServers: [ ETP_HOST0_IP ]
+      PublicIps: [ ETP_PUBLIC_IP_RANGE ]
       clusters:
         - Name: one
-          PrivateIps: [ 'ETP_PRIVATE_IP_RANGE' ]
+          PrivateIps: [ ETP_PRIVATE_IP_RANGE ]
           Subnet:
             Subnet: ETP_SUBNET
             Name: ETP_SUBNET
@@ -53,7 +53,7 @@ default_attributes:
       public-interface: br0
       private-interface: br0
       bridged-nic: eno1
-      bridge-ip: ETP_HOST0
+      bridge-ip: ETP_HOST0_IP
       bridge-netmask: ETP_NETMASK
       bridge-gateway: ETP_GATEWAY
       dns-server: ETP_DNS_SERVER
