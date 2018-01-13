@@ -1,0 +1,120 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<project>
+  <actions/>
+  <description></description>
+  <keepDependencies>false</keepDependencies>
+  <properties>
+    <hudson.plugins.buildblocker.BuildBlockerProperty plugin="build-blocker-plugin@1.7.3">
+      <useBuildBlocker>false</useBuildBlocker>
+      <blockLevel>GLOBAL</blockLevel>
+      <scanQueueFor>DISABLED</scanQueueFor>
+      <blockingJobs></blockingJobs>
+    </hudson.plugins.buildblocker.BuildBlockerProperty>
+    <jenkins.model.BuildDiscarderProperty>
+      <strategy class="hudson.tasks.LogRotator">
+        <daysToKeep>-1</daysToKeep>
+        <numToKeep>20</numToKeep>
+        <artifactDaysToKeep>-1</artifactDaysToKeep>
+        <artifactNumToKeep>-1</artifactNumToKeep>
+      </strategy>
+    </jenkins.model.BuildDiscarderProperty>
+    <com.coravy.hudson.plugins.github.GithubProjectProperty plugin="github@1.28.1">
+      <projectUrl>https://github.com/sjones4/eucalyptus-extras/</projectUrl>
+      <displayName></displayName>
+    </com.coravy.hudson.plugins.github.GithubProjectProperty>
+    <hudson.model.ParametersDefinitionProperty>
+      <parameterDefinitions>
+        <hudson.model.StringParameterDefinition>
+          <name>RESERVATION_ID</name>
+          <description>e.g. user-123</description>
+          <defaultValue></defaultValue>
+        </hudson.model.StringParameterDefinition>
+      </parameterDefinitions>
+    </hudson.model.ParametersDefinitionProperty>
+  </properties>
+  <scm class="hudson.scm.NullSCM"/>
+  <canRoam>true</canRoam>
+  <disabled>false</disabled>
+  <blockBuildWhenDownstreamBuilding>false</blockBuildWhenDownstreamBuilding>
+  <blockBuildWhenUpstreamBuilding>false</blockBuildWhenUpstreamBuilding>
+  <triggers/>
+  <concurrentBuild>false</concurrentBuild>
+  <builders>
+    <hudson.plugins.copyartifact.CopyArtifact plugin="copyartifact@1.39">
+      <project>eucalyptus-host-config</project>
+      <filter>hosts.txt</filter>
+      <target>hosts/</target>
+      <excludes></excludes>
+      <selector class="hudson.plugins.copyartifact.StatusBuildSelector">
+        <stable>true</stable>
+      </selector>
+      <flatten>true</flatten>
+      <doNotFingerprintArtifacts>true</doNotFingerprintArtifacts>
+    </hudson.plugins.copyartifact.CopyArtifact>
+    <hudson.tasks.Shell>
+      <command># ssh key setup
+SSH_KEY_DIR=$(mktemp -dt ssh.XXXXXXXX)
+SSH_KEY_FILE=&quot;${SSH_KEY_DIR}/id_rsa&quot;
+SSH_KNOWNHOSTS=&quot;${SSH_KEY_DIR}/known_hosts&quot;
+function cleanup {
+  echo &quot;Performing cleanup&quot;
+  [ ! -d &quot;${SSH_KEY_DIR}&quot; ] || rm -rf &quot;${SSH_KEY_DIR}&quot;
+}
+trap cleanup EXIT
+echo &quot;-----BEGIN RSA PRIVATE KEY-----&quot; &gt; &quot;${SSH_KEY_FILE}&quot;
+echo ${EUCALYPTUS_GLOBAL_SSH_KEY} | sed &quot;s/ /\n/g&quot; &gt;&gt; &quot;${SSH_KEY_FILE}&quot;
+echo &quot;-----END RSA PRIVATE KEY-----&quot; &gt;&gt; &quot;${SSH_KEY_FILE}&quot;
+chmod 600 &quot;${SSH_KEY_FILE}&quot;
+ssh-keygen -y -f &quot;${SSH_KEY_FILE}&quot; &gt; &quot;${SSH_KEY_DIR}/id_rsa.pub&quot;
+
+if [ &quot;true&quot; = &quot;${EUCALYPTUS_GLOBAL_DOCKER_PULLS:-true}&quot; ] ; then
+  echo &quot;Pulling latest calyptos docker image&quot;
+  docker pull sjones4/calyptos:4.4
+fi
+
+echo &quot;Host status before release&quot;
+docker run --rm \
+  -v &quot;${SSH_KEY_DIR}&quot;:/root/.ssh \
+  -v $(pwd)/hosts:/calyptos/hosts \
+  -w /calyptos/hosts \
+  sjones4/calyptos:4.4 host-status.sh
+
+echo &quot;Releasing hosts using ${RESERVATION_ID}&quot;
+docker run --rm \
+  -v &quot;${SSH_KEY_DIR}&quot;:/root/.ssh \
+  -v $(pwd)/hosts:/calyptos/hosts \
+  -w /calyptos/hosts \
+  sjones4/calyptos:4.4 host-release.sh ${RESERVATION_ID}
+
+echo &quot;Host status after release&quot;
+docker run --rm \
+  -v &quot;${SSH_KEY_DIR}&quot;:/root/.ssh \
+  -v $(pwd)/hosts:/calyptos/hosts \
+  -w /calyptos/hosts \
+  sjones4/calyptos:4.4 host-status.sh
+
+  </command>
+    </hudson.tasks.Shell>
+  </builders>
+  <publishers>
+    <hudson.plugins.parameterizedtrigger.BuildTrigger plugin="parameterized-trigger@2.35.2">
+      <configs>
+        <hudson.plugins.parameterizedtrigger.BuildTriggerConfig>
+          <configs class="empty-list"/>
+          <projects>eucalyptus-host-status</projects>
+          <condition>ALWAYS</condition>
+          <triggerWithNoParameters>true</triggerWithNoParameters>
+          <triggerFromChildProjects>false</triggerFromChildProjects>
+        </hudson.plugins.parameterizedtrigger.BuildTriggerConfig>
+      </configs>
+    </hudson.plugins.parameterizedtrigger.BuildTrigger>
+  </publishers>
+  <buildWrappers>
+    <hudson.plugins.timestamper.TimestamperBuildWrapper plugin="timestamper@1.8.9"/>
+    <EnvInjectPasswordWrapper plugin="envinject@2.1.5">
+      <injectGlobalPasswords>true</injectGlobalPasswords>
+      <maskPasswordParameters>true</maskPasswordParameters>
+      <passwordEntries/>
+    </EnvInjectPasswordWrapper>
+  </buildWrappers>
+</project>

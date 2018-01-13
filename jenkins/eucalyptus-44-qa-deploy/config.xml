@@ -1,0 +1,458 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<project>
+  <actions/>
+  <description></description>
+  <keepDependencies>false</keepDependencies>
+  <properties>
+    <hudson.plugins.buildblocker.BuildBlockerProperty plugin="build-blocker-plugin@1.7.3">
+      <useBuildBlocker>false</useBuildBlocker>
+      <blockLevel>GLOBAL</blockLevel>
+      <scanQueueFor>DISABLED</scanQueueFor>
+      <blockingJobs></blockingJobs>
+    </hudson.plugins.buildblocker.BuildBlockerProperty>
+    <jenkins.model.BuildDiscarderProperty>
+      <strategy class="hudson.tasks.LogRotator">
+        <daysToKeep>-1</daysToKeep>
+        <numToKeep>20</numToKeep>
+        <artifactDaysToKeep>-1</artifactDaysToKeep>
+        <artifactNumToKeep>-1</artifactNumToKeep>
+      </strategy>
+    </jenkins.model.BuildDiscarderProperty>
+    <com.coravy.hudson.plugins.github.GithubProjectProperty plugin="github@1.28.1">
+      <projectUrl>https://github.com/eucalyptus/calyptos/</projectUrl>
+      <displayName></displayName>
+    </com.coravy.hudson.plugins.github.GithubProjectProperty>
+    <hudson.model.ParametersDefinitionProperty>
+      <parameterDefinitions>
+        <hudson.model.ChoiceParameterDefinition>
+          <name>ENV_TEMPLATE</name>
+          <description></description>
+          <choices class="java.util.Arrays$ArrayList">
+            <a class="string-array">
+              <string>cloud-in-a-box</string>
+              <string>cloud-in-a-box-with-console</string>
+              <string>CUSTOM_ENV_TEMPLATE</string>
+            </a>
+          </choices>
+        </hudson.model.ChoiceParameterDefinition>
+        <hudson.model.TextParameterDefinition>
+          <name>CUSTOM_ENV_TEMPLATE</name>
+          <description></description>
+          <defaultValue></defaultValue>
+        </hudson.model.TextParameterDefinition>
+        <hudson.model.ChoiceParameterDefinition>
+          <name>INSTALL_TYPE</name>
+          <description></description>
+          <choices class="java.util.Arrays$ArrayList">
+            <a class="string-array">
+              <string>packages</string>
+              <string>sources</string>
+            </a>
+          </choices>
+        </hudson.model.ChoiceParameterDefinition>
+        <hudson.model.StringParameterDefinition>
+          <name>CLOUD_OPTS</name>
+          <description>e.g. --debug -Xmx2g Use EUCALYPTUS_GLOBAL_CLOUD_OPTS for global options</description>
+          <defaultValue></defaultValue>
+        </hudson.model.StringParameterDefinition>
+        <hudson.model.StringParameterDefinition>
+          <name>EUCALYPTUS_GIT_REPO</name>
+          <description></description>
+          <defaultValue>https://github.com/sjones4/eucalyptus.git</defaultValue>
+        </hudson.model.StringParameterDefinition>
+        <hudson.model.StringParameterDefinition>
+          <name>EUCALYPTUS_GIT_BRANCH</name>
+          <description></description>
+          <defaultValue>devel-4.4</defaultValue>
+        </hudson.model.StringParameterDefinition>
+        <hudson.model.StringParameterDefinition>
+          <name>CLOUD_LIBS_GIT_REPO</name>
+          <description></description>
+          <defaultValue>https://github.com/sjones4/eucalyptus-cloud-libs.git</defaultValue>
+        </hudson.model.StringParameterDefinition>
+        <hudson.model.StringParameterDefinition>
+          <name>CLOUD_LIBS_GIT_BRANCH</name>
+          <description></description>
+          <defaultValue>devel-4.4</defaultValue>
+        </hudson.model.StringParameterDefinition>
+        <hudson.model.StringParameterDefinition>
+          <name>EUCALYPTUS_YUM_REPO</name>
+          <description>Defaults to EUCALYPTUS_GLOBAL_EUCALYPTUS_YUM_REPO if set, else
+http://downloads.eucalyptus.com/software/eucalyptus/4.4/rhel/7/x86_64/</description>
+          <defaultValue></defaultValue>
+        </hudson.model.StringParameterDefinition>
+        <hudson.model.StringParameterDefinition>
+          <name>EUCA2OOLS_YUM_REPO</name>
+          <description>Defaults to EUCALYPTUS_GLOBAL_EUCA2OOLS_YUM_REPO if set, else
+http://downloads.eucalyptus.com/software/euca2ools/3.4/rhel/7/x86_64/</description>
+          <defaultValue></defaultValue>
+        </hudson.model.StringParameterDefinition>
+        <hudson.model.StringParameterDefinition>
+          <name>EUCALYPTUS_DNS_DOMAIN</name>
+          <description></description>
+          <defaultValue>ETP_HOST0_IP.nip.io</defaultValue>
+        </hudson.model.StringParameterDefinition>
+        <hudson.model.StringParameterDefinition>
+          <name>NET_PUBLIC_IP_RANGE</name>
+          <description>Defaults to public ip ranges for reserved hosts</description>
+          <defaultValue></defaultValue>
+        </hudson.model.StringParameterDefinition>
+        <hudson.model.StringParameterDefinition>
+          <name>NET_PRIVATE_IP_RANGE</name>
+          <description>Defaults to private ip ranges for reserved hosts</description>
+          <defaultValue></defaultValue>
+        </hudson.model.StringParameterDefinition>
+        <hudson.model.StringParameterDefinition>
+          <name>NET_SUBNET</name>
+          <description>Defaults to EUCALYPTUS_GLOBAL_NET_SUBNET </description>
+          <defaultValue></defaultValue>
+        </hudson.model.StringParameterDefinition>
+        <hudson.model.StringParameterDefinition>
+          <name>NET_NETMASK</name>
+          <description>Defaults to EUCALYPTUS_GLOBAL_NET_NETMASK </description>
+          <defaultValue></defaultValue>
+        </hudson.model.StringParameterDefinition>
+        <hudson.model.StringParameterDefinition>
+          <name>NET_GATEWAY</name>
+          <description>Defaults to EUCALYPTUS_GLOBAL_NET_GATEWAY</description>
+          <defaultValue></defaultValue>
+        </hudson.model.StringParameterDefinition>
+        <hudson.model.StringParameterDefinition>
+          <name>DNS_SERVER</name>
+          <description>Defaults to EUCALYPTUS_GLOBAL_DNS_SERVER</description>
+          <defaultValue></defaultValue>
+        </hudson.model.StringParameterDefinition>
+        <hudson.model.StringParameterDefinition>
+          <name>NTP_SERVER</name>
+          <description>Defaults to EUCALYPTUS_GLOBAL_NTP_SERVER</description>
+          <defaultValue></defaultValue>
+        </hudson.model.StringParameterDefinition>
+        <hudson.model.ChoiceParameterDefinition>
+          <name>HOST_PARAM_CPU</name>
+          <description>Minimum core requirement for candidate hosts</description>
+          <choices class="java.util.Arrays$ArrayList">
+            <a class="string-array">
+              <string>4</string>
+              <string>8</string>
+              <string>16</string>
+              <string>32</string>
+              <string>64</string>
+            </a>
+          </choices>
+        </hudson.model.ChoiceParameterDefinition>
+        <hudson.model.ChoiceParameterDefinition>
+          <name>HOST_PARAM_MEM</name>
+          <description></description>
+          <choices class="java.util.Arrays$ArrayList">
+            <a class="string-array">
+              <string>16</string>
+              <string>32</string>
+              <string>64</string>
+              <string>128</string>
+              <string>256</string>
+            </a>
+          </choices>
+        </hudson.model.ChoiceParameterDefinition>
+        <hudson.model.BooleanParameterDefinition>
+          <name>RELEASE_RESERVATION</name>
+          <description>Release host reservation on successful build/test</description>
+          <defaultValue>false</defaultValue>
+        </hudson.model.BooleanParameterDefinition>
+        <hudson.model.BooleanParameterDefinition>
+          <name>QA_TESTS</name>
+          <description>Run N4J short test suite post deploy</description>
+          <defaultValue>false</defaultValue>
+        </hudson.model.BooleanParameterDefinition>
+      </parameterDefinitions>
+    </hudson.model.ParametersDefinitionProperty>
+  </properties>
+  <scm class="hudson.scm.NullSCM"/>
+  <canRoam>true</canRoam>
+  <disabled>false</disabled>
+  <blockBuildWhenDownstreamBuilding>false</blockBuildWhenDownstreamBuilding>
+  <blockBuildWhenUpstreamBuilding>false</blockBuildWhenUpstreamBuilding>
+  <triggers/>
+  <concurrentBuild>false</concurrentBuild>
+  <builders>
+    <hudson.tasks.Shell>
+      <command>if [ &quot;true&quot; = &quot;${EUCALYPTUS_GLOBAL_DOCKER_PULLS:-true}&quot; ] ; then
+  echo &quot;Pulling latest calyptos docker image&quot;
+  docker pull sjones4/calyptos:4.4
+fi
+
+echo &quot;Extracting resource requirements from environment template&quot;
+[ ! -d env ] || rm -rf env
+mkdir -v env
+
+TEMPLATE_PATH=&quot;/calyptos/templates/${ENV_TEMPLATE}-environment.yaml&quot;
+if [ &quot;${ENV_TEMPLATE}&quot; = &quot;CUSTOM_ENV_TEMPLATE&quot; ] ; then
+  TEMPLATE_PATH=&quot;/env/template-environment.yaml&quot;
+  echo &quot;${CUSTOM_ENV_TEMPLATE}&quot; &gt; &quot;env/template-environment.yaml&quot;
+fi
+
+ENV_HOST_COUNT=$(docker run --rm \
+  -v $(pwd)/env:/env \
+  sjones4/calyptos:4.4 \
+  template-info.sh &quot;${TEMPLATE_PATH}&quot; &quot;host-count&quot;)
+
+echo &quot;HOST_COUNT=${ENV_HOST_COUNT}&quot; &gt; env/reservation.properties
+echo &quot;HOST_PARAM_CPU=${HOST_PARAM_CPU}&quot; &gt;&gt; env/reservation.properties
+echo &quot;HOST_PARAM_MEM=${HOST_PARAM_MEM}&quot; &gt;&gt; env/reservation.properties
+echo &quot;Reserving hosts using properties&quot;
+cat env/reservation.properties
+</command>
+    </hudson.tasks.Shell>
+    <hudson.plugins.parameterizedtrigger.TriggerBuilder plugin="parameterized-trigger@2.35.2">
+      <configs>
+        <hudson.plugins.parameterizedtrigger.BlockableBuildTriggerConfig>
+          <configs>
+            <hudson.plugins.parameterizedtrigger.FileBuildParameters>
+              <propertiesFile>env/reservation.properties</propertiesFile>
+              <failTriggerOnMissing>true</failTriggerOnMissing>
+              <textParamValueOnNewLine>false</textParamValueOnNewLine>
+              <useMatrixChild>false</useMatrixChild>
+              <onlyExactRuns>false</onlyExactRuns>
+            </hudson.plugins.parameterizedtrigger.FileBuildParameters>
+          </configs>
+          <projects>eucalyptus-host-reserve</projects>
+          <condition>ALWAYS</condition>
+          <triggerWithNoParameters>false</triggerWithNoParameters>
+          <triggerFromChildProjects>false</triggerFromChildProjects>
+          <block>
+            <buildStepFailureThreshold>
+              <name>FAILURE</name>
+              <ordinal>2</ordinal>
+              <color>RED</color>
+              <completeBuild>true</completeBuild>
+            </buildStepFailureThreshold>
+            <unstableThreshold>
+              <name>UNSTABLE</name>
+              <ordinal>1</ordinal>
+              <color>YELLOW</color>
+              <completeBuild>true</completeBuild>
+            </unstableThreshold>
+            <failureThreshold>
+              <name>FAILURE</name>
+              <ordinal>2</ordinal>
+              <color>RED</color>
+              <completeBuild>true</completeBuild>
+            </failureThreshold>
+          </block>
+          <buildAllNodesWithLabel>false</buildAllNodesWithLabel>
+        </hudson.plugins.parameterizedtrigger.BlockableBuildTriggerConfig>
+      </configs>
+    </hudson.plugins.parameterizedtrigger.TriggerBuilder>
+    <hudson.plugins.copyartifact.CopyArtifact plugin="copyartifact@1.39">
+      <project>eucalyptus-host-reserve</project>
+      <filter>hosts/res*.txt</filter>
+      <target>env/</target>
+      <excludes></excludes>
+      <selector class="hudson.plugins.copyartifact.SpecificBuildSelector">
+        <buildNumber>$TRIGGERED_BUILD_NUMBER_eucalyptus_host_reserve</buildNumber>
+      </selector>
+      <flatten>true</flatten>
+      <doNotFingerprintArtifacts>true</doNotFingerprintArtifacts>
+    </hudson.plugins.copyartifact.CopyArtifact>
+    <hudson.tasks.Shell>
+      <command># ssh key setup
+SSH_KEY_DIR=$(mktemp -dt ssh.XXXXXXXX)
+SSH_KEY_FILE=&quot;${SSH_KEY_DIR}/id_rsa&quot;
+SSH_KNOWNHOSTS=&quot;${SSH_KEY_DIR}/known_hosts&quot;
+function cleanup {
+  echo &quot;Performing cleanup&quot;
+  [ ! -d &quot;${SSH_KEY_DIR}&quot; ] || rm -rf &quot;${SSH_KEY_DIR}&quot;
+}
+trap cleanup EXIT
+echo &quot;-----BEGIN RSA PRIVATE KEY-----&quot; &gt; &quot;${SSH_KEY_FILE}&quot;
+echo ${EUCALYPTUS_GLOBAL_SSH_KEY} | sed &quot;s/ /\n/g&quot; &gt;&gt; &quot;${SSH_KEY_FILE}&quot;
+echo &quot;-----END RSA PRIVATE KEY-----&quot; &gt;&gt; &quot;${SSH_KEY_FILE}&quot;
+chmod 600 &quot;${SSH_KEY_FILE}&quot;
+ssh-keygen -y -f &quot;${SSH_KEY_FILE}&quot; &gt; &quot;${SSH_KEY_DIR}/id_rsa.pub&quot;
+
+echo &quot;Stashing host reservations&quot;
+[ ! -d reservations ] || rm -rf reservations
+for HOST in $(&lt;env/reserved_hosts.txt); do
+  mkdir -vp reservations/${HOST}
+  scp -Bpri &quot;${SSH_KEY_FILE}&quot; -o BatchMode=yes -o UserKnownHostsFile=&quot;${SSH_KNOWNHOSTS}&quot; -o StrictHostKeyChecking=no root@${HOST}:.reservation reservations/${HOST}
+done
+find reservations -type f
+
+ENV_TEMPLATE_VARS_FILE=&quot;env/template-variables.txt&quot;
+echo &quot;Building environment template variables file ${ENV_TEMPLATE_VARS_FILE}&quot;
+echo &quot;# Environment template variables for ${BUILD_ID}&quot; &gt;&gt; &quot;${ENV_TEMPLATE_VARS_FILE}&quot;
+echo &quot;ETP_DNS_SERVER=${DNS_SERVER:-${EUCALYPTUS_GLOBAL_DNS_SERVER}}&quot; &gt;&gt; &quot;${ENV_TEMPLATE_VARS_FILE}&quot;
+echo &quot;ETP_EUCA2OOLS_YUM_REPO=${EUCA2OOLS_YUM_REPO:-${EUCALYPTUS_GLOBAL_EUCA2OOLS_YUM_REPO}}&quot; &gt;&gt; &quot;${ENV_TEMPLATE_VARS_FILE}&quot;
+echo &quot;ETP_EUCALYPTUS_BRANCH=${EUCALYPTUS_GIT_BRANCH}&quot; &gt;&gt; &quot;${ENV_TEMPLATE_VARS_FILE}&quot;
+echo &quot;ETP_EUCALYPTUS_CLOUD_LIBS_BRANCH=${CLOUD_LIBS_GIT_BRANCH}&quot; &gt;&gt; &quot;${ENV_TEMPLATE_VARS_FILE}&quot;
+echo &quot;ETP_EUCALYPTUS_CLOUD_LIBS_GIT_REPO=${CLOUD_LIBS_GIT_REPO}&quot; &gt;&gt; &quot;${ENV_TEMPLATE_VARS_FILE}&quot;
+echo &quot;ETP_EUCALYPTUS_CLOUD_OPTS=${EUCALYPTUS_GLOBAL_CLOUD_OPTS} ${CLOUD_OPTS}&quot; &gt;&gt; &quot;${ENV_TEMPLATE_VARS_FILE}&quot;
+echo &quot;ETP_EUCALYPTUS_DNS_DOMAIN=${EUCALYPTUS_DNS_DOMAIN}&quot; &gt;&gt; &quot;${ENV_TEMPLATE_VARS_FILE}&quot;
+echo &quot;ETP_EUCALYPTUS_GIT_REPO=${EUCALYPTUS_GIT_REPO}&quot; &gt;&gt; &quot;${ENV_TEMPLATE_VARS_FILE}&quot;
+echo &quot;ETP_EUCALYPTUS_YUM_REPO=${EUCALYPTUS_YUM_REPO:-${EUCALYPTUS_GLOBAL_EUCALYPTUS_YUM_REPO}}&quot; &gt;&gt; &quot;${ENV_TEMPLATE_VARS_FILE}&quot;
+echo &quot;ETP_GATEWAY=${NET_GATEWAY:-${EUCALYPTUS_GLOBAL_NET_GATEWAY}}&quot; &gt;&gt; &quot;${ENV_TEMPLATE_VARS_FILE}&quot;
+echo &quot;ETP_INSTALL_TYPE=${INSTALL_TYPE}&quot; &gt;&gt; &quot;${ENV_TEMPLATE_VARS_FILE}&quot;
+echo &quot;ETP_NETMASK=${NET_NETMASK:-${EUCALYPTUS_GLOBAL_NET_NETMASK}}&quot; &gt;&gt; &quot;${ENV_TEMPLATE_VARS_FILE}&quot;
+echo &quot;ETP_NTP_SERVER=${NTP_SERVER:-${EUCALYPTUS_GLOBAL_NTP_SERVER}}&quot; &gt;&gt; &quot;${ENV_TEMPLATE_VARS_FILE}&quot;
+echo &quot;ETP_PRIVATE_IP_RANGE=${NET_PRIVATE_IP_RANGE}&quot; &gt;&gt; &quot;${ENV_TEMPLATE_VARS_FILE}&quot;
+echo &quot;ETP_PUBLIC_IP_RANGE=${NET_PUBLIC_IP_RANGE}&quot; &gt;&gt; &quot;${ENV_TEMPLATE_VARS_FILE}&quot;
+echo &quot;ETP_SUBNET=${NET_SUBNET:-${EUCALYPTUS_GLOBAL_NET_SUBNET}}&quot; &gt;&gt; &quot;${ENV_TEMPLATE_VARS_FILE}&quot;
+cat --number &quot;${ENV_TEMPLATE_VARS_FILE}&quot;
+
+echo &quot;Generating environment&quot;
+TEMPLATE_PATH=&quot;/calyptos/templates/${ENV_TEMPLATE}-environment.yaml&quot;
+if [ &quot;${ENV_TEMPLATE}&quot; = &quot;CUSTOM_ENV_TEMPLATE&quot; ] ; then
+  TEMPLATE_PATH=&quot;/env/template-environment.yaml&quot;
+fi
+docker run --rm \
+  --env-file &quot;${ENV_TEMPLATE_VARS_FILE}&quot; \
+  -v &quot;${SSH_KEY_DIR}&quot;:/root/.ssh \
+  -v $(pwd)/env:/env \
+  sjones4/calyptos:4.4 \
+  template-env.sh \
+  &quot;${TEMPLATE_PATH}&quot; \
+  &quot;/env/reserved_hosts.txt&quot; \
+  &quot;/env/reserved_host_names.txt&quot; \
+  &quot;/env/reserved_public_ip_ranges.txt&quot; \
+  &quot;/env/reserved_private_ip_ranges.txt&quot; \
+  &gt; env/environment.yaml
+
+echo &quot;Using environment&quot;
+cat --number env/environment.yaml
+
+for HOST in $(&lt;env/reserved_hosts.txt); do
+  echo &quot;Koaning CentOS 7 on ${HOST}&quot;
+  ssh -i &quot;${SSH_KEY_FILE}&quot; -o BatchMode=yes -o UserKnownHostsFile=&quot;${SSH_KNOWNHOSTS}&quot; -o StrictHostKeyChecking=no root@${HOST} &quot;yum -y install epel-release; yum -y install koan &amp;&amp; koan --server=${EUCALYPTUS_GLOBAL_COBBLER_SERVER} --system=\$(hostname) --replace-self &amp;&amp; shutdown -r&quot;
+done
+
+echo &quot;Sleeping 120 to allow CentOS 7 install to start&quot;
+sleep 120
+
+echo &quot;Waiting for hosts to become available&quot;
+docker run --rm \
+  -v &quot;${SSH_KEY_DIR}&quot;:/root/.ssh \
+  -v $(pwd)/env:/env \
+  sjones4/calyptos:4.4 host-wait.sh $(&lt;env/reserved_hosts.txt)
+
+for HOST in $(&lt;env/reserved_hosts.txt); do
+  echo &quot;Restoring host reservation ${HOST}&quot;
+  scp -Bpri &quot;${SSH_KEY_FILE}&quot; -o BatchMode=yes -o UserKnownHostsFile=&quot;${SSH_KNOWNHOSTS}&quot; -o StrictHostKeyChecking=no reservations/${HOST}/.reservation root@${HOST}:
+done
+
+echo &quot;Sleeping 60 to allow CentOS 7 install to complete&quot;
+sleep 60
+
+echo &quot;Running calyptos&quot;
+docker run --rm \
+  -v &quot;${SSH_KEY_DIR}&quot;:/root/.ssh \
+  -v $(pwd)/env:/env \
+  sjones4/calyptos:4.4 calyptos -e /env/environment.yaml
+
+for HOST in $(&lt;env/reserved_hosts.txt); do
+  echo &quot;Rebooting ${HOST}&quot;
+  ssh -i &quot;${SSH_KEY_FILE}&quot; -o BatchMode=yes -o UserKnownHostsFile=&quot;${SSH_KNOWNHOSTS}&quot; -o StrictHostKeyChecking=no root@${HOST} reboot || true
+done
+
+echo &quot;Build steps completed, run n4j tests: ${QA_TESTS}, release reservation: ${RELEASE_RESERVATION}&quot;
+
+[ ! -d tasks ] || rm -rf tasks
+if [ &quot;${RELEASE_RESERVATION}&quot; = &quot;true&quot; ] || [ &quot;${QA_TESTS}&quot; = &quot;true&quot; ]; then
+  mkdir -v tasks
+
+  if [ &quot;${QA_TESTS}&quot; = &quot;true&quot; ] ; then
+    echo &quot;Sleeping 180 seconds to allow reboot to complete before testing&quot;
+    sleep 180
+
+    for HOST in $(&lt;env/reserved_hosts.txt); do
+      echo &quot;CLC_IP=${HOST}&quot; &gt; tasks/qa.properties
+      echo &quot;Running QA tests using properties&quot;
+      cat tasks/qa.properties
+      break
+    done
+  fi
+
+  if [ &quot;${RELEASE_RESERVATION}&quot; = &quot;true&quot; ] ; then
+    echo &quot;RESERVATION_ID=$(&lt;env/reservation_id.txt)&quot; &gt; tasks/host_release.properties
+    echo &quot;Releasing hosts using properties&quot;
+    cat tasks/host_release.properties
+  fi
+fi</command>
+    </hudson.tasks.Shell>
+    <hudson.plugins.parameterizedtrigger.TriggerBuilder plugin="parameterized-trigger@2.35.2">
+      <configs>
+        <hudson.plugins.parameterizedtrigger.BlockableBuildTriggerConfig>
+          <configs>
+            <hudson.plugins.parameterizedtrigger.FileBuildParameters>
+              <propertiesFile>tasks/qa.properties</propertiesFile>
+              <failTriggerOnMissing>true</failTriggerOnMissing>
+              <textParamValueOnNewLine>false</textParamValueOnNewLine>
+              <useMatrixChild>false</useMatrixChild>
+              <onlyExactRuns>false</onlyExactRuns>
+            </hudson.plugins.parameterizedtrigger.FileBuildParameters>
+          </configs>
+          <projects>eucalyptus-44-qa-fast</projects>
+          <condition>ALWAYS</condition>
+          <triggerWithNoParameters>false</triggerWithNoParameters>
+          <triggerFromChildProjects>false</triggerFromChildProjects>
+          <block>
+            <buildStepFailureThreshold>
+              <name>FAILURE</name>
+              <ordinal>2</ordinal>
+              <color>RED</color>
+              <completeBuild>true</completeBuild>
+            </buildStepFailureThreshold>
+            <unstableThreshold>
+              <name>UNSTABLE</name>
+              <ordinal>1</ordinal>
+              <color>YELLOW</color>
+              <completeBuild>true</completeBuild>
+            </unstableThreshold>
+            <failureThreshold>
+              <name>FAILURE</name>
+              <ordinal>2</ordinal>
+              <color>RED</color>
+              <completeBuild>true</completeBuild>
+            </failureThreshold>
+          </block>
+          <buildAllNodesWithLabel>false</buildAllNodesWithLabel>
+        </hudson.plugins.parameterizedtrigger.BlockableBuildTriggerConfig>
+      </configs>
+    </hudson.plugins.parameterizedtrigger.TriggerBuilder>
+  </builders>
+  <publishers>
+    <hudson.plugins.parameterizedtrigger.BuildTrigger plugin="parameterized-trigger@2.35.2">
+      <configs>
+        <hudson.plugins.parameterizedtrigger.BuildTriggerConfig>
+          <configs>
+            <hudson.plugins.parameterizedtrigger.FileBuildParameters>
+              <propertiesFile>tasks/host_release.properties</propertiesFile>
+              <failTriggerOnMissing>true</failTriggerOnMissing>
+              <textParamValueOnNewLine>false</textParamValueOnNewLine>
+              <useMatrixChild>false</useMatrixChild>
+              <onlyExactRuns>false</onlyExactRuns>
+            </hudson.plugins.parameterizedtrigger.FileBuildParameters>
+          </configs>
+          <projects>eucalyptus-host-release</projects>
+          <condition>ALWAYS</condition>
+          <triggerWithNoParameters>false</triggerWithNoParameters>
+          <triggerFromChildProjects>false</triggerFromChildProjects>
+        </hudson.plugins.parameterizedtrigger.BuildTriggerConfig>
+      </configs>
+    </hudson.plugins.parameterizedtrigger.BuildTrigger>
+    <hudson.tasks.ArtifactArchiver>
+      <artifacts>env/*</artifacts>
+      <allowEmptyArchive>false</allowEmptyArchive>
+      <onlyIfSuccessful>false</onlyIfSuccessful>
+      <fingerprint>false</fingerprint>
+      <defaultExcludes>true</defaultExcludes>
+      <caseSensitive>true</caseSensitive>
+    </hudson.tasks.ArtifactArchiver>
+  </publishers>
+  <buildWrappers>
+    <hudson.plugins.timestamper.TimestamperBuildWrapper plugin="timestamper@1.8.9"/>
+    <EnvInjectPasswordWrapper plugin="envinject@2.1.5">
+      <injectGlobalPasswords>true</injectGlobalPasswords>
+      <maskPasswordParameters>true</maskPasswordParameters>
+      <passwordEntries/>
+    </EnvInjectPasswordWrapper>
+  </buildWrappers>
+</project>
