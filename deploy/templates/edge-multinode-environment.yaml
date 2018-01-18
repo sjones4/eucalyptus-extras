@@ -33,7 +33,7 @@ default_attributes:
           das-device: ETP_DAS_DEVICE
           cc: [ ETP_HOST0_IP ]
           sc: [ ETP_HOST0_IP ]
-          nodes: [ ETP_HOST1_IP ]
+          nodes: [ ETP_HOST1_IP, ETP_HOST2_IP ]
     nc:
       max-cores: 32
       cache-size: 50000
