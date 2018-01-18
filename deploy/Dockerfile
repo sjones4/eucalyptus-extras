@@ -11,7 +11,7 @@ RUN yum -y install epel-release \
  && python setup.py install \
  && mkdir /calyptos \
  && cd /calyptos \
- && git clone --depth 1 --branch euca-4.4 https://github.com/eucalyptus/eucalyptus-cookbook \
+ && git clone --depth 1 --branch devel-4.4 https://github.com/sjones4/eucalyptus-cookbook \
  && berks install --berksfile /calyptos/eucalyptus-cookbook/Berksfile \
  && rm -rf /root/calyptos /root/.cache \
  && pip uninstall -y setuptools pip \

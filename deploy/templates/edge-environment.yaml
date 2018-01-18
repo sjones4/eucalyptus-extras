@@ -1,5 +1,5 @@
-name: ciab-console
-description: 'Eucalyptus cloud-in-a-box, including eucaconsole'
+name: edge
+description: 'Eucalyptus cloud with edge networking and das storage'
 default_attributes:
   eucalyptus:
     source-branch: ETP_EUCALYPTUS_BRANCH
@@ -27,13 +27,13 @@ default_attributes:
         providerclient: walrus
         walrusbackend: [ ETP_HOST0_IP ]
       user-facing: [ ETP_HOST0_IP ]
-      console: [ ETP_HOST0_IP ]
       clusters:
         one:
-          storage-backend: overlay
+          storage-backend: das
+          das-device: ETP_DAS_DEVICE
           cc: [ ETP_HOST0_IP ]
           sc: [ ETP_HOST0_IP ]
-          nodes: [ ETP_HOST0_IP ]
+          nodes: [ ETP_HOST1_IP ]
     nc:
       max-cores: 32
       cache-size: 50000
@@ -54,9 +54,6 @@ default_attributes:
       public-interface: br0
       private-interface: br0
       bridged-nic: ETP_NODE_NIC
-      bridge-ip: ETP_HOST0_IP
-      bridge-netmask: ETP_NETMASK
-      bridge-gateway: ETP_GATEWAY
       dns-server: ETP_DNS_SERVER
 override_attributes: {}
 cookbook_versions: {}

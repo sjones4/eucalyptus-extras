@@ -52,7 +52,7 @@ default_attributes:
       bridge-interface: br0
       public-interface: br0
       private-interface: br0
-      bridged-nic: eno1
+      bridged-nic: ETP_NODE_NIC
       bridge-ip: ETP_HOST0_IP
       bridge-netmask: ETP_NETMASK
       bridge-gateway: ETP_GATEWAY

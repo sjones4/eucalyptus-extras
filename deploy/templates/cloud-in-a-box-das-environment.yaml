@@ -1,5 +1,5 @@
-name: ciab-console
-description: 'Eucalyptus cloud-in-a-box, including eucaconsole'
+name: ciab-das
+description: 'Eucalyptus cloud-in-a-box using das storage'
 default_attributes:
   eucalyptus:
     source-branch: ETP_EUCALYPTUS_BRANCH
@@ -27,10 +27,10 @@ default_attributes:
         providerclient: walrus
         walrusbackend: [ ETP_HOST0_IP ]
       user-facing: [ ETP_HOST0_IP ]
-      console: [ ETP_HOST0_IP ]
       clusters:
         one:
-          storage-backend: overlay
+          storage-backend: das
+          das-device: ETP_DAS_DEVICE
           cc: [ ETP_HOST0_IP ]
           sc: [ ETP_HOST0_IP ]
           nodes: [ ETP_HOST0_IP ]
