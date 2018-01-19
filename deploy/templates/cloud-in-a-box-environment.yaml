@@ -1,61 +1,45 @@
+---
 name: ciab
 description: 'Eucalyptus minimal cloud-in-a-box'
+template_aliases: ETP_TEMPLATE_ALIASES
 default_attributes:
-  eucalyptus:
-    source-branch: ETP_EUCALYPTUS_BRANCH
-    source-repo: ETP_EUCALYPTUS_GIT_REPO
-    cloud-libs-branch: ETP_EUCALYPTUS_CLOUD_LIBS_BRANCH
-    cloud-libs-repo: ETP_EUCALYPTUS_CLOUD_LIBS_GIT_REPO
-    selinux-branch: master
-    selinux-repo: https://github.com/eucalyptus/eucalyptus-selinux
-    eucalyptus-repo: ETP_EUCALYPTUS_YUM_REPO
-    euca2ools-repo: ETP_EUCA2OOLS_YUM_REPO
-    yum-options: '--nogpg'
-    install-type: ETP_INSTALL_TYPE
-    dns-domain: ETP_EUCALYPTUS_DNS_DOMAIN
-    cloud-opts: 'ETP_EUCALYPTUS_CLOUD_OPTS'
-    cloud-properties:
-      bootstrap.webservices.async_internal_operations: true
-      bootstrap.webservices.server_pool_max_threads: 128
-      cloudformation.url_domain_whitelist: '*s3.amazonaws.com'
-      services.imaging.worker.instance_type: m1.medium
-      services.imaging.worker.ntp_server: ETP_NTP_SERVER
-      services.loadbalancing.worker.ntp_server: ETP_NTP_SERVER
-    topology:
-      clc: [ ETP_HOST0_IP ]
-      objectstorage:
-        providerclient: walrus
-        walrusbackend: [ ETP_HOST0_IP ]
-      user-facing: [ ETP_HOST0_IP ]
-      clusters:
-        one:
-          storage-backend: overlay
-          cc: [ ETP_HOST0_IP ]
-          sc: [ ETP_HOST0_IP ]
-          nodes: [ ETP_HOST0_IP ]
-    nc:
-      max-cores: 32
-      cache-size: 50000
-      work-size: 250000
-    network:
-      mode: EDGE
-      InstanceDnsServers: [ ETP_HOST0_IP ]
-      PublicIps: [ ETP_PUBLIC_IP_RANGE ]
-      clusters:
-        - Name: one
-          PrivateIps: [ ETP_PRIVATE_IP_RANGE ]
-          Subnet:
-            Subnet: ETP_SUBNET
-            Name: ETP_SUBNET
-            Netmask: ETP_NETMASK
-            Gateway: ETP_GATEWAY
-      bridge-interface: br0
-      public-interface: br0
-      private-interface: br0
-      bridged-nic: ETP_NODE_NIC
-      bridge-ip: ETP_HOST0_IP
-      bridge-netmask: ETP_NETMASK
-      bridge-gateway: ETP_GATEWAY
-      dns-server: ETP_DNS_SERVER
+    eucalyptus:
+        <<: *alias_eucalyptus
+        cloud-opts: 'ETP_EUCALYPTUS_CLOUD_OPTS'
+        cloud-properties:
+            <<: *alias_eucalyptus_cloud_properties
+        topology:
+            clc: [ETP_HOST0_IP]  # ETP_HOST0_NAME
+            objectstorage:
+                providerclient: walrus
+                walrusbackend: [ETP_HOST0_IP]  # ETP_HOST0_NAME
+            user-facing: [ETP_HOST0_IP]  # ETP_HOST0_NAME
+            clusters:
+                one:
+                    storage-backend: overlay
+                    cc: [ETP_HOST0_IP]  # ETP_HOST0_NAME
+                    sc: [ETP_HOST0_IP]  # ETP_HOST0_NAME
+                    nodes: [ETP_HOST0_IP]  # ETP_HOST0_NAME
+        cc:
+            <<: *alias_eucalyptus_cc
+        nc:
+            <<: *alias_eucalyptus_nc
+        network:
+            mode: EDGE
+            InstanceDnsServers: [ETP_HOST0_IP]  # ETP_HOST0_NAME
+            PublicIps: [ETP_PUBLIC_IP_RANGE]
+            clusters:
+                - Name: one
+                  PrivateIps: [ETP_PRIVATE_IP_RANGE]
+                  Subnet:
+                      Subnet: ETP_SUBNET
+                      Name: ETP_SUBNET
+                      Netmask: ETP_NETMASK
+                      Gateway: ETP_GATEWAY
+            bridge-interface: br0
+            public-interface: br0
+            private-interface: br0
+            bridged-nic: ETP_NODE_NIC
+            dns-server: ETP_DNS_SERVER
 override_attributes: {}
 cookbook_versions: {}

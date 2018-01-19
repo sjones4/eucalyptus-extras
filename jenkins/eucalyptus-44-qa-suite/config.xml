@@ -1,14 +1,13 @@
-<?xml version='1.0' encoding='UTF-8'?>
-<project>
+<?xml version="1.0" encoding="UTF-8"?><project>
   <actions/>
-  <description></description>
+  <description/>
   <keepDependencies>false</keepDependencies>
   <properties>
     <hudson.plugins.buildblocker.BuildBlockerProperty plugin="build-blocker-plugin@1.7.3">
       <useBuildBlocker>false</useBuildBlocker>
       <blockLevel>GLOBAL</blockLevel>
       <scanQueueFor>DISABLED</scanQueueFor>
-      <blockingJobs></blockingJobs>
+      <blockingJobs/>
     </hudson.plugins.buildblocker.BuildBlockerProperty>
     <jenkins.model.BuildDiscarderProperty>
       <strategy class="hudson.tasks.LogRotator">
@@ -20,14 +19,14 @@
     </jenkins.model.BuildDiscarderProperty>
     <com.coravy.hudson.plugins.github.GithubProjectProperty plugin="github@1.28.1">
       <projectUrl>https://github.com/sjones4/n4j/</projectUrl>
-      <displayName></displayName>
+      <displayName/>
     </com.coravy.hudson.plugins.github.GithubProjectProperty>
     <hudson.model.ParametersDefinitionProperty>
       <parameterDefinitions>
         <hudson.model.StringParameterDefinition>
           <name>CLC_IP</name>
-          <description></description>
-          <defaultValue></defaultValue>
+          <description/>
+          <defaultValue/>
         </hudson.model.StringParameterDefinition>
         <hudson.model.ChoiceParameterDefinition>
           <name>TEST_SUITE</name>
@@ -75,19 +74,19 @@
 mkdir -v results
 chmod 777 cache results
 
-if [ ! -z &quot;${EUCALYPTUS_GLOBAL_IMAGE_BASE_URL}&quot; ] ; then
-  export N4J_OPTS=&quot;${N4J_OPTS} -Dcache=/n4j/cache -Dn4j.image.hvm-url=${EUCALYPTUS_GLOBAL_IMAGE_BASE_URL}/CentOS-7-x86_64-GenericCloud.raw.tar.gz&quot;
+if [ ! -z "${EUCALYPTUS_GLOBAL_IMAGE_BASE_URL}" ] ; then
+  export N4J_OPTS="${N4J_OPTS} -Dcache=/n4j/cache -Dn4j.image.hvm-url=${EUCALYPTUS_GLOBAL_IMAGE_BASE_URL}/CentOS-7-x86_64-GenericCloud.raw.tar.gz"
 fi
 
 # run
-if [ &quot;true&quot; = &quot;${EUCALYPTUS_GLOBAL_DOCKER_PULLS:-true}&quot; ] ; then
+if [ "true" = "${EUCALYPTUS_GLOBAL_DOCKER_PULLS:-true}" ] ; then
   docker pull sjones4/n4j:4.4
 fi
 docker run --rm \
   --env N4J_OPTS \
-  -v &quot;${WORKSPACE}/cache&quot;:/n4j/cache \
-  -v &quot;${WORKSPACE}/results&quot;:/n4j/results \
-  sjones4/n4j:4.4 ./n4j.sh ${CLC_IP} &quot;com/eucalyptus/tests/suites/${TEST_SUITE}Suite&quot;</command>
+  -v "${WORKSPACE}/cache":/n4j/cache \
+  -v "${WORKSPACE}/results":/n4j/results \
+  sjones4/n4j:4.4 ./n4j.sh ${CLC_IP} "com/eucalyptus/tests/suites/${TEST_SUITE}Suite"</command>
     </hudson.tasks.Shell>
   </builders>
   <publishers>

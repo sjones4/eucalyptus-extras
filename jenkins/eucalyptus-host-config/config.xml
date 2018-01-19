@@ -1,14 +1,13 @@
-<?xml version='1.0' encoding='UTF-8'?>
-<project>
+<?xml version="1.0" encoding="UTF-8"?><project>
   <actions/>
-  <description></description>
+  <description/>
   <keepDependencies>false</keepDependencies>
   <properties>
     <hudson.plugins.buildblocker.BuildBlockerProperty plugin="build-blocker-plugin@1.7.3">
       <useBuildBlocker>false</useBuildBlocker>
       <blockLevel>GLOBAL</blockLevel>
       <scanQueueFor>DISABLED</scanQueueFor>
-      <blockingJobs></blockingJobs>
+      <blockingJobs/>
     </hudson.plugins.buildblocker.BuildBlockerProperty>
     <jenkins.model.BuildDiscarderProperty>
       <strategy class="hudson.tasks.LogRotator">
@@ -20,7 +19,7 @@
     </jenkins.model.BuildDiscarderProperty>
     <com.coravy.hudson.plugins.github.GithubProjectProperty plugin="github@1.28.1">
       <projectUrl>https://github.com/sjones4/eucalyptus-extras/</projectUrl>
-      <displayName></displayName>
+      <displayName/>
     </com.coravy.hudson.plugins.github.GithubProjectProperty>
     <hudson.model.ParametersDefinitionProperty>
       <parameterDefinitions>
@@ -32,8 +31,8 @@ IP_FQDN_PUBIPRANGE_PRIVIPRANGE_CPUX_DISKX_MEMX_USEX
 
 Remove the last X to temporarily disable a host.
 
-Generally you would copy the &lt;a href=&quot;/job/eucalyptus-host-config/lastSuccessfulBuild/artifact/hosts.txt&quot;&gt;last value&lt;/a&gt; and edit it.</description>
-          <defaultValue></defaultValue>
+Generally you would copy the &lt;a href="/job/eucalyptus-host-config/lastSuccessfulBuild/artifact/hosts.txt"&gt;last value&lt;/a&gt; and edit it.</description>
+          <defaultValue/>
         </hudson.model.TextParameterDefinition>
       </parameterDefinitions>
     </hudson.model.ParametersDefinitionProperty>
@@ -47,7 +46,7 @@ Generally you would copy the &lt;a href=&quot;/job/eucalyptus-host-config/lastSu
   <concurrentBuild>false</concurrentBuild>
   <builders>
     <hudson.tasks.Shell>
-      <command>echo &quot;${HOSTS}&quot; &gt; hosts.txt</command>
+      <command>echo "${HOSTS}" &gt; hosts.txt</command>
     </hudson.tasks.Shell>
   </builders>
   <publishers>

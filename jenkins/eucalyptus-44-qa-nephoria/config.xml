@@ -1,14 +1,13 @@
-<?xml version='1.0' encoding='UTF-8'?>
-<project>
+<?xml version="1.0" encoding="UTF-8"?><project>
   <actions/>
-  <description></description>
+  <description/>
   <keepDependencies>false</keepDependencies>
   <properties>
     <hudson.plugins.buildblocker.BuildBlockerProperty plugin="build-blocker-plugin@1.7.3">
       <useBuildBlocker>false</useBuildBlocker>
       <blockLevel>GLOBAL</blockLevel>
       <scanQueueFor>DISABLED</scanQueueFor>
-      <blockingJobs></blockingJobs>
+      <blockingJobs/>
     </hudson.plugins.buildblocker.BuildBlockerProperty>
     <jenkins.model.BuildDiscarderProperty>
       <strategy class="hudson.tasks.LogRotator">
@@ -20,14 +19,14 @@
     </jenkins.model.BuildDiscarderProperty>
     <com.coravy.hudson.plugins.github.GithubProjectProperty plugin="github@1.28.1">
       <projectUrl>https://github.com/eucalyptus/nephoria/</projectUrl>
-      <displayName></displayName>
+      <displayName/>
     </com.coravy.hudson.plugins.github.GithubProjectProperty>
     <hudson.model.ParametersDefinitionProperty>
       <parameterDefinitions>
         <hudson.model.StringParameterDefinition>
           <name>CLC_IP</name>
-          <description></description>
-          <defaultValue></defaultValue>
+          <description/>
+          <defaultValue/>
         </hudson.model.StringParameterDefinition>
       </parameterDefinitions>
     </hudson.model.ParametersDefinitionProperty>
@@ -43,30 +42,30 @@
     <hudson.tasks.Shell>
       <command># ssh key setup
 SSH_KEY_DIR=$(mktemp -dt ssh.XXXXXXXX)
-SSH_KEY_FILE=&quot;${SSH_KEY_DIR}/id_rsa&quot;
-SSH_KNOWNHOSTS=&quot;${SSH_KEY_DIR}/known_hosts&quot;
+SSH_KEY_FILE="${SSH_KEY_DIR}/id_rsa"
+SSH_KNOWNHOSTS="${SSH_KEY_DIR}/known_hosts"
 function cleanup {
-  echo &quot;Performing cleanup&quot;
-  [ ! -d &quot;${SSH_KEY_DIR}&quot; ] || rm -rf &quot;${SSH_KEY_DIR}&quot;
+  echo "Performing cleanup"
+  [ ! -d "${SSH_KEY_DIR}" ] || rm -rf "${SSH_KEY_DIR}"
 }
 trap cleanup EXIT
-echo &quot;-----BEGIN RSA PRIVATE KEY-----&quot; &gt; &quot;${SSH_KEY_FILE}&quot;
-echo ${EUCALYPTUS_GLOBAL_SSH_KEY} | sed &quot;s/ /\n/g&quot; &gt;&gt; &quot;${SSH_KEY_FILE}&quot;
-echo &quot;-----END RSA PRIVATE KEY-----&quot; &gt;&gt; &quot;${SSH_KEY_FILE}&quot;
-chmod 600 &quot;${SSH_KEY_FILE}&quot;
-ssh-keygen -y -f &quot;${SSH_KEY_FILE}&quot; &gt; &quot;${SSH_KEY_DIR}/id_rsa.pub&quot;
+echo "-----BEGIN RSA PRIVATE KEY-----" &gt; "${SSH_KEY_FILE}"
+echo ${EUCALYPTUS_GLOBAL_SSH_KEY} | sed "s/ /\n/g" &gt;&gt; "${SSH_KEY_FILE}"
+echo "-----END RSA PRIVATE KEY-----" &gt;&gt; "${SSH_KEY_FILE}"
+chmod 600 "${SSH_KEY_FILE}"
+ssh-keygen -y -f "${SSH_KEY_FILE}" &gt; "${SSH_KEY_DIR}/id_rsa.pub"
 
 [ ! -d nephoria_results ] || rm -rf nephoria_results
 mkdir -v nephoria_results
 chmod 777 nephoria_results
 
-if [ &quot;true&quot; = &quot;${EUCALYPTUS_GLOBAL_DOCKER_PULLS:-true}&quot; ] ; then
+if [ "true" = "${EUCALYPTUS_GLOBAL_DOCKER_PULLS:-true}" ] ; then
   docker pull sjones4/nephoria:4.4
 fi
 docker run --rm \
-  --env IMAGE_BASE_URL=&quot;${EUCALYPTUS_GLOBAL_IMAGE_BASE_URL}&quot; \
-  -v &quot;${SSH_KEY_DIR}&quot;:/root/.ssh \
-  -v &quot;${WORKSPACE}&quot;:/workspace \
+  --env IMAGE_BASE_URL="${EUCALYPTUS_GLOBAL_IMAGE_BASE_URL}" \
+  -v "${SSH_KEY_DIR}":/root/.ssh \
+  -v "${WORKSPACE}":/workspace \
   -w /workspace \
   sjones4/nephoria:4.4 \
   nephoria-test.sh ${CLC_IP}</command>

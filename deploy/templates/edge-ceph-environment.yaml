@@ -1,5 +1,6 @@
-name: edge-multinode
-description: 'Eucalyptus cloud with edge networking, das storage, 2 nodes'
+---
+name: edge-ceph
+description: 'Eucalyptus cloud with edge networking and ceph'
 template_aliases: ETP_TEMPLATE_ALIASES
 default_attributes:
     eucalyptus:
@@ -7,19 +8,34 @@ default_attributes:
         cloud-opts: 'ETP_EUCALYPTUS_CLOUD_OPTS'
         cloud-properties:
             <<: *alias_eucalyptus_cloud_properties
+            one.storage.cephconfigfile: /etc/ceph/ceph.conf
+            one.storage.cephkeyringfile:
+                /etc/ceph/ceph.client.eucalyptus.keyring
+            one.storage.cephsnapshotpools: ETP_CEPH_POOL_SNAPSHOTS
+            one.storage.cephuser: eucalyptus
+            one.storage.cephvolumepools: ETP_CEPH_POOL_VOLUMES
+        ceph-config:
+            <<: *alias_eucalyptus_ceph_config
+        ceph-keyrings:
+            rbd-user:
+                key: ETP_CEPH_RBD_KEY
+                keyring: /etc/ceph/ceph.client.eucalyptus.keyring
+                name: client.eucalyptus
         topology:
             clc: [ETP_HOST0_IP]  # ETP_HOST0_NAME
             objectstorage:
-                providerclient: walrus
-                walrusbackend: [ETP_HOST0_IP]  # ETP_HOST0_NAME
+                providerclient: ceph-rgw
+                access-key: ETP_CEPH_S3_ACCESS_KEY
+                secret-key: ETP_CEPH_S3_SECRET_KEY
+                ceph-radosgw:
+                    endpoint: ETP_CEPH_S3_ENDPOINT
             user-facing: [ETP_HOST0_IP]  # ETP_HOST0_NAME
             clusters:
                 one:
-                    storage-backend: das
-                    das-device: ETP_DAS_DEVICE
+                    storage-backend: ceph-rbd
                     cc: [ETP_HOST0_IP]  # ETP_HOST0_NAME
                     sc: [ETP_HOST0_IP]  # ETP_HOST0_NAME
-                    nodes: [ETP_HOST1_IP ETP_HOST2_IP]  # ETP_HOST1_NAME ETP_HOST2_NAME
+                    nodes: [ETP_HOST1_IP]  # ETP_HOST1_NAME
         cc:
             <<: *alias_eucalyptus_cc
         nc:
@@ -43,3 +59,4 @@ default_attributes:
             dns-server: ETP_DNS_SERVER
 override_attributes: {}
 cookbook_versions: {}
+

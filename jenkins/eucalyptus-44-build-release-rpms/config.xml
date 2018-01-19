@@ -1,14 +1,13 @@
-<?xml version='1.0' encoding='UTF-8'?>
-<project>
+<?xml version="1.0" encoding="UTF-8"?><project>
   <actions/>
-  <description></description>
+  <description/>
   <keepDependencies>false</keepDependencies>
   <properties>
     <hudson.plugins.buildblocker.BuildBlockerProperty plugin="build-blocker-plugin@1.7.3">
       <useBuildBlocker>false</useBuildBlocker>
       <blockLevel>GLOBAL</blockLevel>
       <scanQueueFor>DISABLED</scanQueueFor>
-      <blockingJobs></blockingJobs>
+      <blockingJobs/>
     </hudson.plugins.buildblocker.BuildBlockerProperty>
     <jenkins.model.BuildDiscarderProperty>
       <strategy class="hudson.tasks.LogRotator">
@@ -23,7 +22,7 @@
         <hudson.model.StringParameterDefinition>
           <name>BUILD_LABEL</name>
           <description>e.g. rc1</description>
-          <defaultValue></defaultValue>
+          <defaultValue/>
         </hudson.model.StringParameterDefinition>
       </parameterDefinitions>
     </hudson.model.ParametersDefinitionProperty>
@@ -42,14 +41,14 @@
 [ ! -d rpms ]          || rm -rf rpms
 
 EUCALYPTUS_REPO_DIRS=(
-  &quot;eucaconsole&quot;
-  &quot;eucaconsole-selinux&quot;
-  &quot;eucalyptus-cloud-libs&quot;
-  &quot;eucalyptus&quot;
-  &quot;eucalyptus-selinux&quot;
+  "eucaconsole"
+  "eucaconsole-selinux"
+  "eucalyptus-cloud-libs"
+  "eucalyptus"
+  "eucalyptus-selinux"
 )
-for EUCALYPTUS_REPO_DIR in &quot;${EUCALYPTUS_REPO_DIRS[@]}&quot;; do
-  [ ! -d &quot;${EUCALYPTUS_REPO_DIR}&quot; ] || rm -rf &quot;${EUCALYPTUS_REPO_DIR}&quot;
+for EUCALYPTUS_REPO_DIR in "${EUCALYPTUS_REPO_DIRS[@]}"; do
+  [ ! -d "${EUCALYPTUS_REPO_DIR}" ] || rm -rf "${EUCALYPTUS_REPO_DIR}"
 done
 
 # create rpmbuild dirs
@@ -72,55 +71,55 @@ git clone --depth 1 --branch devel-4.4 https://github.com/sjones4/eucalyptus.git
 git clone --depth 1 --branch master    https://github.com/eucalyptus/eucalyptus-selinux.git
 
 # build
-if [ &quot;true&quot; = &quot;${EUCALYPTUS_GLOBAL_DOCKER_PULLS:-true}&quot; ] ; then
+if [ "true" = "${EUCALYPTUS_GLOBAL_DOCKER_PULLS:-true}" ] ; then
   docker pull sjones4/eucalyptus-builder:4.4
 fi
 
-export RPM_DIST=&quot;${EUCALYPTUS_GLOBAL_RPM_DIST:-el7}&quot;
-if [ ! -z &quot;${BUILD_LABEL}&quot; ] ; then
-  export RPM_BUILD_ID=&quot;${BUILD_ID}.${BUILD_LABEL}&quot;
+export RPM_DIST="${EUCALYPTUS_GLOBAL_RPM_DIST:-el7}"
+if [ ! -z "${BUILD_LABEL}" ] ; then
+  export RPM_BUILD_ID="${BUILD_ID}.${BUILD_LABEL}"
 else
-  export RPM_BUILD_ID=&quot;${BUILD_ID}&quot;
+  export RPM_BUILD_ID="${BUILD_ID}"
 fi
 EUCALYPTUS_BUILD_SCRIPTS=(
-  &quot;build-eucalyptus-console-rpm.sh&quot;
-  &quot;build-eucalyptus-console-selinux-rpm.sh&quot;
-  &quot;build-eucalyptus-cloud-libs-rpm.sh&quot;
-  &quot;build-eucalyptus-rpms.sh&quot;
-  &quot;build-eucalyptus-selinux-rpm.sh&quot;
+  "build-eucalyptus-console-rpm.sh"
+  "build-eucalyptus-console-selinux-rpm.sh"
+  "build-eucalyptus-cloud-libs-rpm.sh"
+  "build-eucalyptus-rpms.sh"
+  "build-eucalyptus-selinux-rpm.sh"
 )
-for EUCALYPTUS_BUILD_SCRIPT in &quot;${EUCALYPTUS_BUILD_SCRIPTS[@]}&quot; ; do
+for EUCALYPTUS_BUILD_SCRIPT in "${EUCALYPTUS_BUILD_SCRIPTS[@]}" ; do
   docker run --rm \
     --env RPM_DIST \
     --env RPM_BUILD_ID \
     --env RPM_OUT=/eucalyptus/rpms \
     --env RPMBUILD=/eucalyptus/rpmbuild \
-    -v &quot;$(pwd)&quot;:/eucalyptus \
+    -v "$(pwd)":/eucalyptus \
     -w /eucalyptus \
     sjones4/eucalyptus-builder:4.4 \
-    &quot;${EUCALYPTUS_BUILD_SCRIPT}&quot; build-only
+    "${EUCALYPTUS_BUILD_SCRIPT}" build-only
 done
 
 # log versions / commits
-LOG_FILE=&quot;build-audit.log&quot;
-[ ! -f &quot;${LOG_FILE}&quot; ] || rm -f &quot;${LOG_FILE}&quot;
+LOG_FILE="build-audit.log"
+[ ! -f "${LOG_FILE}" ] || rm -f "${LOG_FILE}"
 
-docker images sjones4/eucalyptus-builder | tee &quot;${LOG_FILE}&quot;
+docker images sjones4/eucalyptus-builder | tee "${LOG_FILE}"
 
 # log sources
-for EUCALYPTUS_REPO_DIR in &quot;${EUCALYPTUS_REPO_DIRS[@]}&quot;; do
-  printf &apos;%-22s&apos; &quot;${EUCALYPTUS_REPO_DIR}&quot; | tee &quot;${LOG_FILE}&quot;
-  git --git-dir=&quot;${EUCALYPTUS_REPO_DIR}/.git&quot; log --max-count=1 --pretty=oneline --no-decorate | tee &quot;${LOG_FILE}&quot;
+for EUCALYPTUS_REPO_DIR in "${EUCALYPTUS_REPO_DIRS[@]}"; do
+  printf '%-22s' "${EUCALYPTUS_REPO_DIR}" | tee "${LOG_FILE}"
+  git --git-dir="${EUCALYPTUS_REPO_DIR}/.git" log --max-count=1 --pretty=oneline --no-decorate | tee "${LOG_FILE}"
 done
 
-cat &quot;${LOG_FILE}&quot;</command>
+cat "${LOG_FILE}"</command>
     </hudson.tasks.Shell>
     <hudson.tasks.Shell>
       <command># sign rpms
-[ ! -z &quot;${GPG_KEY+x}&quot; ] || exit 1
+[ ! -z "${GPG_KEY+x}" ] || exit 1
 docker run --rm \
   --env GPG_KEY \
-  -v &quot;$(pwd)&quot;:/eucalyptus \
+  -v "$(pwd)":/eucalyptus \
   -w /eucalyptus/rpms \
   sjones4/eucalyptus-builder:4.4 \
   rpm-sign.sh
