@@ -1,14 +1,13 @@
-<?xml version='1.0' encoding='UTF-8'?>
-<project>
+<?xml version="1.0" encoding="UTF-8"?><project>
   <actions/>
-  <description></description>
+  <description/>
   <keepDependencies>false</keepDependencies>
   <properties>
     <hudson.plugins.buildblocker.BuildBlockerProperty plugin="build-blocker-plugin@1.7.3">
       <useBuildBlocker>false</useBuildBlocker>
       <blockLevel>GLOBAL</blockLevel>
       <scanQueueFor>DISABLED</scanQueueFor>
-      <blockingJobs></blockingJobs>
+      <blockingJobs/>
     </hudson.plugins.buildblocker.BuildBlockerProperty>
     <jenkins.model.BuildDiscarderProperty>
       <strategy class="hudson.tasks.LogRotator">
@@ -20,18 +19,18 @@
     </jenkins.model.BuildDiscarderProperty>
     <com.coravy.hudson.plugins.github.GithubProjectProperty plugin="github@1.28.1">
       <projectUrl>https://github.com/sjones4/eucalyptus/</projectUrl>
-      <displayName></displayName>
+      <displayName/>
     </com.coravy.hudson.plugins.github.GithubProjectProperty>
     <hudson.model.ParametersDefinitionProperty>
       <parameterDefinitions>
         <hudson.model.StringParameterDefinition>
           <name>EUCALYPTUS_GIT_REPO</name>
-          <description></description>
+          <description/>
           <defaultValue>https://github.com/sjones4/eucalyptus.git</defaultValue>
         </hudson.model.StringParameterDefinition>
         <hudson.model.StringParameterDefinition>
           <name>EUCALYPTUS_GIT_BRANCH</name>
-          <description></description>
+          <description/>
           <defaultValue>devel-4.4</defaultValue>
         </hudson.model.StringParameterDefinition>
       </parameterDefinitions>
@@ -84,7 +83,7 @@ mkdir -pv rpmbuild/RPMS/x86_64
       <project>eucalyptus-44-build-cloud-libs-rpm</project>
       <filter>**/*.rpm</filter>
       <target>rpmbuild/RPMS/noarch/</target>
-      <excludes></excludes>
+      <excludes/>
       <selector class="hudson.plugins.copyartifact.StatusBuildSelector">
         <stable>true</stable>
       </selector>
@@ -98,24 +97,24 @@ mkdir -v rpms
 chmod 777 rpms
 
 # build
-if [ &quot;true&quot; = &quot;${EUCALYPTUS_GLOBAL_DOCKER_PULLS:-true}&quot; ] ; then
+if [ "true" = "${EUCALYPTUS_GLOBAL_DOCKER_PULLS:-true}" ] ; then
   docker pull sjones4/eucalyptus-builder:4.4
 fi
 docker run --rm \
   --env RPM_DIST=${EUCALYPTUS_GLOBAL_RPM_DIST:-el7} \
   --env RPM_OUT=/eucalyptus/rpms \
   --env RPMBUILD=/eucalyptus/rpmbuild \
-  -v &quot;$(pwd)&quot;:/eucalyptus \
+  -v "$(pwd)":/eucalyptus \
   -w /eucalyptus \
   sjones4/eucalyptus-builder:4.4 \
   build-eucalyptus-rpms.sh build-only</command>
     </hudson.tasks.Shell>
     <hudson.tasks.Shell>
       <command># sign rpms
-if [ ! -z &quot;${EUCALYPTUS_GLOBAL_DEV_GPG_KEY+x}&quot; ] ; then
+if [ ! -z "${EUCALYPTUS_GLOBAL_DEV_GPG_KEY+x}" ] ; then
   docker run --rm \
-    --env GPG_KEY=&quot;${EUCALYPTUS_GLOBAL_DEV_GPG_KEY}&quot; \
-    -v &quot;$(pwd)&quot;:/eucalyptus \
+    --env GPG_KEY="${EUCALYPTUS_GLOBAL_DEV_GPG_KEY}" \
+    -v "$(pwd)":/eucalyptus \
     -w /eucalyptus/rpms \
     sjones4/eucalyptus-builder:4.4 \
     rpm-sign.sh

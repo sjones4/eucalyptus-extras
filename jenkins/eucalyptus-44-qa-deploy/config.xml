@@ -29,8 +29,12 @@
           <description></description>
           <choices class="java.util.Arrays$ArrayList">
             <a class="string-array">
+              <string>cloud-in-a-box-das</string>
               <string>cloud-in-a-box</string>
               <string>cloud-in-a-box-with-console</string>
+              <string>edge-ceph</string>
+              <string>edge</string>
+              <string>edge-multinode</string>
               <string>CUSTOM_ENV_TEMPLATE</string>
             </a>
           </choices>
@@ -89,8 +93,8 @@ http://downloads.eucalyptus.com/software/euca2ools/3.4/rhel/7/x86_64/</descripti
         </hudson.model.StringParameterDefinition>
         <hudson.model.StringParameterDefinition>
           <name>EUCALYPTUS_DNS_DOMAIN</name>
-          <description></description>
-          <defaultValue>ETP_HOST0_IP.nip.io</defaultValue>
+          <description>Defaults to EUCALYPTUS_GLOBAL_EUCALYPTUS_DNS_DOMAIN if set, else ETP_HOST0_IP.nip.io</description>
+          <defaultValue></defaultValue>
         </hudson.model.StringParameterDefinition>
         <hudson.model.StringParameterDefinition>
           <name>NET_PUBLIC_IP_RANGE</name>
@@ -127,6 +131,27 @@ http://downloads.eucalyptus.com/software/euca2ools/3.4/rhel/7/x86_64/</descripti
           <description>Defaults to EUCALYPTUS_GLOBAL_NTP_SERVER</description>
           <defaultValue></defaultValue>
         </hudson.model.StringParameterDefinition>
+        <hudson.model.StringParameterDefinition>
+          <name>NODE_MAX_CORES</name>
+          <description>Defaults to EUCALYPTUS_GLOBAL_NODE_MAX_CORES if set, else 0 for available cores on each node</description>
+          <defaultValue></defaultValue>
+        </hudson.model.StringParameterDefinition>
+        <hudson.model.StringParameterDefinition>
+          <name>CLUSTER_MAX_INSTANCES</name>
+          <description>Defaults to EUCALYPTUS_GLOBAL_CLUSTER_MAX_INSTANCES if set, else 128</description>
+          <defaultValue></defaultValue>
+        </hudson.model.StringParameterDefinition>
+        <hudson.model.ChoiceParameterDefinition>
+          <name>CLUSTER_SCHEDULING_POLICY</name>
+          <description>Defaults to EUCALYPTUS_GLOBAL_CLUSTER_SCHEDULING_POLICY if set, else ROUNDROBIN</description>
+          <choices class="java.util.Arrays$ArrayList">
+            <a class="string-array">
+              <string></string>
+              <string>GREEDY</string>
+              <string>ROUNDROBIN</string>
+            </a>
+          </choices>
+        </hudson.model.ChoiceParameterDefinition>
         <hudson.model.ChoiceParameterDefinition>
           <name>HOST_PARAM_CPU</name>
           <description>Minimum core requirement for candidate hosts</description>
@@ -145,11 +170,11 @@ http://downloads.eucalyptus.com/software/euca2ools/3.4/rhel/7/x86_64/</descripti
           <description></description>
           <choices class="java.util.Arrays$ArrayList">
             <a class="string-array">
+              <string>8</string>
               <string>16</string>
               <string>32</string>
               <string>64</string>
               <string>128</string>
-              <string>256</string>
             </a>
           </choices>
         </hudson.model.ChoiceParameterDefinition>
@@ -174,6 +199,17 @@ http://downloads.eucalyptus.com/software/euca2ools/3.4/rhel/7/x86_64/</descripti
   <triggers/>
   <concurrentBuild>false</concurrentBuild>
   <builders>
+    <hudson.plugins.copyartifact.CopyArtifact plugin="copyartifact@1.39">
+      <project>eucalyptus-44-qa-deploy-template-aliases</project>
+      <filter></filter>
+      <target></target>
+      <excludes></excludes>
+      <selector class="hudson.plugins.copyartifact.StatusBuildSelector">
+        <stable>true</stable>
+      </selector>
+      <flatten>true</flatten>
+      <doNotFingerprintArtifacts>true</doNotFingerprintArtifacts>
+    </hudson.plugins.copyartifact.CopyArtifact>
     <hudson.tasks.Shell>
       <command>if [ &quot;true&quot; = &quot;${EUCALYPTUS_GLOBAL_DOCKER_PULLS:-true}&quot; ] ; then
   echo &quot;Pulling latest calyptos docker image&quot;
@@ -183,6 +219,7 @@ fi
 echo &quot;Extracting resource requirements from environment template&quot;
 [ ! -d env ] || rm -rf env
 mkdir -v env
+mv -v template_aliases.yaml env/
 
 TEMPLATE_PATH=&quot;/calyptos/templates/${ENV_TEMPLATE}-environment.yaml&quot;
 if [ &quot;${ENV_TEMPLATE}&quot; = &quot;CUSTOM_ENV_TEMPLATE&quot; ] ; then
@@ -277,21 +314,34 @@ for HOST in $(&lt;env/reserved_hosts.txt); do
 done
 find reservations -type f
 
-ENV_TEMPLATE_VARS_FILE=&quot;env/template-variables.txt&quot;
+ENV_TEMPLATE_VARS_FILE=&quot;env/template_variables.txt&quot;
 echo &quot;Building environment template variables file ${ENV_TEMPLATE_VARS_FILE}&quot;
 echo &quot;# Environment template variables for ${BUILD_ID}&quot; &gt;&gt; &quot;${ENV_TEMPLATE_VARS_FILE}&quot;
+echo &quot;ETP_CEPH_POOL_SNAPSHOTS=${EUCALYPTUS_GLOBAL_CEPH_POOL_SNAPSHOTS:-eucasnapshots}&quot; &gt;&gt; &quot;${ENV_TEMPLATE_VARS_FILE}&quot;
+echo &quot;ETP_CEPH_POOL_VOLUMES=${EUCALYPTUS_GLOBAL_CEPH_POOL_VOLUMES:-eucavolumes}&quot; &gt;&gt; &quot;${ENV_TEMPLATE_VARS_FILE}&quot;
+echo &quot;ETP_CEPH_RBD_KEY=${EUCALYPTUS_GLOBAL_CEPH_RBD_KEY}&quot; &gt;&gt; &quot;${ENV_TEMPLATE_VARS_FILE}&quot;
+echo &quot;ETP_CEPH_S3_ACCESS_KEY=${EUCALYPTUS_GLOBAL_CEPH_S3_ACCESS_KEY}&quot; &gt;&gt; &quot;${ENV_TEMPLATE_VARS_FILE}&quot;
+echo &quot;ETP_CEPH_S3_ENDPOINT=${EUCALYPTUS_GLOBAL_CEPH_S3_ENDPOINT:-127.0.0.1:7480}&quot; &gt;&gt; &quot;${ENV_TEMPLATE_VARS_FILE}&quot;
+echo &quot;ETP_CEPH_S3_SECRET_KEY=${EUCALYPTUS_GLOBAL_CEPH_S3_SECRET_KEY}&quot; &gt;&gt; &quot;${ENV_TEMPLATE_VARS_FILE}&quot;
+echo &quot;ETP_CLUSTER_MAX_INSTANCES=${CLUSTER_MAX_INSTANCES:-${EUCALYPTUS_GLOBAL_CLUSTER_MAX_INSTANCES:-128}}&quot; &gt;&gt; &quot;${ENV_TEMPLATE_VARS_FILE}&quot;
+echo &quot;ETP_CLUSTER_SCHEDULING_POLICY=${CLUSTER_SCHEDULING_POLICY:-${EUCALYPTUS_GLOBAL_CLUSTER_SCHEDULING_POLICY:-ROUNDROBIN}}&quot; &gt;&gt; &quot;${ENV_TEMPLATE_VARS_FILE}&quot;
+echo &quot;ETP_DAS_DEVICE=${EUCALYPTUS_GLOBAL_DAS_DEVICE:-storage_vg}&quot; &gt;&gt; &quot;${ENV_TEMPLATE_VARS_FILE}&quot;
 echo &quot;ETP_DNS_SERVER=${DNS_SERVER:-${EUCALYPTUS_GLOBAL_DNS_SERVER}}&quot; &gt;&gt; &quot;${ENV_TEMPLATE_VARS_FILE}&quot;
 echo &quot;ETP_EUCA2OOLS_YUM_REPO=${EUCA2OOLS_YUM_REPO:-${EUCALYPTUS_GLOBAL_EUCA2OOLS_YUM_REPO}}&quot; &gt;&gt; &quot;${ENV_TEMPLATE_VARS_FILE}&quot;
 echo &quot;ETP_EUCALYPTUS_BRANCH=${EUCALYPTUS_GIT_BRANCH}&quot; &gt;&gt; &quot;${ENV_TEMPLATE_VARS_FILE}&quot;
 echo &quot;ETP_EUCALYPTUS_CLOUD_LIBS_BRANCH=${CLOUD_LIBS_GIT_BRANCH}&quot; &gt;&gt; &quot;${ENV_TEMPLATE_VARS_FILE}&quot;
 echo &quot;ETP_EUCALYPTUS_CLOUD_LIBS_GIT_REPO=${CLOUD_LIBS_GIT_REPO}&quot; &gt;&gt; &quot;${ENV_TEMPLATE_VARS_FILE}&quot;
 echo &quot;ETP_EUCALYPTUS_CLOUD_OPTS=${EUCALYPTUS_GLOBAL_CLOUD_OPTS} ${CLOUD_OPTS}&quot; &gt;&gt; &quot;${ENV_TEMPLATE_VARS_FILE}&quot;
-echo &quot;ETP_EUCALYPTUS_DNS_DOMAIN=${EUCALYPTUS_DNS_DOMAIN}&quot; &gt;&gt; &quot;${ENV_TEMPLATE_VARS_FILE}&quot;
+echo &quot;ETP_EUCALYPTUS_DNS_DOMAIN=${EUCALYPTUS_DNS_DOMAIN:-${EUCALYPTUS_GLOBAL_EUCALYPTUS_DNS_DOMAIN:-ETP_HOST0_IP.nip.io}}&quot; &gt;&gt; &quot;${ENV_TEMPLATE_VARS_FILE}&quot;
 echo &quot;ETP_EUCALYPTUS_GIT_REPO=${EUCALYPTUS_GIT_REPO}&quot; &gt;&gt; &quot;${ENV_TEMPLATE_VARS_FILE}&quot;
 echo &quot;ETP_EUCALYPTUS_YUM_REPO=${EUCALYPTUS_YUM_REPO:-${EUCALYPTUS_GLOBAL_EUCALYPTUS_YUM_REPO}}&quot; &gt;&gt; &quot;${ENV_TEMPLATE_VARS_FILE}&quot;
 echo &quot;ETP_GATEWAY=${NET_GATEWAY:-${EUCALYPTUS_GLOBAL_NET_GATEWAY}}&quot; &gt;&gt; &quot;${ENV_TEMPLATE_VARS_FILE}&quot;
 echo &quot;ETP_INSTALL_TYPE=${INSTALL_TYPE}&quot; &gt;&gt; &quot;${ENV_TEMPLATE_VARS_FILE}&quot;
 echo &quot;ETP_NETMASK=${NET_NETMASK:-${EUCALYPTUS_GLOBAL_NET_NETMASK}}&quot; &gt;&gt; &quot;${ENV_TEMPLATE_VARS_FILE}&quot;
+echo &quot;ETP_NODE_CACHE_SIZE=${EUCALYPTUS_GLOBAL_NODE_CACHE_SIZE:--1}&quot; &gt;&gt; &quot;${ENV_TEMPLATE_VARS_FILE}&quot;
+echo &quot;ETP_NODE_MAX_CORES=${NODE_MAX_CORES:-${EUCALYPTUS_GLOBAL_NODE_MAX_CORES:-0}}&quot; &gt;&gt; &quot;${ENV_TEMPLATE_VARS_FILE}&quot;
+echo &quot;ETP_NODE_NIC=${EUCALYPTUS_GLOBAL_NODE_NIC:-eno1}&quot; &gt;&gt; &quot;${ENV_TEMPLATE_VARS_FILE}&quot;
+echo &quot;ETP_NODE_WORK_SIZE=${EUCALYPTUS_GLOBAL_NODE_WORK_SIZE:--1}&quot; &gt;&gt; &quot;${ENV_TEMPLATE_VARS_FILE}&quot;
 echo &quot;ETP_NTP_SERVER=${NTP_SERVER:-${EUCALYPTUS_GLOBAL_NTP_SERVER}}&quot; &gt;&gt; &quot;${ENV_TEMPLATE_VARS_FILE}&quot;
 echo &quot;ETP_PRIVATE_IP_RANGE=${NET_PRIVATE_IP_RANGE}&quot; &gt;&gt; &quot;${ENV_TEMPLATE_VARS_FILE}&quot;
 echo &quot;ETP_PUBLIC_IP_RANGE=${NET_PUBLIC_IP_RANGE}&quot; &gt;&gt; &quot;${ENV_TEMPLATE_VARS_FILE}&quot;
@@ -303,6 +353,7 @@ TEMPLATE_PATH=&quot;/calyptos/templates/${ENV_TEMPLATE}-environment.yaml&quot;
 if [ &quot;${ENV_TEMPLATE}&quot; = &quot;CUSTOM_ENV_TEMPLATE&quot; ] ; then
   TEMPLATE_PATH=&quot;/env/template-environment.yaml&quot;
 fi
+TEMPLATE_ALIAS_PATH=&quot;/env/template_aliases.yaml&quot;
 docker run --rm \
   --env-file &quot;${ENV_TEMPLATE_VARS_FILE}&quot; \
   -v &quot;${SSH_KEY_DIR}&quot;:/root/.ssh \
@@ -310,6 +361,7 @@ docker run --rm \
   sjones4/calyptos:4.4 \
   template-env.sh \
   &quot;${TEMPLATE_PATH}&quot; \
+  &quot;${TEMPLATE_ALIAS_PATH}&quot; \
   &quot;/env/reserved_hosts.txt&quot; \
   &quot;/env/reserved_host_names.txt&quot; \
   &quot;/env/reserved_public_ip_ranges.txt&quot; \
@@ -321,7 +373,7 @@ cat --number env/environment.yaml
 
 for HOST in $(&lt;env/reserved_hosts.txt); do
   echo &quot;Koaning CentOS 7 on ${HOST}&quot;
-  ssh -i &quot;${SSH_KEY_FILE}&quot; -o BatchMode=yes -o UserKnownHostsFile=&quot;${SSH_KNOWNHOSTS}&quot; -o StrictHostKeyChecking=no root@${HOST} &quot;yum -y install epel-release; yum -y install koan &amp;&amp; koan --server=${EUCALYPTUS_GLOBAL_COBBLER_SERVER} --system=\$(hostname) --replace-self &amp;&amp; shutdown -r&quot;
+  ssh -i &quot;${SSH_KEY_FILE}&quot; -o BatchMode=yes -o UserKnownHostsFile=&quot;${SSH_KNOWNHOSTS}&quot; -o StrictHostKeyChecking=no root@${HOST} &quot;yum -y install epel-release; yum -y install koan &amp;&amp; koan --server=${EUCALYPTUS_GLOBAL_COBBLER_SERVER} --system=\$(hostname  | cut -d &apos;.&apos; -f 1) --replace-self &amp;&amp; shutdown -r&quot;
 done
 
 echo &quot;Sleeping 120 to allow CentOS 7 install to start&quot;

@@ -1,14 +1,13 @@
-<?xml version='1.0' encoding='UTF-8'?>
-<project>
+<?xml version="1.0" encoding="UTF-8"?><project>
   <actions/>
-  <description></description>
+  <description/>
   <keepDependencies>false</keepDependencies>
   <properties>
     <hudson.plugins.buildblocker.BuildBlockerProperty plugin="build-blocker-plugin@1.7.3">
       <useBuildBlocker>false</useBuildBlocker>
       <blockLevel>GLOBAL</blockLevel>
       <scanQueueFor>DISABLED</scanQueueFor>
-      <blockingJobs></blockingJobs>
+      <blockingJobs/>
     </hudson.plugins.buildblocker.BuildBlockerProperty>
     <jenkins.model.BuildDiscarderProperty>
       <strategy class="hudson.tasks.LogRotator">
@@ -20,7 +19,7 @@
     </jenkins.model.BuildDiscarderProperty>
     <com.coravy.hudson.plugins.github.GithubProjectProperty plugin="github@1.28.1">
       <projectUrl>https://github.com/sjones4/eucalyptus-extras/</projectUrl>
-      <displayName></displayName>
+      <displayName/>
     </com.coravy.hudson.plugins.github.GithubProjectProperty>
   </properties>
   <scm class="hudson.scm.NullSCM"/>
@@ -35,7 +34,7 @@
       <project>eucalyptus-host-config</project>
       <filter>hosts.txt</filter>
       <target>hosts</target>
-      <excludes></excludes>
+      <excludes/>
       <selector class="hudson.plugins.copyartifact.StatusBuildSelector">
         <stable>true</stable>
       </selector>
@@ -48,28 +47,28 @@
 
 # ssh key setup
 SSH_KEY_DIR=$(mktemp -dt ssh.XXXXXXXX)
-SSH_KEY_FILE=&quot;${SSH_KEY_DIR}/id_rsa&quot;
-SSH_KNOWNHOSTS=&quot;${SSH_KEY_DIR}/known_hosts&quot;
+SSH_KEY_FILE="${SSH_KEY_DIR}/id_rsa"
+SSH_KNOWNHOSTS="${SSH_KEY_DIR}/known_hosts"
 function cleanup {
-  echo &quot;Performing cleanup&quot;
-  [ ! -d &quot;${SSH_KEY_DIR}&quot; ] || rm -rf &quot;${SSH_KEY_DIR}&quot;
+  echo "Performing cleanup"
+  [ ! -d "${SSH_KEY_DIR}" ] || rm -rf "${SSH_KEY_DIR}"
 }
 trap cleanup EXIT
-echo &quot;-----BEGIN RSA PRIVATE KEY-----&quot; &gt; &quot;${SSH_KEY_FILE}&quot;
-echo ${EUCALYPTUS_GLOBAL_SSH_KEY} | sed &quot;s/ /\n/g&quot; &gt;&gt; &quot;${SSH_KEY_FILE}&quot;
-echo &quot;-----END RSA PRIVATE KEY-----&quot; &gt;&gt; &quot;${SSH_KEY_FILE}&quot;
-chmod 600 &quot;${SSH_KEY_FILE}&quot;
-ssh-keygen -y -f &quot;${SSH_KEY_FILE}&quot; &gt; &quot;${SSH_KEY_DIR}/id_rsa.pub&quot;
+echo "-----BEGIN RSA PRIVATE KEY-----" &gt; "${SSH_KEY_FILE}"
+echo ${EUCALYPTUS_GLOBAL_SSH_KEY} | sed "s/ /\n/g" &gt;&gt; "${SSH_KEY_FILE}"
+echo "-----END RSA PRIVATE KEY-----" &gt;&gt; "${SSH_KEY_FILE}"
+chmod 600 "${SSH_KEY_FILE}"
+ssh-keygen -y -f "${SSH_KEY_FILE}" &gt; "${SSH_KEY_DIR}/id_rsa.pub"
 
-if [ &quot;true&quot; = &quot;${EUCALYPTUS_GLOBAL_DOCKER_PULLS:-true}&quot; ] ; then
-  echo &quot;Pulling latest calyptos docker image&quot;
+if [ "true" = "${EUCALYPTUS_GLOBAL_DOCKER_PULLS:-true}" ] ; then
+  echo "Pulling latest calyptos docker image"
   docker pull sjones4/calyptos:4.4
 fi
 
-echo &quot;Host status&quot;
+echo "Host status"
 docker run --rm \
-  -e SSH_OPTS=&apos;-o ConnectTimeout=5 -o ConnectionAttempts=1&apos; \
-  -v &quot;${SSH_KEY_DIR}&quot;:/root/.ssh \
+  -e SSH_OPTS='-o ConnectTimeout=5 -o ConnectionAttempts=1' \
+  -v "${SSH_KEY_DIR}":/root/.ssh \
   -v $(pwd)/hosts:/calyptos/hosts \
   -w /calyptos/hosts \
   sjones4/calyptos:4.4 host-status.sh | tee hosts/status.txt

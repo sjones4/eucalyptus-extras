@@ -46,10 +46,10 @@
           <description></description>
           <choices class="java.util.Arrays$ArrayList">
             <a class="string-array">
+              <string>8</string>
               <string>16</string>
               <string>32</string>
               <string>64</string>
-              <string>128</string>
             </a>
           </choices>
         </hudson.model.ChoiceParameterDefinition>
@@ -103,7 +103,7 @@ while [ ${HOST_PARAM_CPU} -ge 4 ] ; do
   HOST_PARAM_CPU=$((HOST_PARAM_CPU / 2))
 done
 HOST_PARAMS=&quot;${HOST_PARAMS}:DISKX:MEM&quot;
-while [ ${HOST_PARAM_MEM} -ge 16 ] ; do
+while [ ${HOST_PARAM_MEM} -ge 8 ] ; do
   HOST_PARAMS=&quot;${HOST_PARAMS}X&quot;
   HOST_PARAM_MEM=$((HOST_PARAM_MEM / 2))
 done
