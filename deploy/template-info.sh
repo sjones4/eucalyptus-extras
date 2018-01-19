@@ -7,9 +7,10 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 TEMP_FILE="${1:--}"
 TEMP_INFO="${2:-vars}"
+TEMP_ALIAS_FILE="${3:-}"
 
 function template_env( ) {
-  "${SCRIPT_DIR}/template-env.sh"
+  "${SCRIPT_DIR}/template-env.sh" ${TEMP_INFO}
 }
 
 function template_stream( ) {
