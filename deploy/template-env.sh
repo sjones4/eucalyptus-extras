@@ -76,13 +76,16 @@ if [ ! -z "${HOSTS_FILE}" ] ; then
   HOST_NUM=0
   for HOST in $(<"${HOSTS_FILE}"); do
     TEMPLATE_VAR_MAP["ETP_HOST${HOST_NUM}_IP"]="${HOST}"
+    TEMPLATE_VAR_MAP["ETP_HOST${HOST_NUM}_NAME"]="${HOST}" # ip if name not available
+    TEMPLATE_VAR_MAP["ETP_HOST${HOST_NUM}_FQDN"]="${HOST}" # ip if name not available
     HOST_NUM=$((HOST_NUM + 1))
   done
 fi
 if [ ! -z "${HOST_NAMES_FILE}" ] ; then
   HOST_NUM=0
   for HOST in $(<"${HOST_NAMES_FILE}"); do
-    TEMPLATE_VAR_MAP["ETP_HOST${HOST_NUM}_NAME"]="${HOST}"
+    TEMPLATE_VAR_MAP["ETP_HOST${HOST_NUM}_NAME"]="${HOST/.*}"
+    TEMPLATE_VAR_MAP["ETP_HOST${HOST_NUM}_FQDN"]="${HOST}"
     HOST_NUM=$((HOST_NUM + 1))
   done
 fi
