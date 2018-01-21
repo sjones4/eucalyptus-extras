@@ -89,7 +89,9 @@ EUCALYPTUS_BUILD_SCRIPTS=(
   "build-eucalyptus-selinux-rpm.sh"
 )
 for EUCALYPTUS_BUILD_SCRIPT in "${EUCALYPTUS_BUILD_SCRIPTS[@]}" ; do
-  docker run --rm \
+  docker run \
+    ${EUCALYPTUS_GLOBAL_DOCKER_RUN_OPTS} \
+    --rm \
     --env RPM_DIST \
     --env RPM_BUILD_ID \
     --env RPM_OUT=/eucalyptus/rpms \
@@ -117,7 +119,9 @@ cat "${LOG_FILE}"</command>
     <hudson.tasks.Shell>
       <command># sign rpms
 [ ! -z "${GPG_KEY+x}" ] || exit 1
-docker run --rm \
+docker run \
+  ${EUCALYPTUS_GLOBAL_DOCKER_RUN_OPTS} \
+  --rm \
   --env GPG_KEY \
   -v "$(pwd)":/eucalyptus \
   -w /eucalyptus/rpms \

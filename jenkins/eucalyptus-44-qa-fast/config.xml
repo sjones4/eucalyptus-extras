@@ -54,7 +54,9 @@ fi
 if [ "true" = "${EUCALYPTUS_GLOBAL_DOCKER_PULLS:-true}" ] ; then
   docker pull sjones4/n4j:4.4
 fi
-docker run --rm \
+docker run \
+  ${EUCALYPTUS_GLOBAL_DOCKER_RUN_OPTS} \
+  --rm \
   --env N4J_OPTS \
   -v "${WORKSPACE}/cache":/n4j/cache \
   -v "${WORKSPACE}/results":/n4j/results \

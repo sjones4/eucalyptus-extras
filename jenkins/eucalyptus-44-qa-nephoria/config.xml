@@ -62,7 +62,9 @@ chmod 777 nephoria_results
 if [ "true" = "${EUCALYPTUS_GLOBAL_DOCKER_PULLS:-true}" ] ; then
   docker pull sjones4/nephoria:4.4
 fi
-docker run --rm \
+docker run \
+  ${EUCALYPTUS_GLOBAL_DOCKER_RUN_OPTS} \
+  --rm \
   --env IMAGE_BASE_URL="${EUCALYPTUS_GLOBAL_IMAGE_BASE_URL}" \
   -v "${SSH_KEY_DIR}":/root/.ssh \
   -v "${WORKSPACE}":/workspace \

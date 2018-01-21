@@ -100,7 +100,9 @@ chmod 777 rpms
 if [ "true" = "${EUCALYPTUS_GLOBAL_DOCKER_PULLS:-true}" ] ; then
   docker pull sjones4/eucalyptus-builder:4.4
 fi
-docker run --rm \
+docker run \
+  ${EUCALYPTUS_GLOBAL_DOCKER_RUN_OPTS} \
+  --rm \
   --env RPM_DIST=${EUCALYPTUS_GLOBAL_RPM_DIST:-el7} \
   --env RPM_OUT=/eucalyptus/rpms \
   --env RPMBUILD=/eucalyptus/rpmbuild \
@@ -112,7 +114,9 @@ docker run --rm \
     <hudson.tasks.Shell>
       <command># sign rpms
 if [ ! -z "${EUCALYPTUS_GLOBAL_DEV_GPG_KEY+x}" ] ; then
-  docker run --rm \
+  docker run \
+    ${EUCALYPTUS_GLOBAL_DOCKER_RUN_OPTS} \
+    --rm \
     --env GPG_KEY="${EUCALYPTUS_GLOBAL_DEV_GPG_KEY}" \
     -v "$(pwd)":/eucalyptus \
     -w /eucalyptus/rpms \
