@@ -46,6 +46,10 @@ EUCALYPTUS_REPO_DIRS=(
   "eucalyptus-cloud-libs"
   "eucalyptus"
   "eucalyptus-selinux"
+  "eucalyptus-imaging-worker"
+  "load-balancer-servo"
+  "eucalyptus-service-image"
+  "eucalyptus-sosreport-plugins"
 )
 for EUCALYPTUS_REPO_DIR in "${EUCALYPTUS_REPO_DIRS[@]}"; do
   [ ! -d "${EUCALYPTUS_REPO_DIR}" ] || rm -rf "${EUCALYPTUS_REPO_DIR}"
@@ -69,6 +73,11 @@ git clone --depth 1 --branch master    https://github.com/eucalyptus/eucaconsole
 git clone --depth 1 --branch devel-4.4 https://github.com/sjones4/eucalyptus-cloud-libs.git
 git clone --depth 1 --branch devel-4.4 https://github.com/sjones4/eucalyptus.git
 git clone --depth 1 --branch master    https://github.com/eucalyptus/eucalyptus-selinux.git
+git clone --depth 1 --branch maint-0.2 https://github.com/eucalyptus/eucalyptus-imaging-worker.git
+git clone --depth 1 --branch maint-1.4 https://github.com/eucalyptus/load-balancer-servo.git
+git clone --depth 1 --branch maint-3   https://github.com/sjones4/eucalyptus-service-image.git
+git clone --depth 1 --branch maint-0.5 https://github.com/eucalyptus/eucalyptus-sosreport-plugins.git
+
 
 # build
 if [ "true" = "${EUCALYPTUS_GLOBAL_DOCKER_PULLS:-true}" ] ; then
@@ -87,6 +96,10 @@ EUCALYPTUS_BUILD_SCRIPTS=(
   "build-eucalyptus-cloud-libs-rpm.sh"
   "build-eucalyptus-rpms.sh"
   "build-eucalyptus-selinux-rpm.sh"
+  "build-eucalyptus-sim-imaging-worker-rpm.sh"
+  "build-eucalyptus-sim-load-balancer-servo-rpm.sh"
+  "build-eucalyptus-service-image-rpm.sh"
+  "build-eucalyptus-sosreport-plugins-rpm.sh"
 )
 for EUCALYPTUS_BUILD_SCRIPT in "${EUCALYPTUS_BUILD_SCRIPTS[@]}" ; do
   docker run \
@@ -96,6 +109,8 @@ for EUCALYPTUS_BUILD_SCRIPT in "${EUCALYPTUS_BUILD_SCRIPTS[@]}" ; do
     --env RPM_BUILD_ID \
     --env RPM_OUT=/eucalyptus/rpms \
     --env RPMBUILD=/eucalyptus/rpmbuild \
+    --device /dev/kvm:/dev/kvm \
+    -v /sys/fs/cgroup:/sys/fs/cgroup:ro \
     -v "$(pwd)":/eucalyptus \
     -w /eucalyptus \
     sjones4/eucalyptus-builder:4.4 \
