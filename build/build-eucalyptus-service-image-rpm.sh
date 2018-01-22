@@ -124,6 +124,16 @@ HERE
 
 cp -v "${RPMBUILD}/RPMS"/*/*.rpm "${EUCALYPTUS_BUILD_REPO_DIR}"
 
+# exclude rpms from mirror if they were otherwise provided
+for RPMFILE in "${EUCALYPTUS_BUILD_REPO_DIR}"/* ; do
+  if [ -f "${RPMFILE}" ] ; then
+cat >> "${EUCALYPTUS_BUILD_REPO_YUM_CONF}" << HERE
+exclude=eucalyptus-* load-balancer-servo*
+HERE
+    break
+  fi
+done
+
 createrepo "${EUCALYPTUS_BUILD_REPO_DIR}"
 
 yumdownloader \
