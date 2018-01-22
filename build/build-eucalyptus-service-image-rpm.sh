@@ -49,10 +49,21 @@ fi
 
 [ "${MODE}" != "setup" ] || exit 0
 
+# detect environment
+DOCKER_COUNT=$(grep -c docker /proc/self/cgroup || true)
+DOCKER="n"
+if [ ${DOCKER_COUNT} -gt 0 ] ; then
+  DOCKER="y"
+fi
+
 #
 if [ -z "${EUCALYPTUS_BUILD_REPO_IP}" ] ; then
-  EUCALYPTUS_BUILD_REPO_IP=$(curl "http://169.254.169.254/latest/meta-data/local-ipv4")
-  [ ! -z "${EUCALYPTUS_BUILD_REPO_IP}" ] || ( echo "Could not detect ip" && exit 1 )
+  if [ "${DOCKER}" == "y" ] ; then
+    EUCALYPTUS_BUILD_REPO_IP=$(hostname -I | sed 's/ //g')
+  else
+    EUCALYPTUS_BUILD_REPO_IP=$(curl "http://169.254.169.254/latest/meta-data/local-ipv4")
+    [ ! -z "${EUCALYPTUS_BUILD_REPO_IP}" ] || ( echo "Could not detect ip" && exit 1 )
+  fi
 fi
 if [ -z "${EUCALYPTUS_BUILD_REPO_DIR}" ] ; then
   EUCALYPTUS_BUILD_REPO_DIR=$(mktemp -td --tmpdir="/var/www/" "eucalyptus-packages.XXXXXXXXXX")
@@ -144,14 +155,26 @@ Alias /eucalyptus-local-packages "${EUCALYPTUS_BUILD_REPO_DIR}"
 
 HERE
 
-systemctl restart httpd
+if [ "${DOCKER}" == "y" ] ; then
+  LANG=C httpd -DFOREGROUND &
+else
+  systemctl restart httpd
+fi
 
 echo "EUCALYPTUS_MIRROR=http://${EUCALYPTUS_BUILD_REPO_IP}/eucalyptus-local-packages/"
 
-systemctl start libvirtd
+if [ "${DOCKER}" == "y" ] ; then
+  virtlogd &
+  libvirtd &
+  sleep 10 # allow for startup
+  virsh net-undefine default || true
+else
+  systemctl start libvirtd
+  chmod 775 "${RPMBUILD}"
+  chgrp qemu "${RPMBUILD}"
+fi
 
-chmod 770 "${RPMBUILD}"
-chgrp qemu "${RPMBUILD}"
+export CPUS=2       # override make defined CPUS=1
 export DISK=2       # override make defined DISK=2
 export MEMORY=2048  # override make defined MEMORY=1024
 export EUCA_SIM_CONFIGURE_OPTS="
@@ -166,7 +189,9 @@ rpmbuild \
     ${RPMBUILD_OPTS} \
     -ba "${RPMBUILD}/SPECS/eucalyptus-service-image.spec"
 
-systemctl stop libvirtd
+if [ "${DOCKER}" != "y" ] ; then
+  systemctl stop libvirtd
+fi
 
 [ ! -f "${EUCALYPTUS_BUILD_REPO_YUM_CONF}" ] || \
   rm -fv "${EUCALYPTUS_BUILD_REPO_YUM_CONF}"

@@ -1,14 +1,13 @@
-<?xml version='1.0' encoding='UTF-8'?>
-<project>
+<?xml version="1.0" encoding="UTF-8"?><project>
   <actions/>
-  <description></description>
+  <description/>
   <keepDependencies>false</keepDependencies>
   <properties>
     <hudson.plugins.buildblocker.BuildBlockerProperty plugin="build-blocker-plugin@1.7.3">
       <useBuildBlocker>false</useBuildBlocker>
       <blockLevel>GLOBAL</blockLevel>
       <scanQueueFor>DISABLED</scanQueueFor>
-      <blockingJobs></blockingJobs>
+      <blockingJobs/>
     </hudson.plugins.buildblocker.BuildBlockerProperty>
     <jenkins.model.BuildDiscarderProperty>
       <strategy class="hudson.tasks.LogRotator">
@@ -20,18 +19,18 @@
     </jenkins.model.BuildDiscarderProperty>
     <com.coravy.hudson.plugins.github.GithubProjectProperty plugin="github@1.28.1">
       <projectUrl>https://github.com/sjones4/eucalyptus-extras/</projectUrl>
-      <displayName></displayName>
+      <displayName/>
     </com.coravy.hudson.plugins.github.GithubProjectProperty>
     <hudson.model.ParametersDefinitionProperty>
       <parameterDefinitions>
         <hudson.model.StringParameterDefinition>
           <name>HOST_COUNT</name>
-          <description></description>
+          <description/>
           <defaultValue>1</defaultValue>
         </hudson.model.StringParameterDefinition>
         <hudson.model.ChoiceParameterDefinition>
           <name>HOST_PARAM_CPU</name>
-          <description></description>
+          <description/>
           <choices class="java.util.Arrays$ArrayList">
             <a class="string-array">
               <string>4</string>
@@ -43,7 +42,7 @@
         </hudson.model.ChoiceParameterDefinition>
         <hudson.model.ChoiceParameterDefinition>
           <name>HOST_PARAM_MEM</name>
-          <description></description>
+          <description/>
           <choices class="java.util.Arrays$ArrayList">
             <a class="string-array">
               <string>8</string>
@@ -68,7 +67,7 @@
       <project>eucalyptus-host-config</project>
       <filter>hosts.txt</filter>
       <target>hosts</target>
-      <excludes></excludes>
+      <excludes/>
       <selector class="hudson.plugins.copyartifact.StatusBuildSelector">
         <stable>true</stable>
       </selector>
@@ -78,54 +77,54 @@
     <hudson.tasks.Shell>
       <command># ssh key setup
 SSH_KEY_DIR=$(mktemp -dt ssh.XXXXXXXX)
-SSH_KEY_FILE=&quot;${SSH_KEY_DIR}/id_rsa&quot;
-SSH_KNOWNHOSTS=&quot;${SSH_KEY_DIR}/known_hosts&quot;
+SSH_KEY_FILE="${SSH_KEY_DIR}/id_rsa"
+SSH_KNOWNHOSTS="${SSH_KEY_DIR}/known_hosts"
 function cleanup {
-  echo &quot;Performing cleanup&quot;
-  [ ! -d &quot;${SSH_KEY_DIR}&quot; ] || rm -rf &quot;${SSH_KEY_DIR}&quot;
+  echo "Performing cleanup"
+  [ ! -d "${SSH_KEY_DIR}" ] || rm -rf "${SSH_KEY_DIR}"
 }
 trap cleanup EXIT
-echo &quot;-----BEGIN RSA PRIVATE KEY-----&quot; &gt; &quot;${SSH_KEY_FILE}&quot;
-echo ${EUCALYPTUS_GLOBAL_SSH_KEY} | sed &quot;s/ /\n/g&quot; &gt;&gt; &quot;${SSH_KEY_FILE}&quot;
-echo &quot;-----END RSA PRIVATE KEY-----&quot; &gt;&gt; &quot;${SSH_KEY_FILE}&quot;
-chmod 600 &quot;${SSH_KEY_FILE}&quot;
-ssh-keygen -y -f &quot;${SSH_KEY_FILE}&quot; &gt; &quot;${SSH_KEY_DIR}/id_rsa.pub&quot;
+echo "-----BEGIN RSA PRIVATE KEY-----" &gt; "${SSH_KEY_FILE}"
+echo ${EUCALYPTUS_GLOBAL_SSH_KEY} | sed "s/ /\n/g" &gt;&gt; "${SSH_KEY_FILE}"
+echo "-----END RSA PRIVATE KEY-----" &gt;&gt; "${SSH_KEY_FILE}"
+chmod 600 "${SSH_KEY_FILE}"
+ssh-keygen -y -f "${SSH_KEY_FILE}" &gt; "${SSH_KEY_DIR}/id_rsa.pub"
 
-if [ &quot;true&quot; = &quot;${EUCALYPTUS_GLOBAL_DOCKER_PULLS:-true}&quot; ] ; then
-  echo &quot;Pulling latest calyptos docker image&quot;
+if [ "true" = "${EUCALYPTUS_GLOBAL_DOCKER_PULLS:-true}" ] ; then
+  echo "Pulling latest calyptos docker image"
   docker pull sjones4/calyptos:4.4
 fi
 
-echo &quot;Calculating param string&quot;
-HOST_PARAMS=&quot;CPU&quot;
+echo "Calculating param string"
+HOST_PARAMS="CPU"
 while [ ${HOST_PARAM_CPU} -ge 4 ] ; do
-  HOST_PARAMS=&quot;${HOST_PARAMS}X&quot;
+  HOST_PARAMS="${HOST_PARAMS}X"
   HOST_PARAM_CPU=$((HOST_PARAM_CPU / 2))
 done
-HOST_PARAMS=&quot;${HOST_PARAMS}:DISKX:MEM&quot;
+HOST_PARAMS="${HOST_PARAMS}:DISKX:MEM"
 while [ ${HOST_PARAM_MEM} -ge 8 ] ; do
-  HOST_PARAMS=&quot;${HOST_PARAMS}X&quot;
+  HOST_PARAMS="${HOST_PARAMS}X"
   HOST_PARAM_MEM=$((HOST_PARAM_MEM / 2))
 done
-HOST_PARAMS=&quot;${HOST_PARAMS}:USEX&quot;
-echo &quot;Host params ${HOST_PARAMS}&quot;
+HOST_PARAMS="${HOST_PARAMS}:USEX"
+echo "Host params ${HOST_PARAMS}"
 
-echo &quot;Host status&quot;
+echo "Host status"
 docker run --rm \
-  -v &quot;${SSH_KEY_DIR}&quot;:/root/.ssh \
+  -v "${SSH_KEY_DIR}":/root/.ssh \
   -v $(pwd)/hosts:/calyptos/hosts \
   -w /calyptos/hosts \
   sjones4/calyptos:4.4 host-status.sh
 
-echo &quot;Reserving ${HOST_COUNT} host(s)&quot;
+echo "Reserving ${HOST_COUNT} host(s)"
 docker run --rm \
-  -v &quot;${SSH_KEY_DIR}&quot;:/root/.ssh \
+  -v "${SSH_KEY_DIR}":/root/.ssh \
   -v $(pwd)/hosts:/calyptos/hosts \
   -w /calyptos/hosts \
   sjones4/calyptos:4.4 host-reserve.sh \
   ${BUILD_USER_ID}-${BUILD_ID} ${BUILD_USER_EMAIL} ${HOST_COUNT} ${HOST_PARAMS} \
   &gt; hosts/reserved_hosts.txt &amp;&amp; \
-  echo &quot;${BUILD_USER_ID}-${BUILD_ID}&quot; &gt; hosts/reservation_id.txt
+  echo "${BUILD_USER_ID}-${BUILD_ID}" &gt; hosts/reservation_id.txt
 
 
 

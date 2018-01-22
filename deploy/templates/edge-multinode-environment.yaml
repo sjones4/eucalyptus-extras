@@ -12,21 +12,21 @@ default_attributes:
             objectstorage:
                 providerclient: walrus
                 walrusbackend: [ETP_HOST0_IP]  # ETP_HOST0_NAME
-            user-facing: [ETP_HOST0_IP]  # ETP_HOST0_NAME
+            user-facing: [ETP_HOST1_IP]  # ETP_HOST1_NAME
             clusters:
                 one:
                     storage-backend: das
                     das-device: ETP_DAS_DEVICE
-                    cc: [ETP_HOST0_IP]  # ETP_HOST0_NAME
-                    sc: [ETP_HOST0_IP]  # ETP_HOST0_NAME
-                    nodes: [ETP_HOST1_IP ETP_HOST2_IP]  # ETP_HOST1_NAME ETP_HOST2_NAME
+                    cc: [ETP_HOST1_IP]  # ETP_HOST1_NAME
+                    sc: [ETP_HOST1_IP]  # ETP_HOST1_NAME
+                    nodes: [ETP_HOST2_IP, ETP_HOST3_IP]  # ETP_HOST2_NAME ETP_HOST3_NAME
         cc:
             <<: *alias_eucalyptus_cc
         nc:
             <<: *alias_eucalyptus_nc
         network:
             mode: EDGE
-            InstanceDnsServers: [ETP_HOST0_IP]  # ETP_HOST0_NAME
+            InstanceDnsServers: [ETP_HOST1_IP]  # ETP_HOST1_NAME
             PublicIps: [ETP_PUBLIC_IP_RANGE]
             clusters:
                 - Name: one

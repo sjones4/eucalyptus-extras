@@ -1,14 +1,13 @@
-<?xml version='1.0' encoding='UTF-8'?>
-<project>
+<?xml version="1.0" encoding="UTF-8"?><project>
   <actions/>
-  <description></description>
+  <description/>
   <keepDependencies>false</keepDependencies>
   <properties>
     <hudson.plugins.buildblocker.BuildBlockerProperty plugin="build-blocker-plugin@1.7.3">
       <useBuildBlocker>false</useBuildBlocker>
       <blockLevel>GLOBAL</blockLevel>
       <scanQueueFor>DISABLED</scanQueueFor>
-      <blockingJobs></blockingJobs>
+      <blockingJobs/>
     </hudson.plugins.buildblocker.BuildBlockerProperty>
     <jenkins.model.BuildDiscarderProperty>
       <strategy class="hudson.tasks.LogRotator">
@@ -33,7 +32,7 @@ alias-eucalyptus: &amp;alias_eucalyptus
     selinux-repo: https://github.com/eucalyptus/eucalyptus-selinux
     eucalyptus-repo: ETP_EUCALYPTUS_YUM_REPO
     euca2ools-repo: ETP_EUCA2OOLS_YUM_REPO
-    yum-options: &apos;--nogpg&apos;
+    yum-options: '--nogpg'
     install-type: ETP_INSTALL_TYPE
     dns-domain: ETP_EUCALYPTUS_DNS_DOMAIN
 alias-eucalyptus-cloud-properties: &amp;alias_eucalyptus_cloud_properties
@@ -50,7 +49,7 @@ alias-eucalyptus-ceph-config: &amp;alias_eucalyptus_ceph_config
     global:
         cluster network: ETP_SUBNET/16
         fsid: FSID_GOES_HERE
-        max open files: &apos;131072&apos;
+        max open files: '131072'
         mon host: MON_HOSTNAMES_GO_HERE
         mon initial members: MON_INITIAL_MEMBER_IPS_GO_HERE
         public network: ETP_SUBNET/16
@@ -70,7 +69,7 @@ alias-eucalyptus-ceph-config: &amp;alias_eucalyptus_ceph_config
   <concurrentBuild>false</concurrentBuild>
   <builders>
     <hudson.tasks.Shell>
-      <command>echo &quot;${TEMPLATE_ALIASES}&quot; &gt; template_aliases.yaml</command>
+      <command>echo "${TEMPLATE_ALIASES}" &gt; template_aliases.yaml</command>
     </hudson.tasks.Shell>
   </builders>
   <publishers>

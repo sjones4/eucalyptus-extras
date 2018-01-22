@@ -2,8 +2,10 @@
 # Build eucalyptus sosreport plugins rpm on CentOS/RHEL 7
 
 # config
+MODE="${1:-build}" # setup build build-only
+YUM_OPTS="${YUM_OPTS:--y}"
 EUCA_SOS_BRANCH="${EUCA_SOS_BRANCH:-maint-0.5}"
-EUCA_SOS_REPO="${EUCA_SOS_REPO:-https://github.com/eucalyptus/eucalyptus-sosreport-plugins}"
+EUCA_SOS_REPO="${EUCA_SOS_REPO:-https://github.com/eucalyptus/eucalyptus-sosreport-plugins.git}"
 REQUIRE=(
     "git"
     "python2-devel"
@@ -13,20 +15,24 @@ REQUIRE=(
     "yum"
 )
 set -ex
-RPMBUILD=${RPMBUILD:-$(mktemp -td "rpmbuild.XXXXXXXXXX")}
 
 # dependencies
-yum erase -y 'eucalyptus-*'
+if [ "${MODE}" != "build-only" ] ; then
+  yum ${YUM_OPTS} erase 'eucalyptus-*'
 
-yum -y install "${REQUIRE[@]}"
+  yum ${YUM_OPTS} install "${REQUIRE[@]}"
+fi
 
-yum -y groupinstall development
+[ "${MODE}" != "setup" ] || exit 0
 
 # clone repositories
-[ ! -d "eucalyptus-sosreport-plugins" ] || rm -rf "eucalyptus-sosreport-plugins"
-git clone --depth 1 --branch "${EUCA_SOS_BRANCH}" "${EUCA_SOS_REPO}"
+if [ "${MODE}" != "build-only" ] ; then
+  [ ! -d "eucalyptus-sosreport-plugins" ] || rm -rf "eucalyptus-sosreport-plugins"
+  git clone --depth 1 --branch "${EUCA_SOS_BRANCH}" "${EUCA_SOS_REPO}"
+fi
 
 # setup rpmbuild
+RPMBUILD=${RPMBUILD:-$(mktemp -td "rpmbuild.XXXXXXXXXX")}
 mkdir -p "${RPMBUILD}/SPECS"
 mkdir -p "${RPMBUILD}/SOURCES"
 
@@ -45,12 +51,16 @@ tar -cvJf "${RPMBUILD}/SOURCES/eucalyptus-sosreport-plugins.tar.xz" \
     "eucalyptus-sosreport-plugins"
 
 # build rpms
+RPMBUILD_OPTS="${RPMBUILD_OPTS}"
+RPM_DIST="${RPM_DIST:-el7}"
 RPM_VERSION="${RPM_VERSION:-$(date -u +%Y%m%d%H%M)}"
+RPM_BUILD_ID="${RPM_BUILD_ID:-${RPM_VERSION}git${EUCA_SOS_GIT_SHORT}}"
 
 rpmbuild \
     --define "_topdir ${RPMBUILD}" \
     --define "tarball_basedir eucalyptus-sosreport-plugins" \
-    --define "dist .${RPM_VERSION}git${EUCA_SOS_GIT_SHORT}.el7" \
+    --define "dist .${RPM_BUILD_ID}.${RPM_DIST}" \
+    ${RPMBUILD_OPTS} \
     -ba "${RPMBUILD}/SPECS/eucalyptus-sos-plugins.spec"
 
 find "${RPMBUILD}/SRPMS/"
