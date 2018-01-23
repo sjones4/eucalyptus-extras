@@ -78,9 +78,20 @@
           <description/>
           <defaultValue>devel-4.4</defaultValue>
         </hudson.model.StringParameterDefinition>
+        <hudson.model.ChoiceParameterDefinition>
+          <name>EUCALYPTUS_YUM_REPO_VERSION</name>
+          <description>Specify the default yum repository by version. Will use EUCALYPTUS_GLOBAL_EUCALYPTUS_YUM_REPO for 4.4.2 EUCALYPTUS_GLOBAL_EUCALYPTUS_YUM_REPO_DEV for 4.4.x</description>
+          <choices class="java.util.Arrays$ArrayList">
+            <a class="string-array">
+              <string>4.4.x</string>
+              <string>4.4.2</string>
+              <string>EUCALYPTUS_YUM_REPO</string>
+            </a>
+          </choices>
+        </hudson.model.ChoiceParameterDefinition>
         <hudson.model.StringParameterDefinition>
           <name>EUCALYPTUS_YUM_REPO</name>
-          <description>Defaults to EUCALYPTUS_GLOBAL_EUCALYPTUS_YUM_REPO if set, else
+          <description>Defaults to global setting for version if any, else
 http://downloads.eucalyptus.com/software/eucalyptus/4.4/rhel/7/x86_64/</description>
           <defaultValue/>
         </hudson.model.StringParameterDefinition>
@@ -315,6 +326,15 @@ for HOST in $(&lt;env/reserved_hosts.txt); do
 done
 find reservations -type f
 
+# pick eucalyptus yum repository for specified version or custom
+if [ "${EUCALYPTUS_YUM_REPO_VERSION}" == "4.4.x" ] ; then
+  ETP_EUCALYPTUS_YUM_REPO="${EUCALYPTUS_GLOBAL_EUCALYPTUS_YUM_REPO_DEV:-${EUCALYPTUS_GLOBAL_EUCALYPTUS_YUM_REPO}}"
+elif [ "${EUCALYPTUS_YUM_REPO_VERSION}" == "4.4.2" ] ; then
+  ETP_EUCALYPTUS_YUM_REPO="${EUCALYPTUS_GLOBAL_EUCALYPTUS_YUM_REPO}"
+else
+  ETP_EUCALYPTUS_YUM_REPO="${EUCALYPTUS_YUM_REPO:-${EUCALYPTUS_GLOBAL_EUCALYPTUS_YUM_REPO_DEV:-${EUCALYPTUS_GLOBAL_EUCALYPTUS_YUM_REPO}}}"
+fi
+
 ENV_TEMPLATE_VARS_FILE="env/template_variables.txt"
 echo "Building environment template variables file ${ENV_TEMPLATE_VARS_FILE}"
 echo "# Environment template variables for ${BUILD_ID}" &gt;&gt; "${ENV_TEMPLATE_VARS_FILE}"
@@ -335,7 +355,7 @@ echo "ETP_EUCALYPTUS_CLOUD_LIBS_GIT_REPO=${CLOUD_LIBS_GIT_REPO}" &gt;&gt; "${ENV
 echo "ETP_EUCALYPTUS_CLOUD_OPTS=${EUCALYPTUS_GLOBAL_CLOUD_OPTS} ${CLOUD_OPTS}" &gt;&gt; "${ENV_TEMPLATE_VARS_FILE}"
 echo "ETP_EUCALYPTUS_DNS_DOMAIN=${EUCALYPTUS_DNS_DOMAIN:-${EUCALYPTUS_GLOBAL_EUCALYPTUS_DNS_DOMAIN:-ETP_HOST0_IP.nip.io}}" &gt;&gt; "${ENV_TEMPLATE_VARS_FILE}"
 echo "ETP_EUCALYPTUS_GIT_REPO=${EUCALYPTUS_GIT_REPO}" &gt;&gt; "${ENV_TEMPLATE_VARS_FILE}"
-echo "ETP_EUCALYPTUS_YUM_REPO=${EUCALYPTUS_YUM_REPO:-${EUCALYPTUS_GLOBAL_EUCALYPTUS_YUM_REPO}}" &gt;&gt; "${ENV_TEMPLATE_VARS_FILE}"
+echo "ETP_EUCALYPTUS_YUM_REPO=${ETP_EUCALYPTUS_YUM_REPO}" &gt;&gt; "${ENV_TEMPLATE_VARS_FILE}"
 echo "ETP_GATEWAY=${NET_GATEWAY:-${EUCALYPTUS_GLOBAL_NET_GATEWAY}}" &gt;&gt; "${ENV_TEMPLATE_VARS_FILE}"
 echo "ETP_INSTALL_TYPE=${INSTALL_TYPE}" &gt;&gt; "${ENV_TEMPLATE_VARS_FILE}"
 echo "ETP_NETMASK=${NET_NETMASK:-${EUCALYPTUS_GLOBAL_NET_NETMASK}}" &gt;&gt; "${ENV_TEMPLATE_VARS_FILE}"
