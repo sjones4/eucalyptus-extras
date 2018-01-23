@@ -33,6 +33,7 @@
               <string>cloud-in-a-box-with-console</string>
               <string>edge-ceph</string>
               <string>edge</string>
+              <string>edge-multicluster-multinode</string>
               <string>edge-multinode</string>
               <string>CUSTOM_ENV_TEMPLATE</string>
             </a>
