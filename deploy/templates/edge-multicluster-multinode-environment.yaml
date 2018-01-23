@@ -1,0 +1,51 @@
+name: edge-multicluster-multinode
+description: 'Eucalyptus cloud with edge networking, das storage, 2 clusters'
+template_aliases: ETP_TEMPLATE_ALIASES
+default_attributes:
+    eucalyptus:
+        <<: *alias_eucalyptus
+        cloud-opts: 'ETP_EUCALYPTUS_CLOUD_OPTS'
+        cloud-properties:
+            <<: *alias_eucalyptus_cloud_properties
+        topology:
+            clc: [ETP_HOST0_IP]  # ETP_HOST0_NAME
+            objectstorage:
+                providerclient: walrus
+                walrusbackend: [ETP_HOST0_IP]  # ETP_HOST0_NAME
+            user-facing: [ETP_HOST1_IP, ETP_HOST2_IP]  # ETP_HOST1_NAME ETP_HOST2_NAME
+            clusters:
+                one:
+                    storage-backend: das
+                    das-device: ETP_DAS_DEVICE
+                    cc: [ETP_HOST1_IP]  # ETP_HOST1_NAME
+                    sc: [ETP_HOST1_IP]  # ETP_HOST1_NAME
+                    nodes: [ETP_HOST3_IP, ETP_HOST4_IP]  # ETP_HOST3_NAME ETP_HOST4_NAME
+                two:
+                    storage-backend: das
+                    das-device: ETP_DAS_DEVICE
+                    cc: [ETP_HOST2_IP]  # ETP_HOST2_NAME
+                    sc: [ETP_HOST2_IP]  # ETP_HOST2_NAME
+                    nodes: [ETP_HOST5_IP, ETP_HOST6_IP]  # ETP_HOST5_NAME ETP_HOST6_NAME
+        cc:
+            <<: *alias_eucalyptus_cc
+        nc:
+            <<: *alias_eucalyptus_nc
+        network:
+            mode: EDGE
+            InstanceDnsServers: [ETP_HOST1_IP, ETP_HOST2_IP]  # ETP_HOST1_NAME ETP_HOST2_NAME
+            PublicIps: [ETP_PUBLIC_IP_RANGE]
+            clusters:
+                - Name: one
+                  PrivateIps: [ETP_PRIVATE_IP_RANGE]
+                  Subnet:
+                      Subnet: ETP_SUBNET
+                      Name: ETP_SUBNET
+                      Netmask: ETP_NETMASK
+                      Gateway: ETP_GATEWAY
+            bridge-interface: br0
+            public-interface: br0
+            private-interface: br0
+            bridged-nic: ETP_NODE_NIC
+            dns-server: ETP_DNS_SERVER
+override_attributes: {}
+cookbook_versions: {}

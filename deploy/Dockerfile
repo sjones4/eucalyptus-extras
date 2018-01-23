@@ -17,7 +17,7 @@ RUN yum -y install epel-release \
  && pip uninstall -y setuptools pip \
  && /opt/chefdk/embedded/bin/gem uninstall -a dep_selector \
  && /opt/chefdk/embedded/bin/gem uninstall -a dep-selector-libgecode \
- && yum -y erase gcc make patch python-devel python-setuptools openssl-devel libyaml-devel *-headers \
+ && yum -y erase gcc keyutils-libs-develkrb5-devel libcom_err-devel libselinux-devel libsepol-devel libverto-devel libyaml-devel make openssl-devel patch python-devel python-setuptools zlib-devel *-headers \
  && yum -y clean all
 
 ENV PATH=/calyptos/bin:$PATH
