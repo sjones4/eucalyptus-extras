@@ -37,8 +37,8 @@ default_attributes:
                       Netmask: ETP_NETMASK
                       Gateway: ETP_GATEWAY
             bridge-interface: br0
-            public-interface: br0
-            private-interface: br0
+            public-interface: ETP_NODE_NIC
+            private-interface: ETP_NODE_NIC
             bridged-nic: ETP_NODE_NIC
             dns-server: ETP_DNS_SERVER
 override_attributes: {}

@@ -34,17 +34,14 @@ default_attributes:
             mode: EDGE
             InstanceDnsServers: [ETP_HOST1_IP, ETP_HOST2_IP]  # ETP_HOST1_NAME ETP_HOST2_NAME
             PublicIps: [ETP_PUBLIC_IP_RANGE]
-            clusters:
-                - Name: one
-                  PrivateIps: [ETP_PRIVATE_IP_RANGE]
-                  Subnet:
-                      Subnet: ETP_SUBNET
-                      Name: ETP_SUBNET
-                      Netmask: ETP_NETMASK
-                      Gateway: ETP_GATEWAY
+            PrivateIps: [ETP_PRIVATE_IP_RANGE]
+            subnets:
+                - Subnet: ETP_SUBNET
+                  Netmask: ETP_NETMASK
+                  Gateway: ETP_GATEWAY
             bridge-interface: br0
-            public-interface: br0
-            private-interface: br0
+            public-interface: ETP_NODE_NIC
+            private-interface: ETP_NODE_NIC
             bridged-nic: ETP_NODE_NIC
             dns-server: ETP_DNS_SERVER
 override_attributes: {}

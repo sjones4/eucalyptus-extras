@@ -1,7 +1,7 @@
 FROM centos:7
 
 RUN yum -y install epel-release \
- && yum -y install gcc make patch git python-devel python2-pip libffi-devel openssl-devel libyaml-devel \
+ && yum -y install gcc git libffi-devel libyaml-devel make openssl-devel patch python2-pip python-devel \
  && pip install --upgrade pip setuptools \
  && easy_install pbr \
  && yum -y install https://packages.chef.io/files/stable/chefdk/0.12.0/el/7/chefdk-0.12.0-1.el7.x86_64.rpm \
