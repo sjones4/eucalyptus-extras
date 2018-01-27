@@ -9,7 +9,7 @@ RUN yum -y install epel-release \
  && cd adminapi \
  && python setup.py install \
  && cd /root \
- && git clone --depth 1 https://github.com/eucalyptus/nephoria.git \
+ && git clone --depth 1 --branch devel-4.4 https://github.com/sjones4/nephoria.git \
  && cd nephoria \
  && python setup.py install \
  && cd /root \
