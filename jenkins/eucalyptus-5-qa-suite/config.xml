@@ -58,6 +58,8 @@
               <string>S3Full</string>
               <string>S3Short</string>
               <string>Services</string>
+              <string>SQSFull</string>
+              <string>SQSShort</string>
             </a>
           </choices>
         </hudson.model.ChoiceParameterDefinition>
@@ -85,7 +87,7 @@ fi
 
 # run
 if [ "true" = "${EUCALYPTUS_GLOBAL_DOCKER_PULLS:-true}" ] ; then
-  docker pull sjones4/n4j:4.4
+  docker pull sjones4/n4j:5.0
 fi
 docker run \
   ${EUCALYPTUS_GLOBAL_DOCKER_RUN_OPTS} \
@@ -93,7 +95,7 @@ docker run \
   --env N4J_OPTS \
   -v "${WORKSPACE}/cache":/n4j/cache \
   -v "${WORKSPACE}/results":/n4j/results \
-  sjones4/n4j:4.4 ./n4j.sh ${CLC_IP} "com/eucalyptus/tests/suites/${TEST_SUITE}Suite"</command>
+  sjones4/n4j:5.0 ./n4j.sh ${CLC_IP} "com/eucalyptus/tests/suites/${TEST_SUITE}Suite"</command>
     </hudson.tasks.Shell>
   </builders>
   <publishers>
