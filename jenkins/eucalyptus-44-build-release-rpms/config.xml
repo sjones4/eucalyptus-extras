@@ -17,6 +17,10 @@
         <artifactNumToKeep>-1</artifactNumToKeep>
       </strategy>
     </jenkins.model.BuildDiscarderProperty>
+    <com.sonyericsson.rebuild.RebuildSettings plugin="rebuild@1.25">
+      <autoRebuild>false</autoRebuild>
+      <rebuildDisabled>false</rebuildDisabled>
+    </com.sonyericsson.rebuild.RebuildSettings>
     <hudson.model.ParametersDefinitionProperty>
       <parameterDefinitions>
         <hudson.model.StringParameterDefinition>
@@ -68,15 +72,15 @@ done
 mkdir -vm 777 rpms
 
 # clone repositories
-git clone --depth 1 --branch devel-4.4 https://github.com/sjones4/eucaconsole.git
-git clone --depth 1 --branch master    https://github.com/eucalyptus/eucaconsole-selinux.git
-git clone --depth 1 --branch devel-4.4 https://github.com/sjones4/eucalyptus-cloud-libs.git
-git clone --depth 1 --branch devel-4.4 https://github.com/sjones4/eucalyptus.git
-git clone --depth 1 --branch master    https://github.com/eucalyptus/eucalyptus-selinux.git
-git clone --depth 1 --branch maint-0.2 https://github.com/eucalyptus/eucalyptus-imaging-worker.git
-git clone --depth 1 --branch maint-1.4 https://github.com/eucalyptus/load-balancer-servo.git
-git clone --depth 1 --branch maint-3   https://github.com/sjones4/eucalyptus-service-image.git
-git clone --depth 1 --branch maint-0.5 https://github.com/eucalyptus/eucalyptus-sosreport-plugins.git
+git clone --depth 1 --branch maint-4.4 https://github.com/Corymbia/eucaconsole.git
+git clone --depth 1 --branch master    https://github.com/Corymbia/eucaconsole-selinux.git
+git clone --depth 1 --branch maint-4.4 https://github.com/Corymbia/eucalyptus-cloud-libs.git
+git clone --depth 1 --branch maint-4.4 https://github.com/Corymbia/eucalyptus.git
+git clone --depth 1 --branch master    https://github.com/Corymbia/eucalyptus-selinux.git
+git clone --depth 1 --branch master    https://github.com/Corymbia/eucalyptus-imaging-worker.git
+git clone --depth 1 --branch master    https://github.com/Corymbia/load-balancer-servo.git
+git clone --depth 1 --branch master    https://github.com/Corymbia/eucalyptus-service-image.git
+git clone --depth 1 --branch master    https://github.com/Corymbia/eucalyptus-sosreport-plugins.git
 
 
 # build
@@ -156,8 +160,7 @@ docker run \
     </hudson.tasks.ArtifactArchiver>
   </publishers>
   <buildWrappers>
-    <hudson.plugins.timestamper.TimestamperBuildWrapper plugin="timestamper@1.8.9"/>
-    <EnvInjectPasswordWrapper plugin="envinject@2.1.5">
+    <EnvInjectPasswordWrapper plugin="envinject@2.1.3">
       <injectGlobalPasswords>true</injectGlobalPasswords>
       <maskPasswordParameters>true</maskPasswordParameters>
       <passwordEntries/>

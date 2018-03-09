@@ -17,10 +17,14 @@
         <artifactNumToKeep>-1</artifactNumToKeep>
       </strategy>
     </jenkins.model.BuildDiscarderProperty>
-    <com.coravy.hudson.plugins.github.GithubProjectProperty plugin="github@1.28.1">
+    <com.coravy.hudson.plugins.github.GithubProjectProperty plugin="github@1.28.0">
       <projectUrl>https://github.com/eucalyptus/calyptos/</projectUrl>
       <displayName/>
     </com.coravy.hudson.plugins.github.GithubProjectProperty>
+    <com.sonyericsson.rebuild.RebuildSettings plugin="rebuild@1.25">
+      <autoRebuild>false</autoRebuild>
+      <rebuildDisabled>false</rebuildDisabled>
+    </com.sonyericsson.rebuild.RebuildSettings>
     <hudson.model.ParametersDefinitionProperty>
       <parameterDefinitions>
         <hudson.model.ChoiceParameterDefinition>
@@ -62,22 +66,22 @@
         <hudson.model.StringParameterDefinition>
           <name>EUCALYPTUS_GIT_REPO</name>
           <description/>
-          <defaultValue>https://github.com/sjones4/eucalyptus.git</defaultValue>
+          <defaultValue>https://github.com/Corymbia/eucalyptus.git</defaultValue>
         </hudson.model.StringParameterDefinition>
         <hudson.model.StringParameterDefinition>
           <name>EUCALYPTUS_GIT_BRANCH</name>
           <description/>
-          <defaultValue>devel-4.4</defaultValue>
+          <defaultValue>maint-4.4</defaultValue>
         </hudson.model.StringParameterDefinition>
         <hudson.model.StringParameterDefinition>
           <name>CLOUD_LIBS_GIT_REPO</name>
           <description/>
-          <defaultValue>https://github.com/sjones4/eucalyptus-cloud-libs.git</defaultValue>
+          <defaultValue>https://github.com/Corymbia/eucalyptus-cloud-libs.git</defaultValue>
         </hudson.model.StringParameterDefinition>
         <hudson.model.StringParameterDefinition>
           <name>CLOUD_LIBS_GIT_BRANCH</name>
           <description/>
-          <defaultValue>devel-4.4</defaultValue>
+          <defaultValue>maint-4.4</defaultValue>
         </hudson.model.StringParameterDefinition>
         <hudson.model.ChoiceParameterDefinition>
           <name>EUCALYPTUS_YUM_REPO_VERSION</name>
@@ -528,8 +532,10 @@ fi</command>
     </hudson.tasks.ArtifactArchiver>
   </publishers>
   <buildWrappers>
-    <hudson.plugins.timestamper.TimestamperBuildWrapper plugin="timestamper@1.8.9"/>
-    <EnvInjectPasswordWrapper plugin="envinject@2.1.5">
+    <hudson.plugins.ansicolor.AnsiColorBuildWrapper plugin="ansicolor@0.5.2">
+      <colorMapName>xterm</colorMapName>
+    </hudson.plugins.ansicolor.AnsiColorBuildWrapper>
+    <EnvInjectPasswordWrapper plugin="envinject@2.1.3">
       <injectGlobalPasswords>true</injectGlobalPasswords>
       <maskPasswordParameters>true</maskPasswordParameters>
       <passwordEntries/>
