@@ -70,6 +70,7 @@ cp -fv "$(pwd)/eucaconsole/rpm/eucaconsole.spec" \
 
 # generate source tars, get commit info
 pushd "eucaconsole"
+EUCA_CON_VERSION=$(<VERSION)
 EUCA_CON_GIT_SHORT=$(git rev-parse --short HEAD)
 popd
 tar -cvJf "${RPMBUILD}/SOURCES/eucaconsole.tar.xz" \
@@ -90,6 +91,7 @@ RPM_BUILD_ID="${RPM_BUILD_ID:-${RPM_VERSION}git${EUCA_CON_GIT_SHORT}}"
 rpmbuild \
     --define "_topdir ${RPMBUILD}" \
     --define 'tarball_basedir eucaconsole' \
+    --define "version ${EUCA_CON_VERSION}" \
     --define "dist ${RPM_DIST}" \
     --define "build_id ${RPM_BUILD_ID}." \
     ${RPMBUILD_OPTS} \

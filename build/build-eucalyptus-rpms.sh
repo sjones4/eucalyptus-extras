@@ -85,6 +85,7 @@ fi
 
 # generate source tars, get commit info
 pushd "${EUCA_PATH}"
+EUCA_VERSION=$(<VERSION)
 EUCA_GIT_SHORT=$(git rev-parse --short HEAD)
 autoconf
 popd
@@ -104,6 +105,7 @@ RPM_BUILD_ID="${RPM_BUILD_ID:-${RPM_VERSION}git${EUCA_GIT_SHORT}}"
 rpmbuild \
     --define "_topdir ${RPMBUILD}" \
     --define 'tarball_basedir eucalyptus' \
+    --define "version ${EUCA_VERSION}" \
     --define "dist ${RPM_DIST}" \
     --define "build_id ${RPM_BUILD_ID}." \
     ${RPMBUILD_OPTS} \
