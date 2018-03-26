@@ -1,0 +1,64 @@
+---
+name: edge-ceph-cluster2x1
+description: 'Eucalyptus cloud with edge networking and ceph, 2 clusters'
+template_aliases: ETP_TEMPLATE_ALIASES
+default_attributes:
+    eucalyptus:
+        <<: *alias_eucalyptus
+        cloud-opts: 'ETP_EUCALYPTUS_CLOUD_OPTS'
+        cloud-properties:
+            <<: *alias_eucalyptus_cloud_properties
+            one.storage.cephconfigfile: /etc/ceph/ceph.conf
+            one.storage.cephkeyringfile:
+                /etc/ceph/ceph.client.eucalyptus.keyring
+            one.storage.cephsnapshotpools: ETP_CEPH_POOL_SNAPSHOTS
+            one.storage.cephuser: eucalyptus
+            one.storage.cephvolumepools: ETP_CEPH_POOL_VOLUMES
+        ceph-config:
+            <<: *alias_eucalyptus_ceph_config
+        ceph-keyrings:
+            rbd-user:
+                key: ETP_CEPH_RBD_KEY
+                keyring: /etc/ceph/ceph.client.eucalyptus.keyring
+                name: client.eucalyptus
+        topology:
+            clc: [ETP_HOST0_IP]  # ETP_HOST0_NAME
+            objectstorage:
+                providerclient: ceph-rgw
+                access-key: ETP_CEPH_S3_ACCESS_KEY
+                secret-key: ETP_CEPH_S3_SECRET_KEY
+                ceph-radosgw:
+                    endpoint: ETP_CEPH_S3_ENDPOINT
+            user-facing: [ETP_HOST1_IP, ETP_HOST2_IP]  # ETP_HOST1_NAME ETP_HOST2_NAME
+            clusters:
+                one:
+                    storage-backend: ceph-rbd
+                    cc: [ETP_HOST1_IP]  # ETP_HOST1_NAME
+                    sc: [ETP_HOST1_IP]  # ETP_HOST1_NAME
+                    nodes: [ETP_HOST3_IP]  # ETP_HOST3_NAME
+                two:
+                    storage-backend: ceph-rbd
+                    cc: [ETP_HOST2_IP]  # ETP_HOST2_NAME
+                    sc: [ETP_HOST2_IP]  # ETP_HOST2_NAME
+                    nodes: [ETP_HOST4_IP]  # ETP_HOST4_NAME
+        cc:
+            <<: *alias_eucalyptus_cc
+        nc:
+            <<: *alias_eucalyptus_nc
+        network:
+            mode: EDGE
+            InstanceDnsServers: [ETP_HOST1_IP, ETP_HOST2_IP]  # ETP_HOST1_NAME ETP_HOST2_NAME
+            PublicIps: [ETP_PUBLIC_IP_RANGE]
+            PrivateIps: [ETP_PRIVATE_IP_RANGE]
+            subnets:
+                - Subnet: ETP_SUBNET
+                  Netmask: ETP_NETMASK
+                  Gateway: ETP_GATEWAY
+            bridge-interface: br0
+            public-interface: ETP_NODE_NIC
+            private-interface: ETP_NODE_NIC
+            bridged-nic: ETP_NODE_NIC
+            dns-server: ETP_DNS_SERVER
+override_attributes: {}
+cookbook_versions: {}
+

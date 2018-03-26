@@ -1,5 +1,5 @@
-name: edge-multinode
-description: 'Eucalyptus cloud with edge networking, das storage, 2 nodes'
+name: edge-cluster2x1
+description: 'Eucalyptus cloud with edge networking, 2 clusters'
 template_aliases: ETP_TEMPLATE_ALIASES
 default_attributes:
     eucalyptus:
@@ -12,21 +12,27 @@ default_attributes:
             objectstorage:
                 providerclient: walrus
                 walrusbackend: [ETP_HOST0_IP]  # ETP_HOST0_NAME
-            user-facing: [ETP_HOST1_IP]  # ETP_HOST1_NAME
+            user-facing: [ETP_HOST1_IP, ETP_HOST2_IP]  # ETP_HOST1_NAME ETP_HOST2_NAME
             clusters:
                 one:
                     storage-backend: das
                     das-device: ETP_DAS_DEVICE
                     cc: [ETP_HOST1_IP]  # ETP_HOST1_NAME
                     sc: [ETP_HOST1_IP]  # ETP_HOST1_NAME
-                    nodes: [ETP_HOST2_IP, ETP_HOST3_IP]  # ETP_HOST2_NAME ETP_HOST3_NAME
+                    nodes: [ETP_HOST3_IP]  # ETP_HOST3_NAME
+                two:
+                    storage-backend: das
+                    das-device: ETP_DAS_DEVICE
+                    cc: [ETP_HOST2_IP]  # ETP_HOST2_NAME
+                    sc: [ETP_HOST2_IP]  # ETP_HOST2_NAME
+                    nodes: [ETP_HOST4_IP]  # ETP_HOST4_NAME
         cc:
             <<: *alias_eucalyptus_cc
         nc:
             <<: *alias_eucalyptus_nc
         network:
             mode: EDGE
-            InstanceDnsServers: [ETP_HOST1_IP]  # ETP_HOST1_NAME
+            InstanceDnsServers: [ETP_HOST1_IP, ETP_HOST2_IP]  # ETP_HOST1_NAME ETP_HOST2_NAME
             PublicIps: [ETP_PUBLIC_IP_RANGE]
             PrivateIps: [ETP_PRIVATE_IP_RANGE]
             subnets:
