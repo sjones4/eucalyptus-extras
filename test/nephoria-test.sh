@@ -20,7 +20,7 @@ NEPHORIA_TESTCASES=(
   "ec2.ebs.legacy_ebs_test_suite"
   "ec2.images.import_instance --no-https --image-url ${IMAGE_BASE_URL}/precise-server-cloudimg-amd64-disk1.img"
   "ec2.images.import_instance --no-https --imageformat vmdk --image-url ${IMAGE_BASE_URL}/ubuntu_trusty.vmdk"
-  "ec2.instances.migration --image-url ${IMAGE_BASE_URL}/precise-server-cloudimg-amd64-disk1.img"
+  "admintests.instance_migration"
 )
 
 # setup
