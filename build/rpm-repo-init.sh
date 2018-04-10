@@ -6,7 +6,7 @@
 #   REPO_EXCLUDES=eucalyptus-release ./rpm-repo-init.sh
 
 # setup
-EUCALYPTUS_MIRROR="${EUCALYPTUS_MIRROR:-http://downloads.eucalyptus.com/software/eucalyptus/4.4/rhel/7/x86_64/}"
+EUCALYPTUS_MIRROR="${EUCALYPTUS_MIRROR:-http://downloads.eucalyptuscloud.org/software/eucalyptus/4.4/rhel/7/x86_64/}"
 REPO_VERSION="devel-4.4"
 REPO_PATH="${REPO_PATH:-eucalyptus-${REPO_VERSION}}"
 REPO_DIR="${1:-/var/www/eucalyptus-repos/${REPO_PATH}}"

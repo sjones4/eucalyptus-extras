@@ -36,17 +36,17 @@ REQUIRE=(
     "yum"
 )
 REQUIRE_EUCA=(
-    "http://downloads.eucalyptus.com/software/eucalyptus/4.4/rhel/7Server/x86_64/annogen-0.1.0-8.el7.noarch.rpm"
-    "http://downloads.eucalyptus.com/software/eucalyptus/4.4/rhel/7Server/x86_64/axiom-1.2.12-11.el7.noarch.rpm"
-    "http://downloads.eucalyptus.com/software/eucalyptus/4.4/rhel/7Server/x86_64/axis2-1.4.1-0.2.el7.noarch.rpm"
-    "http://downloads.eucalyptus.com/software/eucalyptus/4.4/rhel/7Server/x86_64/axis2c-devel-1.6.0-0.8.el7.x86_64.rpm"
-    "http://downloads.eucalyptus.com/software/eucalyptus/4.4/rhel/7Server/x86_64/axis2c-1.6.0-0.8.el7.x86_64.rpm"
-    "http://downloads.eucalyptus.com/software/eucalyptus/4.4/rhel/7Server/x86_64/glassfish-servlet-api-3.1.0-9.el7.noarch.rpm"
-    "http://downloads.eucalyptus.com/software/eucalyptus/4.4/rhel/7Server/x86_64/neethi-3.0.1-10.el7.noarch.rpm"
-    "http://downloads.eucalyptus.com/software/eucalyptus/4.4/rhel/7Server/x86_64/rampartc-1.3.0-0.6.el7.x86_64.rpm"
-    "http://downloads.eucalyptus.com/software/eucalyptus/4.4/rhel/7Server/x86_64/rampartc-devel-1.3.0-0.6.el7.x86_64.rpm"
-    "http://downloads.eucalyptus.com/software/eucalyptus/4.4/rhel/7Server/x86_64/woden-1.0-0.11.M9.el7.1.noarch.rpm"
-    "http://downloads.eucalyptus.com/software/eucalyptus/4.4/rhel/7Server/x86_64/XmlSchema-1.4.7-11.el7.noarch.rpm"
+    "http://downloads.eucalyptuscloud.org/software/eucalyptus/4.4/rhel/7/x86_64/annogen-0.1.0-8.el7.noarch.rpm"
+    "http://downloads.eucalyptuscloud.org/software/eucalyptus/4.4/rhel/7/x86_64/axiom-1.2.12-11.el7.noarch.rpm"
+    "http://downloads.eucalyptuscloud.org/software/eucalyptus/4.4/rhel/7/x86_64/axis2-1.4.1-0.2.el7.noarch.rpm"
+    "http://downloads.eucalyptuscloud.org/software/eucalyptus/4.4/rhel/7/x86_64/axis2c-devel-1.6.0-0.8.el7.x86_64.rpm"
+    "http://downloads.eucalyptuscloud.org/software/eucalyptus/4.4/rhel/7/x86_64/axis2c-1.6.0-0.8.el7.x86_64.rpm"
+    "http://downloads.eucalyptuscloud.org/software/eucalyptus/4.4/rhel/7/x86_64/glassfish-servlet-api-3.1.0-9.el7.noarch.rpm"
+    "http://downloads.eucalyptuscloud.org/software/eucalyptus/4.4/rhel/7/x86_64/neethi-3.0.1-10.el7.noarch.rpm"
+    "http://downloads.eucalyptuscloud.org/software/eucalyptus/4.4/rhel/7/x86_64/rampartc-1.3.0-0.6.el7.x86_64.rpm"
+    "http://downloads.eucalyptuscloud.org/software/eucalyptus/4.4/rhel/7/x86_64/rampartc-devel-1.3.0-0.6.el7.x86_64.rpm"
+    "http://downloads.eucalyptuscloud.org/software/eucalyptus/4.4/rhel/7/x86_64/woden-1.0-0.11.M9.el7.1.noarch.rpm"
+    "http://downloads.eucalyptuscloud.org/software/eucalyptus/4.4/rhel/7/x86_64/XmlSchema-1.4.7-11.el7.noarch.rpm"
 )
 set -ex
 
