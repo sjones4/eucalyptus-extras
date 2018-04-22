@@ -72,7 +72,7 @@ class ImageManager:
             time.sleep(0.5)
             print_error("Euca2ools not found.\n")
             print_info("Install instructions can be found here:\n"
-                       "https://docs.eucalyptus.com/eucalyptus/4.4.2/"
+                       "https://docs.eucalyptus.cloud/eucalyptus/4.4.2/"
                        "#shared/installing_euca2ools.html")
             sys.exit("Bye")
         sys.stdout.flush()
@@ -104,28 +104,28 @@ class ImageManager:
                 sys.exit("Bye")
 
     def install_qemu_img(self):
-        if call(["yum", "install", "-y", "--nogpgcheck", "qemu-img"]):
+        if call(["yum", "install", "-y", "qemu-img"]):
             print_error("Failed to install qemu-img.")
             sys.exit("Bye")
 
     def get_catalog(self):
-        return json.loads(urllib.urlopen(self.catalog).read())["images"]
+        return json.loads(urllib.urlopen(self.catalog).read(1024*64))["images"]
 
     def print_catalog(self):
         print "Select an image Id from the following table: "
         print
         catalog = self.get_catalog()
-        format_spec = '{0:3} {1:20} {2:20} {3:20} {4:10}'
-        print_bold(
-            format_spec.format("id", "version", "image-format", "created-date",
-                               "description"))
+        format_spec = '{0:5} {1:8} {2:8} {3:8} {4:42}'
+        print_bold(format_spec.format("ID", "Format", "Updates",
+                                      "Login", "Description"))
         image_number = 1
         for image in catalog:
             if not image["image-format"]:
                 image["image-format"] = "None"
-            print format_spec.format(str(image_number), image["version"],
+            print format_spec.format(str(image_number),
                                      image["image-format"],
-                                     image["created-date"],
+                                     image["updates"],
+                                     image["login"],
                                      image["description"])
             image_number += 1
         print
@@ -171,7 +171,7 @@ class ImageManager:
                 print_success("\t\tchecking %s" % "qemu-img... ok")
                 time.sleep(1)
 
-        image_name = image["os"] + "-" + image["created-date"]
+        image_name = image["os"]
 
         describe_images = "euca-describe-images --filter name={0} " \
                           "--region {1}@{2}".format(image_name,
@@ -180,7 +180,7 @@ class ImageManager:
         if re.search(image_name, stdout):
             print_warning(
                 "Warning: An image with name '" + image_name +
-                "' is already install.")
+                "' is already installed.")
             print_warning(stdout)
             install_image = "Continue? (Y/n) : ".strip()
             if check_response(install_image):
@@ -194,7 +194,10 @@ class ImageManager:
         (tmpdir, stderr) = self.check_output('mktemp -d ' + directory_format)
 
         # Download image
-        download_path = tmpdir.strip() + "/" + image["url"].rsplit("/", 1)[-1]
+        download_name = image["url"].rsplit("/", 1)[-1]
+        if "url-name" in image:
+            download_name = urllib.urlopen(image["url-name"]).read(256)
+        download_path = tmpdir.strip() + "/" + download_name
         print_info(
             "Downloading " + image['url'] + " image to: " + download_path)
         if call(["wget", image["url"], "-O", download_path]):
@@ -204,25 +207,26 @@ class ImageManager:
             sys.exit("Bye")
 
         # Decompress image, if necessary
-        if image["url"].endswith(".xz"):
+        if download_name.endswith(".xz"):
             print_info("Decompressing image...")
-            if call(["xz", "-d", download_path]):
+            if call(["xz", "-dv", download_path]):
                 print_error(
                     "Unable to decompress image downloaded to: " +
                     download_path)
                 sys.exit("Bye")
             image_path = download_path.strip(".xz")
             print_info("Decompressed image can be found at: " + image_path)
-        elif image["url"].endswith(".bz2"):
+        elif download_name.endswith(".bz2"):
             print_info("Decompressing image...")
-            if call(["bzip2", "-d", download_path]):
+            if call(["bzip2", "-dv", download_path]):
                 print_error(
                     "Unable to decompress image downloaded to: " +
                     download_path)
                 sys.exit("Bye")
             image_path = download_path.strip(".bz2")
             print_info("Decompressed image can be found at: " + image_path)
-        elif image["url"].endswith(".tar.gz") or image["url"].endswith(".tgz"):
+        elif (download_name.endswith(".tar.gz") or
+              download_name.endswith(".tgz")):
             print_info("Decompressing image...")
             if call(["tar", "--extract", "--gunzip", "--file", download_path,
                      "--directory", tmpdir.strip(), "*.raw"]):
