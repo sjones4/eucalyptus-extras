@@ -21,6 +21,8 @@ alias-eucalyptus-nc: &alias_eucalyptus_nc
     max-cores: ETP_NODE_MAX_CORES
     cache-size: ETP_NODE_CACHE_SIZE
     work-size: ETP_NODE_WORK_SIZE
+    use-cpu-passthrough: ETP_NODE_USE_CPU_PASSTHROUGH
+    libvirt-use-policy-kit: ETP_NODE_LIBVIRT_USE_POLICY_KIT
 alias-eucalyptus-ceph-config: &alias_eucalyptus_ceph_config
     global:
         cluster network: ETP_SUBNET/16
