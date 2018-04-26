@@ -4,7 +4,7 @@
 # config
 MODE="${1:-build}" # setup build build-only
 YUM_OPTS="${YUM_OPTS:--y}"
-EUCA_SOS_BRANCH="${EUCA_SOS_BRANCH:-maint-0.5}"
+EUCA_SOS_BRANCH="${EUCA_SOS_BRANCH:-master}"
 EUCA_SOS_REPO="${EUCA_SOS_REPO:-https://github.com/eucalyptus/eucalyptus-sosreport-plugins.git}"
 REQUIRE=(
     "git"

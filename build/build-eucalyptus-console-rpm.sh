@@ -34,8 +34,8 @@ REQUIRE=(
     "yum"
 )
 REQUIRE_EUCA=(
-    "http://downloads.eucalyptuscloud.org/software/eucalyptus/4.4/rhel/7/x86_64/python-pylibmc-1.2.3-6.1.el7.x86_64.rpm"
-    "http://downloads.eucalyptuscloud.org/software/eucalyptus/4.4/rhel/7/x86_64/python-pylibmc-debuginfo-1.2.3-6.1.el7.x86_64.rpm"
+    "http://downloads.eucalyptus.cloud/software/eucalyptus/4.4/rhel/7/x86_64/python-pylibmc-1.2.3-6.1.el7.x86_64.rpm"
+    "http://downloads.eucalyptus.cloud/software/eucalyptus/4.4/rhel/7/x86_64/python-pylibmc-debuginfo-1.2.3-6.1.el7.x86_64.rpm"
 )
 set -ex
 

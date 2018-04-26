@@ -4,7 +4,7 @@
 # config
 MODE="${1:-build}" # setup build build-only
 YUM_OPTS="${YUM_OPTS:--y}"
-EUCA_IW_BRANCH="${EUCA_IW_BRANCH:-maint-0.2}"
+EUCA_IW_BRANCH="${EUCA_IW_BRANCH:-master}"
 EUCA_IW_REPO="${EUCA_IW_REPO:-https://github.com/eucalyptus/eucalyptus-imaging-worker.git}"
 REQUIRE=(
     "git"

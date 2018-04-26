@@ -2,7 +2,7 @@
 # Build eucalyptus service image rpm on CentOS/RHEL 7
 #
 # Builds using dependency rpms from:
-# http://downloads.eucalyptuscloud.org/software/eucalyptus/4.4/rhel/7/x86_64/
+# http://downloads.eucalyptus.cloud/software/eucalyptus/4.4/rhel/7/x86_64/
 #
 # To build using git snapshot rpms copy to EUCALYPTUS_BUILD_REPO_DIR
 # and they will be included in repository (or build using predefined
@@ -15,12 +15,12 @@
 # config
 MODE="${1:-build}" # setup build build-only
 YUM_OPTS="${YUM_OPTS:--y}"
-EUCA_SIM_BRANCH="${EUCA_SIM_BRANCH:-maint-3}"
+EUCA_SIM_BRANCH="${EUCA_SIM_BRANCH:-master}"
 EUCA_SIM_REPO="${EUCA_SIM_REPO:-https://github.com/sjones4/eucalyptus-service-image.git}"
 EUCALYPTUS_BUILD_REPO_DIR="${EUCALYPTUS_BUILD_REPO_DIR:-""}"
 EUCALYPTUS_BUILD_REPO_IP=${EUCALYPTUS_BUILD_REPO_IP:-""}
-EUCALYPTUS_MIRROR="${EUCALYPTUS_MIRROR:-http://downloads.eucalyptuscloud.org/software/eucalyptus/4.4/rhel/7/x86_64/}"
-EUCA2OOLS_MIRROR="${EUCA2OOLS_MIRROR:-http://downloads.eucalyptuscloud.org/software/euca2ools/3.3/rhel/7/x86_64/}"
+EUCALYPTUS_MIRROR="${EUCALYPTUS_MIRROR:-http://downloads.eucalyptus.cloud/software/eucalyptus/4.4/rhel/7/x86_64/}"
+EUCA2OOLS_MIRROR="${EUCA2OOLS_MIRROR:-http://downloads.eucalyptus.cloud/software/euca2ools/3.3/rhel/7/x86_64/}"
 REQUIRE=(
     "autoconf"
     "createrepo"
