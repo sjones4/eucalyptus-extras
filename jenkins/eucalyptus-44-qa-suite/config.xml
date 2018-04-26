@@ -17,10 +17,14 @@
         <artifactNumToKeep>-1</artifactNumToKeep>
       </strategy>
     </jenkins.model.BuildDiscarderProperty>
-    <com.coravy.hudson.plugins.github.GithubProjectProperty plugin="github@1.28.1">
+    <com.coravy.hudson.plugins.github.GithubProjectProperty plugin="github@1.28.0">
       <projectUrl>https://github.com/sjones4/n4j/</projectUrl>
       <displayName/>
     </com.coravy.hudson.plugins.github.GithubProjectProperty>
+    <com.sonyericsson.rebuild.RebuildSettings plugin="rebuild@1.25">
+      <autoRebuild>false</autoRebuild>
+      <rebuildDisabled>false</rebuildDisabled>
+    </com.sonyericsson.rebuild.RebuildSettings>
     <hudson.model.ParametersDefinitionProperty>
       <parameterDefinitions>
         <hudson.model.StringParameterDefinition>
@@ -41,8 +45,10 @@
               <string>AllShort</string>
               <string>AutoScalingFull</string>
               <string>AutoScalingShort</string>
-              <string>CloudFormation</string>
+              <string>CloudFormationFull</string>
+              <string>CloudFormationShort</string>
               <string>CloudWatch</string>
+              <string>EbsImage</string>
               <string>Ec2Full</string>
               <string>Ec2Short</string>
               <string>Ec2Vpc</string>
@@ -50,6 +56,7 @@
               <string>ElbShort</string>
               <string>Iam</string>
               <string>Initialization</string>
+              <string>Load</string>
               <string>S3Full</string>
               <string>S3Short</string>
               <string>Services</string>
@@ -92,14 +99,12 @@ docker run \
     </hudson.tasks.Shell>
   </builders>
   <publishers>
-    <hudson.tasks.junit.JUnitResultArchiver plugin="junit@1.23">
+    <hudson.tasks.junit.JUnitResultArchiver plugin="junit@1.21">
       <testResults>results/test-results/test/TEST-*.xml</testResults>
       <keepLongStdio>false</keepLongStdio>
       <healthScaleFactor>1.0</healthScaleFactor>
       <allowEmptyResults>false</allowEmptyResults>
     </hudson.tasks.junit.JUnitResultArchiver>
   </publishers>
-  <buildWrappers>
-    <hudson.plugins.timestamper.TimestamperBuildWrapper plugin="timestamper@1.8.9"/>
-  </buildWrappers>
+  <buildWrappers/>
 </project>
