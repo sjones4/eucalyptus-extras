@@ -12,7 +12,7 @@ MIRROR_RPM_VERSIONS="${MIRROR_RPM_VERSIONS:-1}"
 
 # meta
 declare -A REPO_MAP_BASEURL=(
-  ["euca2ools"]="http://downloads.eucalyptuscloud.org/software/euca2ools/3.4/rhel/7/x86_64/"
+  ["euca2ools"]="http://downloads.eucalyptus.cloud/software/euca2ools/3.4/rhel/7/x86_64/"
 )
 
 declare -A REPO_MAP_MIRRORLIST=(

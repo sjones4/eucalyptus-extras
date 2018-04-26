@@ -6,7 +6,7 @@ MODE="${1:-build}" # setup build build-only
 YUM_OPTS="${YUM_OPTS:--y}"
 EUCA2OOLS_REL_BRANCH="${EUCA2OOLS_REL_BRANCH:-master}"
 EUCA2OOLS_REL_REPO="${EUCA2OOLS_REL_REPO:-https://github.com/sjones4/euca2ools-release.git}"
-EUCA2OOLS_REL_RPM_REPO_URL="${EUCA2OOLS_REL_RPM_REPO_URL:-http://downloads.eucalyptuscloud.org/software/euca2ools/3.4/rhel/7/x86_64/}"
+EUCA2OOLS_REL_RPM_REPO_URL="${EUCA2OOLS_REL_RPM_REPO_URL:-http://downloads.eucalyptus.cloud/software/euca2ools/3.4/rhel/7/x86_64/}"
 REQUIRE=(
     "autoconf"
     "git"
