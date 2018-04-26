@@ -35,10 +35,18 @@
               <string>cloud-in-a-box-das</string>
               <string>cloud-in-a-box</string>
               <string>cloud-in-a-box-with-console</string>
+              <string>edge-ceph-cluster1x1</string>
+              <string>edge-ceph-cluster1x2</string>
+              <string>edge-ceph-cluster2x1</string>
+              <string>edge-ceph-cluster2x2</string>
+              <string>edge-ceph-cluster3x1</string>
               <string>edge-ceph</string>
+              <string>edge-cluster1x1</string>
+              <string>edge-cluster1x2</string>
+              <string>edge-cluster2x1</string>
+              <string>edge-cluster2x2</string>
+              <string>edge-cluster3x1</string>
               <string>edge</string>
-              <string>edge-multicluster-multinode</string>
-              <string>edge-multinode</string>
               <string>CUSTOM_ENV_TEMPLATE</string>
             </a>
           </choices>
@@ -90,6 +98,7 @@
             <a class="string-array">
               <string>4.4.x</string>
               <string>4.4.2</string>
+              <string>4.4.3</string>
               <string>EUCALYPTUS_YUM_REPO</string>
             </a>
           </choices>
@@ -146,6 +155,16 @@ http://downloads.eucalyptus.com/software/euca2ools/3.4/rhel/7/x86_64/</descripti
           <description>Defaults to EUCALYPTUS_GLOBAL_NTP_SERVER</description>
           <defaultValue/>
         </hudson.model.StringParameterDefinition>
+        <hudson.model.BooleanParameterDefinition>
+          <name>NODE_CPU_PASSTHROUGH</name>
+          <description/>
+          <defaultValue>true</defaultValue>
+        </hudson.model.BooleanParameterDefinition>
+        <hudson.model.StringParameterDefinition>
+          <name>NODE_LIBVIRT_POLICY_KIT</name>
+          <description/>
+          <defaultValue/>
+        </hudson.model.StringParameterDefinition>
         <hudson.model.StringParameterDefinition>
           <name>NODE_MAX_CORES</name>
           <description>Defaults to EUCALYPTUS_GLOBAL_NODE_MAX_CORES if set, else 0 for available cores on each node</description>
@@ -164,6 +183,16 @@ http://downloads.eucalyptus.com/software/euca2ools/3.4/rhel/7/x86_64/</descripti
               <string/>
               <string>GREEDY</string>
               <string>ROUNDROBIN</string>
+            </a>
+          </choices>
+        </hudson.model.ChoiceParameterDefinition>
+        <hudson.model.ChoiceParameterDefinition>
+          <name>SELINUX_MODE</name>
+          <description/>
+          <choices class="java.util.Arrays$ArrayList">
+            <a class="string-array">
+              <string>permissive</string>
+              <string>enforcing</string>
             </a>
           </choices>
         </hudson.model.ChoiceParameterDefinition>
@@ -335,10 +364,17 @@ find reservations -type f
 if [ "${EUCALYPTUS_YUM_REPO_VERSION}" == "4.4.x" ] ; then
   ETP_EUCALYPTUS_YUM_REPO="${EUCALYPTUS_GLOBAL_EUCALYPTUS_YUM_REPO_DEV:-${EUCALYPTUS_GLOBAL_EUCALYPTUS_YUM_REPO}}"
 elif [ "${EUCALYPTUS_YUM_REPO_VERSION}" == "4.4.2" ] ; then
+  ETP_EUCALYPTUS_YUM_REPO="${EUCALYPTUS_GLOBAL_EUCALYPTUS_YUM_REPO_442:-${EUCALYPTUS_GLOBAL_EUCALYPTUS_YUM_REPO}}"
+elif [ "${EUCALYPTUS_YUM_REPO_VERSION}" == "4.4.3" ] ; then
   ETP_EUCALYPTUS_YUM_REPO="${EUCALYPTUS_GLOBAL_EUCALYPTUS_YUM_REPO}"
 else
   ETP_EUCALYPTUS_YUM_REPO="${EUCALYPTUS_YUM_REPO:-${EUCALYPTUS_GLOBAL_EUCALYPTUS_YUM_REPO_DEV:-${EUCALYPTUS_GLOBAL_EUCALYPTUS_YUM_REPO}}}"
 fi
+
+ETP_NODE_USE_CPU_PASSTHROUGH="1"
+if [ "false" == "${NODE_CPU_PASSTHROUGH}" ] ; then
+ ETP_NODE_USE_CPU_PASSTHROUGH="0"
+fi 
 
 ENV_TEMPLATE_VARS_FILE="env/template_variables.txt"
 echo "Building environment template variables file ${ENV_TEMPLATE_VARS_FILE}"
@@ -368,6 +404,8 @@ echo "ETP_NODE_CACHE_SIZE=${EUCALYPTUS_GLOBAL_NODE_CACHE_SIZE:--1}" &gt;&gt; "${
 echo "ETP_NODE_MAX_CORES=${NODE_MAX_CORES:-${EUCALYPTUS_GLOBAL_NODE_MAX_CORES:-0}}" &gt;&gt; "${ENV_TEMPLATE_VARS_FILE}"
 echo "ETP_NODE_NIC=${EUCALYPTUS_GLOBAL_NODE_NIC:-eno1}" &gt;&gt; "${ENV_TEMPLATE_VARS_FILE}"
 echo "ETP_NODE_WORK_SIZE=${EUCALYPTUS_GLOBAL_NODE_WORK_SIZE:--1}" &gt;&gt; "${ENV_TEMPLATE_VARS_FILE}"
+echo "ETP_NODE_USE_CPU_PASSTHROUGH=${ETP_NODE_USE_CPU_PASSTHROUGH}" &gt;&gt; "${ENV_TEMPLATE_VARS_FILE}"
+echo "ETP_NODE_LIBVIRT_USE_POLICY_KIT=${NODE_LIBVIRT_POLICY_KIT:--1}" &gt;&gt; "${ENV_TEMPLATE_VARS_FILE}"
 echo "ETP_NTP_SERVER=${NTP_SERVER:-${EUCALYPTUS_GLOBAL_NTP_SERVER}}" &gt;&gt; "${ENV_TEMPLATE_VARS_FILE}"
 echo "ETP_PRIVATE_IP_RANGE=${NET_PRIVATE_IP_RANGE}" &gt;&gt; "${ENV_TEMPLATE_VARS_FILE}"
 echo "ETP_PUBLIC_IP_RANGE=${NET_PUBLIC_IP_RANGE}" &gt;&gt; "${ENV_TEMPLATE_VARS_FILE}"
@@ -418,6 +456,13 @@ docker run \
 for HOST in $(&lt;env/reserved_hosts.txt); do
   echo "Restoring host reservation ${HOST}"
   scp -Bpri "${SSH_KEY_FILE}" -o BatchMode=yes -o UserKnownHostsFile="${SSH_KNOWNHOSTS}" -o StrictHostKeyChecking=no reservations/${HOST}/.reservation root@${HOST}:
+done
+
+SELINUX_ENF_MODE=$(echo "${SELINUX_MODE}" | sed 's/^e/E/' | sed 's/^p/P/')
+for HOST in $(&lt;env/reserved_hosts.txt); do
+  echo "Configuring SELinux mode ${SELINUX_MODE} on ${HOST}"
+  ssh -i "${SSH_KEY_FILE}" -o BatchMode=yes -o UserKnownHostsFile="${SSH_KNOWNHOSTS}" -o StrictHostKeyChecking=no root@${HOST} \
+    "sed --in-place \"s/SELINUX=.*/SELINUX=${SELINUX_MODE}/\" /etc/selinux/config; setenforce ${SELINUX_ENF_MODE}"
 done
 
 echo "Sleeping 60 to allow CentOS 7 install to complete"
