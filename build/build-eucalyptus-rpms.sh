@@ -5,8 +5,8 @@
 MODE="${1:-build}" # setup build build-only
 VERSION="4.4"
 YUM_OPTS="${YUM_OPTS:--y}"
-EUCA_BRANCH="${EUCA_BRANCH:-devel-${VERSION}}"
-EUCA_REPO="${EUCA_REPO:-https://github.com/sjones4/eucalyptus.git}"
+EUCA_BRANCH="${EUCA_BRANCH:-maint-${VERSION}}"
+EUCA_REPO="${EUCA_REPO:-https://github.com/corymbia/eucalyptus.git}"
 EUCA_PATH="${EUCA_PATH:-${PWD}/eucalyptus}"
 REQUIRE=(
     "ant"

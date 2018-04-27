@@ -16,7 +16,7 @@
 MODE="${1:-build}" # setup build build-only
 YUM_OPTS="${YUM_OPTS:--y}"
 EUCA_SIM_BRANCH="${EUCA_SIM_BRANCH:-master}"
-EUCA_SIM_REPO="${EUCA_SIM_REPO:-https://github.com/sjones4/eucalyptus-service-image.git}"
+EUCA_SIM_REPO="${EUCA_SIM_REPO:-https://github.com/corymbia/eucalyptus-service-image.git}"
 EUCALYPTUS_BUILD_REPO_DIR="${EUCALYPTUS_BUILD_REPO_DIR:-""}"
 EUCALYPTUS_BUILD_REPO_IP=${EUCALYPTUS_BUILD_REPO_IP:-""}
 EUCALYPTUS_MIRROR="${EUCALYPTUS_MIRROR:-http://downloads.eucalyptus.cloud/software/eucalyptus/4.4/rhel/7/x86_64/}"

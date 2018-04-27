@@ -5,7 +5,7 @@
 MODE="${1:-build}" # setup build build-only
 YUM_OPTS="${YUM_OPTS:--y}"
 EUCA_SOS_BRANCH="${EUCA_SOS_BRANCH:-master}"
-EUCA_SOS_REPO="${EUCA_SOS_REPO:-https://github.com/eucalyptus/eucalyptus-sosreport-plugins.git}"
+EUCA_SOS_REPO="${EUCA_SOS_REPO:-https://github.com/corymbia/eucalyptus-sosreport-plugins.git}"
 REQUIRE=(
     "git"
     "python2-devel"

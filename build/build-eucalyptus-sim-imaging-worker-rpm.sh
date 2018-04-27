@@ -5,7 +5,7 @@
 MODE="${1:-build}" # setup build build-only
 YUM_OPTS="${YUM_OPTS:--y}"
 EUCA_IW_BRANCH="${EUCA_IW_BRANCH:-master}"
-EUCA_IW_REPO="${EUCA_IW_REPO:-https://github.com/eucalyptus/eucalyptus-imaging-worker.git}"
+EUCA_IW_REPO="${EUCA_IW_REPO:-https://github.com/corymbia/eucalyptus-imaging-worker.git}"
 REQUIRE=(
     "git"
     "python-devel"

@@ -5,7 +5,7 @@
 MODE="${1:-build}" # setup build build-only
 YUM_OPTS="${YUM_OPTS:--y}"
 EUCA_CON_SE_BRANCH="${EUCA_CON_SE_BRANCH:-master}"
-EUCA_CON_SE_REPO="${EUCA_CON_SE_REPO:-https://github.com/eucalyptus/eucaconsole-selinux.git}"
+EUCA_CON_SE_REPO="${EUCA_CON_SE_REPO:-https://github.com/corymbia/eucaconsole-selinux.git}"
 REQUIRE=(
     "autoconf"
     "git"
