@@ -5,7 +5,7 @@
 MODE="${1:-build}" # setup build build-only
 YUM_OPTS="${YUM_OPTS:--y}"
 EUCA_LBS_BRANCH="${EUCA_LBS_BRANCH:-master}"
-EUCA_LBS_REPO="${EUCA_LBS_REPO:-https://github.com/eucalyptus/load-balancer-servo.git}"
+EUCA_LBS_REPO="${EUCA_LBS_REPO:-https://github.com/corymbia/load-balancer-servo.git}"
 REQUIRE=(
     "git"
     "python-devel"
