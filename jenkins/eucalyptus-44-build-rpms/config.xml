@@ -35,7 +35,7 @@
         <hudson.model.StringParameterDefinition>
           <name>EUCALYPTUS_GIT_BRANCH</name>
           <description/>
-          <defaultValue>devel-4.4</defaultValue>
+          <defaultValue>maint-4.4</defaultValue>
         </hudson.model.StringParameterDefinition>
       </parameterDefinitions>
     </hudson.model.ParametersDefinitionProperty>

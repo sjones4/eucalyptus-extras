@@ -34,6 +34,7 @@
             <a class="string-array">
               <string>cloud-in-a-box-das</string>
               <string>cloud-in-a-box</string>
+              <string>cloud-in-a-box-net2-vpc</string>
               <string>cloud-in-a-box-with-console</string>
               <string>edge-ceph-cluster1x1</string>
               <string>edge-ceph-cluster1x2</string>
@@ -47,6 +48,7 @@
               <string>edge-cluster2x2</string>
               <string>edge-cluster3x1</string>
               <string>edge</string>
+              <string>vpc-static-net2</string>
               <string>CUSTOM_ENV_TEMPLATE</string>
             </a>
           </choices>
@@ -432,6 +434,8 @@ docker run \
   "/env/reserved_host_names.txt" \
   "/env/reserved_public_ip_ranges.txt" \
   "/env/reserved_private_ip_ranges.txt" \
+  "/env/reserved_vpc_gateway_ips.txt" \
+  "/env/reserved_vpc_public_ip_ranges.txt" \
   &gt; env/environment.yaml
 
 echo "Using environment"

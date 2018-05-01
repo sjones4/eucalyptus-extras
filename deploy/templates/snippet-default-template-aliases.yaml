@@ -11,6 +11,8 @@ alias-eucalyptus: &alias_eucalyptus
     yum-options: '--nogpg'
     install-type: ETP_INSTALL_TYPE
     dns-domain: ETP_EUCALYPTUS_DNS_DOMAIN
+    set-bind-addr: true
+    bind-interface: ETP_NODE_NIC
 alias-eucalyptus-cloud-properties: &alias_eucalyptus_cloud_properties
     services.imaging.worker.ntp_server: ETP_NTP_SERVER
     services.loadbalancing.worker.ntp_server: ETP_NTP_SERVER
@@ -34,3 +36,14 @@ alias-eucalyptus-ceph-config: &alias_eucalyptus_ceph_config
     mon.FIRST_MON_HOSTNAME_GOES_HERE:
         host: FIRST_MON_HOSTNAME_GOES_HERE
         mon addr: FIRST_MON_IP_GOES_HERE:6789
+alias-eucalyptus-midonet: &alias_eucalyptus_midonet
+    version: 5.2
+    midonet-url: http://builds.midonet.org/midonet-5.2/stable/el7/
+    misc-url: http://builds.midonet.org/misc/stable/el7/
+    max-heap-size: 2g
+    heap-newsize: 2g
+    initial-tenant: euca_tenant_1
+alias-eucalyptus-midonet-gateway0: &alias_eucalyptus_midonet_gateway0
+    ExternalDevice: FIRST_GATEWAY_EXTERNAL_DEVICE_GOES_HERE
+    ExternalCidr: FIRST_GATEWAY_EXTERNAL_CIDR_GOES_HERE
+    ExternalRouterIp: FIRST_GATEWAY_EXTERNAL_ROUTER_IP_GOES_HERE
