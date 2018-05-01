@@ -37,6 +37,7 @@
           <description>&lt;ul&gt;
   &lt;li&gt;AllGood - Nightly tests&lt;/li&gt;
   &lt;li&gt;AllShort - Fast tests, pre-qa&lt;/li&gt;
+  &lt;li&gt;Cleanup - Clean cloud EC2/S3 resources&lt;/li&gt;
   &lt;li&gt;Initialization - Configure a cloud for testing, load an image&lt;/li&gt;
 &lt;/ul&gt;  </description>
           <choices class="java.util.Arrays$ArrayList">
@@ -45,6 +46,7 @@
               <string>AllShort</string>
               <string>AutoScalingFull</string>
               <string>AutoScalingShort</string>
+              <string>Cleanup</string>
               <string>CloudFormationFull</string>
               <string>CloudFormationShort</string>
               <string>CloudWatch</string>

@@ -17,17 +17,21 @@
         <artifactNumToKeep>-1</artifactNumToKeep>
       </strategy>
     </jenkins.model.BuildDiscarderProperty>
-    <com.coravy.hudson.plugins.github.GithubProjectProperty plugin="github@1.28.1">
+    <com.coravy.hudson.plugins.github.GithubProjectProperty plugin="github@1.28.0">
       <projectUrl>https://github.com/sjones4/eucalyptus-extras/</projectUrl>
       <displayName/>
     </com.coravy.hudson.plugins.github.GithubProjectProperty>
+    <com.sonyericsson.rebuild.RebuildSettings plugin="rebuild@1.25">
+      <autoRebuild>false</autoRebuild>
+      <rebuildDisabled>false</rebuildDisabled>
+    </com.sonyericsson.rebuild.RebuildSettings>
     <hudson.model.ParametersDefinitionProperty>
       <parameterDefinitions>
         <hudson.model.TextParameterDefinition>
           <name>HOSTS</name>
           <description>Each host has a line such as:
 
-IP_FQDN_PUBIPRANGE_PRIVIPRANGE_CPUX_DISKX_MEMX_USEX
+IP_FQDN_PUBIPRANGE_PRIVIPRANGE_VPCGWIP_VPCPUBIPRANGE_CPUX_DISKX_MEMX_USEX
 
 Remove the last X to temporarily disable a host.
 
@@ -59,7 +63,5 @@ Generally you would copy the &lt;a href="/job/eucalyptus-host-config/lastSuccess
       <caseSensitive>true</caseSensitive>
     </hudson.tasks.ArtifactArchiver>
   </publishers>
-  <buildWrappers>
-    <hudson.plugins.timestamper.TimestamperBuildWrapper plugin="timestamper@1.8.9"/>
-  </buildWrappers>
+  <buildWrappers/>
 </project>

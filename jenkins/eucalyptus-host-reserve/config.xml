@@ -137,11 +137,15 @@ if [ $? -ne 0 ] ; then
  [ ! -f hosts/reserved_host_names.txt ] || rm -fv hosts/reserved_host_names.txt
  [ ! -f hosts/reserved_public_ip_ranges.txt ] || rm -fv hosts/reserved_public_ip_ranges.txt
  [ ! -f hosts/reserved_private_ip_ranges.txt ] || rm -fv hosts/reserved_private_ip_ranges.txt
+ [ ! -f hosts/reserved_vpc_gateway_ips.txt ] || rm -fv hosts/reserved_vpc_gateway_ips.txt
+ [ ! -f hosts/reserved_vpc_public_ip_ranges.txt ] || rm -fv hosts/reserved_vpc_public_ip_ranges.txt
  [ ! -f hosts/reservation_id.txt ] || rm -fv hosts/reservation_id.txt
 else
  grep -f hosts/reserved_hosts.txt hosts/hosts.txt | cut -d _ -f 2 &gt; hosts/reserved_host_names.txt
  grep -f hosts/reserved_hosts.txt hosts/hosts.txt | cut -d _ -f 3 &gt; hosts/reserved_public_ip_ranges.txt
  grep -f hosts/reserved_hosts.txt hosts/hosts.txt | cut -d _ -f 4 &gt; hosts/reserved_private_ip_ranges.txt
+ grep -f hosts/reserved_hosts.txt hosts/hosts.txt | cut -d _ -f 5 &amp;gt; hosts/reserved_vpc_gateway_ips.txt
+ grep -f hosts/reserved_hosts.txt hosts/hosts.txt | cut -d _ -f 6 &amp;gt; hosts/reserved_vpc_public_ip_ranges.txt
 fi</command>
     </hudson.tasks.Shell>
   </builders>
