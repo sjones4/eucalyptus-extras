@@ -35,7 +35,7 @@ if [ -z "${GPG_KEY_NAME}" ] ; then
 fi
 
 # sign rpms
-for RPM in eucalyptus-*.rpm eucanetd-*.rpm eucaconsole-*.rpm load-balancer-servo-*.rpm; do
+for RPM in eucalyptus-*.rpm eucanetd-*.rpm eucaconsole-*.rpm load-balancer-servo-*.rpm ${EUCALYPTUS_RPM_SIGN_EXTRAS:-}; do
   [ -f "${RPM}" ] || continue
   echo "" | setsid rpmsign \
     --define "_gpg_path ${GPG_KEYS_DIR}" \
