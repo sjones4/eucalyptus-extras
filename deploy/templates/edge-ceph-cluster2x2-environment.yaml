@@ -59,6 +59,8 @@ default_attributes:
             private-interface: ETP_NODE_NIC
             bridged-nic: ETP_NODE_NIC
             dns-server: ETP_DNS_SERVER
+            nc-router: Y
+            nc-router-ip: AUTO
 override_attributes: {}
 cookbook_versions: {}
 
