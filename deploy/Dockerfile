@@ -6,7 +6,7 @@ RUN yum -y install epel-release \
  && easy_install pbr \
  && yum -y install https://packages.chef.io/files/stable/chefdk/0.12.0/el/7/chefdk-0.12.0-1.el7.x86_64.rpm \
  && cd /root \
- && git clone --depth 1 https://github.com/eucalyptus/calyptos \
+ && git clone --depth 1 https://github.com/sjones4/calyptos \
  && cd calyptos \
  && python setup.py install \
  && mkdir /calyptos \
