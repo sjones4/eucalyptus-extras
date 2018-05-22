@@ -1,0 +1,62 @@
+---
+name: kubeuca
+version: '1.0'
+confinement: strict
+environment:
+  HOME: /home/$USER
+  PATH: $PATH:$SNAP/bin
+grade: stable
+summary: Eucalyptus helper scripts for rancher kubnernetes cluster
+description: |
+  Helper scripts for managing kubernetes clusters on eucalyptus clouds
+  using rancher/rancheros.
+
+apps:
+  config:
+    command: bin/kubeuca_config.sh
+    plugs:
+      - home
+      - network
+  down:
+    command: bin/kubeuca_down.sh
+    plugs:
+      - home
+      - network
+  up:
+    command: bin/kubeuca_up.sh
+    plugs:
+      - home
+      - network
+
+parts:
+  euca2ools:
+    plugin: python
+    python-version: python2
+    source: https://github.com/Corymbia/euca2ools.git
+    source-type: git
+    source-depth: 1
+    source-tag: v3.4.1
+  kubeuca:
+    plugin: dump
+    source: ./
+    stage-packages:
+      - bind9-host
+      - coreutils
+      - jq
+      - wget
+    organize:
+      usr/bin: bin
+    filesets:
+      binaries:
+        - bin/*
+        - usr/bin/*
+        - usr/lib/*
+      resources:
+        - templates/*
+    stage:
+      - $binaries
+      - $resources
+    prime:
+      - $binaries
+      - $resources
+

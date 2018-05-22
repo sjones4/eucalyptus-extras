@@ -1,0 +1,1653 @@
+---
+name: eucalyptus-tools
+version: '3.4.1-1'
+confinement: strict
+environment:
+  HOME: /home/$USER
+grade: stable
+icon: eucalyptus_icon.png
+summary: Euca2ools for use with your Eucalyptus cloud
+description: |
+  Euca2ools are command line tools used to interact with Eucalyptus, a
+  service overlay designed to be interface-compatible with Amazon Web
+  Services (AWS), as well as AWS itself.
+
+apps:
+  euca:
+    command: bin/euca.sh
+    plugs:
+      - home
+      - network
+  euare-accountaliascreate:
+    command: bin/euare-accountaliascreate
+    plugs:
+      - home
+      - network
+  euare-accountaliasdelete:
+    command: bin/euare-accountaliasdelete
+    plugs:
+      - home
+      - network
+  euare-accountaliaslist:
+    command: bin/euare-accountaliaslist
+    plugs:
+      - home
+      - network
+  euare-accountcreate:
+    command: bin/euare-accountcreate
+    plugs:
+      - home
+      - network
+  euare-accountdel:
+    command: bin/euare-accountdel
+    plugs:
+      - home
+      - network
+  euare-accountdelpolicy:
+    command: bin/euare-accountdelpolicy
+    plugs:
+      - home
+      - network
+  euare-accountgetpolicy:
+    command: bin/euare-accountgetpolicy
+    plugs:
+      - home
+      - network
+  euare-accountgetsummary:
+    command: bin/euare-accountgetsummary
+    plugs:
+      - home
+      - network
+  euare-accountlist:
+    command: bin/euare-accountlist
+    plugs:
+      - home
+      - network
+  euare-accountlistpolicies:
+    command: bin/euare-accountlistpolicies
+    plugs:
+      - home
+      - network
+  euare-accountuploadpolicy:
+    command: bin/euare-accountuploadpolicy
+    plugs:
+      - home
+      - network
+  euare-assumerole:
+    command: bin/euare-assumerole
+    plugs:
+      - home
+      - network
+  euare-getcallerid:
+    command: bin/euare-getcallerid
+    plugs:
+      - home
+      - network
+  euare-getldapsyncstatus:
+    command: bin/euare-getldapsyncstatus
+    plugs:
+      - home
+      - network
+  euare-groupaddpolicy:
+    command: bin/euare-groupaddpolicy
+    plugs:
+      - home
+      - network
+  euare-groupadduser:
+    command: bin/euare-groupadduser
+    plugs:
+      - home
+      - network
+  euare-groupcreate:
+    command: bin/euare-groupcreate
+    plugs:
+      - home
+      - network
+  euare-groupdel:
+    command: bin/euare-groupdel
+    plugs:
+      - home
+      - network
+  euare-groupdelpolicy:
+    command: bin/euare-groupdelpolicy
+    plugs:
+      - home
+      - network
+  euare-groupgetpolicy:
+    command: bin/euare-groupgetpolicy
+    plugs:
+      - home
+      - network
+  euare-grouplistbypath:
+    command: bin/euare-grouplistbypath
+    plugs:
+      - home
+      - network
+  euare-grouplistpolicies:
+    command: bin/euare-grouplistpolicies
+    plugs:
+      - home
+      - network
+  euare-grouplistusers:
+    command: bin/euare-grouplistusers
+    plugs:
+      - home
+      - network
+  euare-groupmod:
+    command: bin/euare-groupmod
+    plugs:
+      - home
+      - network
+  euare-groupremoveuser:
+    command: bin/euare-groupremoveuser
+    plugs:
+      - home
+      - network
+  euare-groupuploadpolicy:
+    command: bin/euare-groupuploadpolicy
+    plugs:
+      - home
+      - network
+  euare-instanceprofileaddrole:
+    command: bin/euare-instanceprofileaddrole
+    plugs:
+      - home
+      - network
+  euare-instanceprofilecreate:
+    command: bin/euare-instanceprofilecreate
+    plugs:
+      - home
+      - network
+  euare-instanceprofiledel:
+    command: bin/euare-instanceprofiledel
+    plugs:
+      - home
+      - network
+  euare-instanceprofilegetattributes:
+    command: bin/euare-instanceprofilegetattributes
+    plugs:
+      - home
+      - network
+  euare-instanceprofilelistbypath:
+    command: bin/euare-instanceprofilelistbypath
+    plugs:
+      - home
+      - network
+  euare-instanceprofilelistforrole:
+    command: bin/euare-instanceprofilelistforrole
+    plugs:
+      - home
+      - network
+  euare-instanceprofileremoverole:
+    command: bin/euare-instanceprofileremoverole
+    plugs:
+      - home
+      - network
+  euare-oidcprovideraddclientid:
+    command: bin/euare-oidcprovideraddclientid
+    plugs:
+      - home
+      - network
+  euare-oidcproviderchangethumbprint:
+    command: bin/euare-oidcproviderchangethumbprint
+    plugs:
+      - home
+      - network
+  euare-oidcprovidercreate:
+    command: bin/euare-oidcprovidercreate
+    plugs:
+      - home
+      - network
+  euare-oidcproviderdel:
+    command: bin/euare-oidcproviderdel
+    plugs:
+      - home
+      - network
+  euare-oidcproviderdelclientid:
+    command: bin/euare-oidcproviderdelclientid
+    plugs:
+      - home
+      - network
+  euare-oidcprovidergetattributes:
+    command: bin/euare-oidcprovidergetattributes
+    plugs:
+      - home
+      - network
+  euare-oidcproviderlist:
+    command: bin/euare-oidcproviderlist
+    plugs:
+      - home
+      - network
+  euare-releaserole:
+    command: bin/euare-releaserole
+    plugs:
+      - home
+      - network
+  euare-roleaddpolicy:
+    command: bin/euare-roleaddpolicy
+    plugs:
+      - home
+      - network
+  euare-rolecreate:
+    command: bin/euare-rolecreate
+    plugs:
+      - home
+      - network
+  euare-roledel:
+    command: bin/euare-roledel
+    plugs:
+      - home
+      - network
+  euare-roledelpolicy:
+    command: bin/euare-roledelpolicy
+    plugs:
+      - home
+      - network
+  euare-rolegetattributes:
+    command: bin/euare-rolegetattributes
+    plugs:
+      - home
+      - network
+  euare-rolegetpolicy:
+    command: bin/euare-rolegetpolicy
+    plugs:
+      - home
+      - network
+  euare-rolelistbypath:
+    command: bin/euare-rolelistbypath
+    plugs:
+      - home
+      - network
+  euare-rolelistpolicies:
+    command: bin/euare-rolelistpolicies
+    plugs:
+      - home
+      - network
+  euare-roleupdateassumepolicy:
+    command: bin/euare-roleupdateassumepolicy
+    plugs:
+      - home
+      - network
+  euare-roleuploadpolicy:
+    command: bin/euare-roleuploadpolicy
+    plugs:
+      - home
+      - network
+  euare-servercertdel:
+    command: bin/euare-servercertdel
+    plugs:
+      - home
+      - network
+  euare-servercertgetattributes:
+    command: bin/euare-servercertgetattributes
+    plugs:
+      - home
+      - network
+  euare-servercertlistbypath:
+    command: bin/euare-servercertlistbypath
+    plugs:
+      - home
+      - network
+  euare-servercertmod:
+    command: bin/euare-servercertmod
+    plugs:
+      - home
+      - network
+  euare-servercertupload:
+    command: bin/euare-servercertupload
+    plugs:
+      - home
+      - network
+  euare-useraddcert:
+    command: bin/euare-useraddcert
+    plugs:
+      - home
+      - network
+  euare-useraddkey:
+    command: bin/euare-useraddkey
+    plugs:
+      - home
+      - network
+  euare-useraddloginprofile:
+    command: bin/euare-useraddloginprofile
+    plugs:
+      - home
+      - network
+  euare-useraddpolicy:
+    command: bin/euare-useraddpolicy
+    plugs:
+      - home
+      - network
+  euare-usercreate:
+    command: bin/euare-usercreate
+    plugs:
+      - home
+      - network
+  euare-usercreatecert:
+    command: bin/euare-usercreatecert
+    plugs:
+      - home
+      - network
+  euare-userdeactivatemfadevice:
+    command: bin/euare-userdeactivatemfadevice
+    plugs:
+      - home
+      - network
+  euare-userdel:
+    command: bin/euare-userdel
+    plugs:
+      - home
+      - network
+  euare-userdelcert:
+    command: bin/euare-userdelcert
+    plugs:
+      - home
+      - network
+  euare-userdelkey:
+    command: bin/euare-userdelkey
+    plugs:
+      - home
+      - network
+  euare-userdelloginprofile:
+    command: bin/euare-userdelloginprofile
+    plugs:
+      - home
+      - network
+  euare-userdelpolicy:
+    command: bin/euare-userdelpolicy
+    plugs:
+      - home
+      - network
+  euare-userenablemfadevice:
+    command: bin/euare-userenablemfadevice
+    plugs:
+      - home
+      - network
+  euare-usergetattributes:
+    command: bin/euare-usergetattributes
+    plugs:
+      - home
+      - network
+  euare-usergetinfo:
+    command: bin/euare-usergetinfo
+    plugs:
+      - home
+      - network
+  euare-usergetloginprofile:
+    command: bin/euare-usergetloginprofile
+    plugs:
+      - home
+      - network
+  euare-usergetpolicy:
+    command: bin/euare-usergetpolicy
+    plugs:
+      - home
+      - network
+  euare-userlistbypath:
+    command: bin/euare-userlistbypath
+    plugs:
+      - home
+      - network
+  euare-userlistcerts:
+    command: bin/euare-userlistcerts
+    plugs:
+      - home
+      - network
+  euare-userlistgroups:
+    command: bin/euare-userlistgroups
+    plugs:
+      - home
+      - network
+  euare-userlistkeys:
+    command: bin/euare-userlistkeys
+    plugs:
+      - home
+      - network
+  euare-userlistmfadevices:
+    command: bin/euare-userlistmfadevices
+    plugs:
+      - home
+      - network
+  euare-userlistpolicies:
+    command: bin/euare-userlistpolicies
+    plugs:
+      - home
+      - network
+  euare-usermod:
+    command: bin/euare-usermod
+    plugs:
+      - home
+      - network
+  euare-usermodcert:
+    command: bin/euare-usermodcert
+    plugs:
+      - home
+      - network
+  euare-usermodkey:
+    command: bin/euare-usermodkey
+    plugs:
+      - home
+      - network
+  euare-usermodloginprofile:
+    command: bin/euare-usermodloginprofile
+    plugs:
+      - home
+      - network
+  euare-userresyncmfadevice:
+    command: bin/euare-userresyncmfadevice
+    plugs:
+      - home
+      - network
+  euare-userupdateinfo:
+    command: bin/euare-userupdateinfo
+    plugs:
+      - home
+      - network
+  euare-useruploadpolicy:
+    command: bin/euare-useruploadpolicy
+    plugs:
+      - home
+      - network
+  euca-accept-vpc-peering-connection:
+    command: bin/euca-accept-vpc-peering-connection
+    plugs:
+      - home
+      - network
+  euca-allocate-address:
+    command: bin/euca-allocate-address
+    plugs:
+      - home
+      - network
+  euca-assign-private-ip-addresses:
+    command: bin/euca-assign-private-ip-addresses
+    plugs:
+      - home
+      - network
+  euca-associate-address:
+    command: bin/euca-associate-address
+    plugs:
+      - home
+      - network
+  euca-associate-dhcp-options:
+    command: bin/euca-associate-dhcp-options
+    plugs:
+      - home
+      - network
+  euca-associate-route-table:
+    command: bin/euca-associate-route-table
+    plugs:
+      - home
+      - network
+  euca-attach-internet-gateway:
+    command: bin/euca-attach-internet-gateway
+    plugs:
+      - home
+      - network
+  euca-attach-network-interface:
+    command: bin/euca-attach-network-interface
+    plugs:
+      - home
+      - network
+  euca-attach-volume:
+    command: bin/euca-attach-volume
+    plugs:
+      - home
+      - network
+  euca-attach-vpn-gateway:
+    command: bin/euca-attach-vpn-gateway
+    plugs:
+      - home
+      - network
+  euca-authorize:
+    command: bin/euca-authorize
+    plugs:
+      - home
+      - network
+  euca-bundle-and-upload-image:
+    command: bin/euca-bundle-and-upload-image
+    plugs:
+      - home
+      - network
+  euca-bundle-image:
+    command: bin/euca-bundle-image
+    plugs:
+      - home
+      - network
+  euca-bundle-instance:
+    command: bin/euca-bundle-instance
+    plugs:
+      - home
+      - network
+  euca-bundle-vol:
+    command: bin/euca-bundle-vol
+    plugs:
+      - home
+      - network
+  euca-cancel-bundle-task:
+    command: bin/euca-cancel-bundle-task
+    plugs:
+      - home
+      - network
+  euca-cancel-conversion-task:
+    command: bin/euca-cancel-conversion-task
+    plugs:
+      - home
+      - network
+  euca-confirm-product-instance:
+    command: bin/euca-confirm-product-instance
+    plugs:
+      - home
+      - network
+  euca-copy-image:
+    command: bin/euca-copy-image
+    plugs:
+      - home
+      - network
+  euca-create-customer-gateway:
+    command: bin/euca-create-customer-gateway
+    plugs:
+      - home
+      - network
+  euca-create-dhcp-options:
+    command: bin/euca-create-dhcp-options
+    plugs:
+      - home
+      - network
+  euca-create-group:
+    command: bin/euca-create-group
+    plugs:
+      - home
+      - network
+  euca-create-image:
+    command: bin/euca-create-image
+    plugs:
+      - home
+      - network
+  euca-create-internet-gateway:
+    command: bin/euca-create-internet-gateway
+    plugs:
+      - home
+      - network
+  euca-create-keypair:
+    command: bin/euca-create-keypair
+    plugs:
+      - home
+      - network
+  euca-create-nat-gateway:
+    command: bin/euca-create-nat-gateway
+    plugs:
+      - home
+      - network
+  euca-create-network-acl:
+    command: bin/euca-create-network-acl
+    plugs:
+      - home
+      - network
+  euca-create-network-acl-entry:
+    command: bin/euca-create-network-acl-entry
+    plugs:
+      - home
+      - network
+  euca-create-network-interface:
+    command: bin/euca-create-network-interface
+    plugs:
+      - home
+      - network
+  euca-create-route:
+    command: bin/euca-create-route
+    plugs:
+      - home
+      - network
+  euca-create-route-table:
+    command: bin/euca-create-route-table
+    plugs:
+      - home
+      - network
+  euca-create-snapshot:
+    command: bin/euca-create-snapshot
+    plugs:
+      - home
+      - network
+  euca-create-subnet:
+    command: bin/euca-create-subnet
+    plugs:
+      - home
+      - network
+  euca-create-tags:
+    command: bin/euca-create-tags
+    plugs:
+      - home
+      - network
+  euca-create-volume:
+    command: bin/euca-create-volume
+    plugs:
+      - home
+      - network
+  euca-create-vpc:
+    command: bin/euca-create-vpc
+    plugs:
+      - home
+      - network
+  euca-create-vpc-peering-connection:
+    command: bin/euca-create-vpc-peering-connection
+    plugs:
+      - home
+      - network
+  euca-create-vpn-connection:
+    command: bin/euca-create-vpn-connection
+    plugs:
+      - home
+      - network
+  euca-create-vpn-connection-route:
+    command: bin/euca-create-vpn-connection-route
+    plugs:
+      - home
+      - network
+  euca-create-vpn-gateway:
+    command: bin/euca-create-vpn-gateway
+    plugs:
+      - home
+      - network
+  euca-delete-bundle:
+    command: bin/euca-delete-bundle
+    plugs:
+      - home
+      - network
+  euca-delete-customer-gateway:
+    command: bin/euca-delete-customer-gateway
+    plugs:
+      - home
+      - network
+  euca-delete-dhcp-options:
+    command: bin/euca-delete-dhcp-options
+    plugs:
+      - home
+      - network
+  euca-delete-disk-image:
+    command: bin/euca-delete-disk-image
+    plugs:
+      - home
+      - network
+  euca-delete-group:
+    command: bin/euca-delete-group
+    plugs:
+      - home
+      - network
+  euca-delete-internet-gateway:
+    command: bin/euca-delete-internet-gateway
+    plugs:
+      - home
+      - network
+  euca-delete-keypair:
+    command: bin/euca-delete-keypair
+    plugs:
+      - home
+      - network
+  euca-delete-nat-gateway:
+    command: bin/euca-delete-nat-gateway
+    plugs:
+      - home
+      - network
+  euca-delete-network-acl:
+    command: bin/euca-delete-network-acl
+    plugs:
+      - home
+      - network
+  euca-delete-network-acl-entry:
+    command: bin/euca-delete-network-acl-entry
+    plugs:
+      - home
+      - network
+  euca-delete-network-interface:
+    command: bin/euca-delete-network-interface
+    plugs:
+      - home
+      - network
+  euca-delete-route:
+    command: bin/euca-delete-route
+    plugs:
+      - home
+      - network
+  euca-delete-route-table:
+    command: bin/euca-delete-route-table
+    plugs:
+      - home
+      - network
+  euca-delete-snapshot:
+    command: bin/euca-delete-snapshot
+    plugs:
+      - home
+      - network
+  euca-delete-subnet:
+    command: bin/euca-delete-subnet
+    plugs:
+      - home
+      - network
+  euca-delete-tags:
+    command: bin/euca-delete-tags
+    plugs:
+      - home
+      - network
+  euca-delete-volume:
+    command: bin/euca-delete-volume
+    plugs:
+      - home
+      - network
+  euca-delete-vpc:
+    command: bin/euca-delete-vpc
+    plugs:
+      - home
+      - network
+  euca-delete-vpc-peering-connection:
+    command: bin/euca-delete-vpc-peering-connection
+    plugs:
+      - home
+      - network
+  euca-delete-vpn-connection:
+    command: bin/euca-delete-vpn-connection
+    plugs:
+      - home
+      - network
+  euca-delete-vpn-connection-route:
+    command: bin/euca-delete-vpn-connection-route
+    plugs:
+      - home
+      - network
+  euca-delete-vpn-gateway:
+    command: bin/euca-delete-vpn-gateway
+    plugs:
+      - home
+      - network
+  euca-deregister:
+    command: bin/euca-deregister
+    plugs:
+      - home
+      - network
+  euca-describe-account-attributes:
+    command: bin/euca-describe-account-attributes
+    plugs:
+      - home
+      - network
+  euca-describe-addresses:
+    command: bin/euca-describe-addresses
+    plugs:
+      - home
+      - network
+  euca-describe-availability-zones:
+    command: bin/euca-describe-availability-zones
+    plugs:
+      - home
+      - network
+  euca-describe-bundle-tasks:
+    command: bin/euca-describe-bundle-tasks
+    plugs:
+      - home
+      - network
+  euca-describe-conversion-tasks:
+    command: bin/euca-describe-conversion-tasks
+    plugs:
+      - home
+      - network
+  euca-describe-customer-gateways:
+    command: bin/euca-describe-customer-gateways
+    plugs:
+      - home
+      - network
+  euca-describe-dhcp-options:
+    command: bin/euca-describe-dhcp-options
+    plugs:
+      - home
+      - network
+  euca-describe-group:
+    command: bin/euca-describe-group
+    plugs:
+      - home
+      - network
+  euca-describe-groups:
+    command: bin/euca-describe-groups
+    plugs:
+      - home
+      - network
+  euca-describe-image-attribute:
+    command: bin/euca-describe-image-attribute
+    plugs:
+      - home
+      - network
+  euca-describe-images:
+    command: bin/euca-describe-images
+    plugs:
+      - home
+      - network
+  euca-describe-instance-attribute:
+    command: bin/euca-describe-instance-attribute
+    plugs:
+      - home
+      - network
+  euca-describe-instance-status:
+    command: bin/euca-describe-instance-status
+    plugs:
+      - home
+      - network
+  euca-describe-instance-types:
+    command: bin/euca-describe-instance-types
+    plugs:
+      - home
+      - network
+  euca-describe-instances:
+    command: bin/euca-describe-instances
+    plugs:
+      - home
+      - network
+  euca-describe-internet-gateways:
+    command: bin/euca-describe-internet-gateways
+    plugs:
+      - home
+      - network
+  euca-describe-keypairs:
+    command: bin/euca-describe-keypairs
+    plugs:
+      - home
+      - network
+  euca-describe-nat-gateways:
+    command: bin/euca-describe-nat-gateways
+    plugs:
+      - home
+      - network
+  euca-describe-network-acls:
+    command: bin/euca-describe-network-acls
+    plugs:
+      - home
+      - network
+  euca-describe-network-interface-attribute:
+    command: bin/euca-describe-network-interface-attribute
+    plugs:
+      - home
+      - network
+  euca-describe-network-interfaces:
+    command: bin/euca-describe-network-interfaces
+    plugs:
+      - home
+      - network
+  euca-describe-regions:
+    command: bin/euca-describe-regions
+    plugs:
+      - home
+      - network
+  euca-describe-route-tables:
+    command: bin/euca-describe-route-tables
+    plugs:
+      - home
+      - network
+  euca-describe-snapshot-attribute:
+    command: bin/euca-describe-snapshot-attribute
+    plugs:
+      - home
+      - network
+  euca-describe-snapshots:
+    command: bin/euca-describe-snapshots
+    plugs:
+      - home
+      - network
+  euca-describe-subnets:
+    command: bin/euca-describe-subnets
+    plugs:
+      - home
+      - network
+  euca-describe-tags:
+    command: bin/euca-describe-tags
+    plugs:
+      - home
+      - network
+  euca-describe-volumes:
+    command: bin/euca-describe-volumes
+    plugs:
+      - home
+      - network
+  euca-describe-vpc-attribute:
+    command: bin/euca-describe-vpc-attribute
+    plugs:
+      - home
+      - network
+  euca-describe-vpc-peering-connections:
+    command: bin/euca-describe-vpc-peering-connections
+    plugs:
+      - home
+      - network
+  euca-describe-vpcs:
+    command: bin/euca-describe-vpcs
+    plugs:
+      - home
+      - network
+  euca-describe-vpn-connections:
+    command: bin/euca-describe-vpn-connections
+    plugs:
+      - home
+      - network
+  euca-describe-vpn-gateways:
+    command: bin/euca-describe-vpn-gateways
+    plugs:
+      - home
+      - network
+  euca-detach-internet-gateway:
+    command: bin/euca-detach-internet-gateway
+    plugs:
+      - home
+      - network
+  euca-detach-network-interface:
+    command: bin/euca-detach-network-interface
+    plugs:
+      - home
+      - network
+  euca-detach-volume:
+    command: bin/euca-detach-volume
+    plugs:
+      - home
+      - network
+  euca-detach-vpn-gateway:
+    command: bin/euca-detach-vpn-gateway
+    plugs:
+      - home
+      - network
+  euca-disable-vgw-route-propagation:
+    command: bin/euca-disable-vgw-route-propagation
+    plugs:
+      - home
+      - network
+  euca-disassociate-address:
+    command: bin/euca-disassociate-address
+    plugs:
+      - home
+      - network
+  euca-disassociate-route-table:
+    command: bin/euca-disassociate-route-table
+    plugs:
+      - home
+      - network
+  euca-download-and-unbundle:
+    command: bin/euca-download-and-unbundle
+    plugs:
+      - home
+      - network
+  euca-download-bundle:
+    command: bin/euca-download-bundle
+    plugs:
+      - home
+      - network
+  euca-enable-vgw-route-propagation:
+    command: bin/euca-enable-vgw-route-propagation
+    plugs:
+      - home
+      - network
+  euca-fingerprint-key:
+    command: bin/euca-fingerprint-key
+    plugs:
+      - home
+      - network
+  euca-generate-environment-config:
+    command: bin/euca-generate-environment-config
+    plugs:
+      - home
+      - network
+  euca-get-console-output:
+    command: bin/euca-get-console-output
+    plugs:
+      - home
+      - network
+  euca-get-password:
+    command: bin/euca-get-password
+    plugs:
+      - home
+      - network
+  euca-get-password-data:
+    command: bin/euca-get-password-data
+    plugs:
+      - home
+      - network
+  euca-import-instance:
+    command: bin/euca-import-instance
+    plugs:
+      - home
+      - network
+  euca-import-keypair:
+    command: bin/euca-import-keypair
+    plugs:
+      - home
+      - network
+  euca-import-volume:
+    command: bin/euca-import-volume
+    plugs:
+      - home
+      - network
+  euca-install-image:
+    command: bin/euca-install-image
+    plugs:
+      - home
+      - network
+  euca-modify-image-attribute:
+    command: bin/euca-modify-image-attribute
+    plugs:
+      - home
+      - network
+  euca-modify-instance-attribute:
+    command: bin/euca-modify-instance-attribute
+    plugs:
+      - home
+      - network
+  euca-modify-instance-type:
+    command: bin/euca-modify-instance-type
+    plugs:
+      - home
+      - network
+  euca-modify-network-interface-attribute:
+    command: bin/euca-modify-network-interface-attribute
+    plugs:
+      - home
+      - network
+  euca-modify-snapshot-attribute:
+    command: bin/euca-modify-snapshot-attribute
+    plugs:
+      - home
+      - network
+  euca-modify-subnet-attribute:
+    command: bin/euca-modify-subnet-attribute
+    plugs:
+      - home
+      - network
+  euca-modify-vpc-attribute:
+    command: bin/euca-modify-vpc-attribute
+    plugs:
+      - home
+      - network
+  euca-monitor-instances:
+    command: bin/euca-monitor-instances
+    plugs:
+      - home
+      - network
+  euca-reboot-instances:
+    command: bin/euca-reboot-instances
+    plugs:
+      - home
+      - network
+  euca-register:
+    command: bin/euca-register
+    plugs:
+      - home
+      - network
+  euca-reject-vpc-peering-connection:
+    command: bin/euca-reject-vpc-peering-connection
+    plugs:
+      - home
+      - network
+  euca-release-address:
+    command: bin/euca-release-address
+    plugs:
+      - home
+      - network
+  euca-replace-network-acl-association:
+    command: bin/euca-replace-network-acl-association
+    plugs:
+      - home
+      - network
+  euca-replace-network-acl-entry:
+    command: bin/euca-replace-network-acl-entry
+    plugs:
+      - home
+      - network
+  euca-replace-route:
+    command: bin/euca-replace-route
+    plugs:
+      - home
+      - network
+  euca-replace-route-table-association:
+    command: bin/euca-replace-route-table-association
+    plugs:
+      - home
+      - network
+  euca-reset-image-attribute:
+    command: bin/euca-reset-image-attribute
+    plugs:
+      - home
+      - network
+  euca-reset-instance-attribute:
+    command: bin/euca-reset-instance-attribute
+    plugs:
+      - home
+      - network
+  euca-reset-network-interface-attribute:
+    command: bin/euca-reset-network-interface-attribute
+    plugs:
+      - home
+      - network
+  euca-reset-snapshot-attribute:
+    command: bin/euca-reset-snapshot-attribute
+    plugs:
+      - home
+      - network
+  euca-resume-import:
+    command: bin/euca-resume-import
+    plugs:
+      - home
+      - network
+  euca-revoke:
+    command: bin/euca-revoke
+    plugs:
+      - home
+      - network
+  euca-run-instances:
+    command: bin/euca-run-instances
+    plugs:
+      - home
+      - network
+  euca-start-instances:
+    command: bin/euca-start-instances
+    plugs:
+      - home
+      - network
+  euca-stop-instances:
+    command: bin/euca-stop-instances
+    plugs:
+      - home
+      - network
+  euca-terminate-instances:
+    command: bin/euca-terminate-instances
+    plugs:
+      - home
+      - network
+  euca-unassign-private-ip-addresses:
+    command: bin/euca-unassign-private-ip-addresses
+    plugs:
+      - home
+      - network
+  euca-unbundle:
+    command: bin/euca-unbundle
+    plugs:
+      - home
+      - network
+  euca-unbundle-stream:
+    command: bin/euca-unbundle-stream
+    plugs:
+      - home
+      - network
+  euca-unmonitor-instances:
+    command: bin/euca-unmonitor-instances
+    plugs:
+      - home
+      - network
+  euca-upload-bundle:
+    command: bin/euca-upload-bundle
+    plugs:
+      - home
+      - network
+  euca-version:
+    command: bin/euca-version
+    plugs:
+      - home
+      - network
+  euform-cancel-update-stack:
+    command: bin/euform-cancel-update-stack
+    plugs:
+      - home
+      - network
+  euform-continue-rollback:
+    command: bin/euform-continue-rollback
+    plugs:
+      - home
+      - network
+  euform-create-stack:
+    command: bin/euform-create-stack
+    plugs:
+      - home
+      - network
+  euform-delete-stack:
+    command: bin/euform-delete-stack
+    plugs:
+      - home
+      - network
+  euform-describe-stack-events:
+    command: bin/euform-describe-stack-events
+    plugs:
+      - home
+      - network
+  euform-describe-stack-resource:
+    command: bin/euform-describe-stack-resource
+    plugs:
+      - home
+      - network
+  euform-describe-stack-resources:
+    command: bin/euform-describe-stack-resources
+    plugs:
+      - home
+      - network
+  euform-describe-stacks:
+    command: bin/euform-describe-stacks
+    plugs:
+      - home
+      - network
+  euform-get-template:
+    command: bin/euform-get-template
+    plugs:
+      - home
+      - network
+  euform-get-template-summary:
+    command: bin/euform-get-template-summary
+    plugs:
+      - home
+      - network
+  euform-list-stack-resources:
+    command: bin/euform-list-stack-resources
+    plugs:
+      - home
+      - network
+  euform-list-stacks:
+    command: bin/euform-list-stacks
+    plugs:
+      - home
+      - network
+  euform-update-stack:
+    command: bin/euform-update-stack
+    plugs:
+      - home
+      - network
+  euform-validate-template:
+    command: bin/euform-validate-template
+    plugs:
+      - home
+      - network
+  euimage-describe-pack:
+    command: bin/euimage-describe-pack
+    plugs:
+      - home
+      - network
+  euimage-install-pack:
+    command: bin/euimage-install-pack
+    plugs:
+      - home
+      - network
+  euimage-pack-image:
+    command: bin/euimage-pack-image
+    plugs:
+      - home
+      - network
+  eulb-apply-security-groups-to-lb:
+    command: bin/eulb-apply-security-groups-to-lb
+    plugs:
+      - home
+      - network
+  eulb-attach-lb-to-subnets:
+    command: bin/eulb-attach-lb-to-subnets
+    plugs:
+      - home
+      - network
+  eulb-configure-healthcheck:
+    command: bin/eulb-configure-healthcheck
+    plugs:
+      - home
+      - network
+  eulb-create-app-cookie-stickiness-policy:
+    command: bin/eulb-create-app-cookie-stickiness-policy
+    plugs:
+      - home
+      - network
+  eulb-create-lb:
+    command: bin/eulb-create-lb
+    plugs:
+      - home
+      - network
+  eulb-create-lb-cookie-stickiness-policy:
+    command: bin/eulb-create-lb-cookie-stickiness-policy
+    plugs:
+      - home
+      - network
+  eulb-create-lb-listeners:
+    command: bin/eulb-create-lb-listeners
+    plugs:
+      - home
+      - network
+  eulb-create-lb-policy:
+    command: bin/eulb-create-lb-policy
+    plugs:
+      - home
+      - network
+  eulb-create-tags:
+    command: bin/eulb-create-tags
+    plugs:
+      - home
+      - network
+  eulb-delete-lb:
+    command: bin/eulb-delete-lb
+    plugs:
+      - home
+      - network
+  eulb-delete-lb-listeners:
+    command: bin/eulb-delete-lb-listeners
+    plugs:
+      - home
+      - network
+  eulb-delete-lb-policy:
+    command: bin/eulb-delete-lb-policy
+    plugs:
+      - home
+      - network
+  eulb-delete-tags:
+    command: bin/eulb-delete-tags
+    plugs:
+      - home
+      - network
+  eulb-deregister-instances-from-lb:
+    command: bin/eulb-deregister-instances-from-lb
+    plugs:
+      - home
+      - network
+  eulb-describe-instance-health:
+    command: bin/eulb-describe-instance-health
+    plugs:
+      - home
+      - network
+  eulb-describe-lb-attributes:
+    command: bin/eulb-describe-lb-attributes
+    plugs:
+      - home
+      - network
+  eulb-describe-lb-policies:
+    command: bin/eulb-describe-lb-policies
+    plugs:
+      - home
+      - network
+  eulb-describe-lb-policy-types:
+    command: bin/eulb-describe-lb-policy-types
+    plugs:
+      - home
+      - network
+  eulb-describe-lbs:
+    command: bin/eulb-describe-lbs
+    plugs:
+      - home
+      - network
+  eulb-describe-tags:
+    command: bin/eulb-describe-tags
+    plugs:
+      - home
+      - network
+  eulb-detach-lb-from-subnets:
+    command: bin/eulb-detach-lb-from-subnets
+    plugs:
+      - home
+      - network
+  eulb-disable-zones-for-lb:
+    command: bin/eulb-disable-zones-for-lb
+    plugs:
+      - home
+      - network
+  eulb-enable-zones-for-lb:
+    command: bin/eulb-enable-zones-for-lb
+    plugs:
+      - home
+      - network
+  eulb-modify-lb-attributes:
+    command: bin/eulb-modify-lb-attributes
+    plugs:
+      - home
+      - network
+  eulb-register-instances-with-lb:
+    command: bin/eulb-register-instances-with-lb
+    plugs:
+      - home
+      - network
+  eulb-set-lb-listener-ssl-cert:
+    command: bin/eulb-set-lb-listener-ssl-cert
+    plugs:
+      - home
+      - network
+  eulb-set-lb-policies-for-backend-server:
+    command: bin/eulb-set-lb-policies-for-backend-server
+    plugs:
+      - home
+      - network
+  eulb-set-lb-policies-of-listener:
+    command: bin/eulb-set-lb-policies-of-listener
+    plugs:
+      - home
+      - network
+  euscale-create-auto-scaling-group:
+    command: bin/euscale-create-auto-scaling-group
+    plugs:
+      - home
+      - network
+  euscale-create-launch-config:
+    command: bin/euscale-create-launch-config
+    plugs:
+      - home
+      - network
+  euscale-create-or-update-tags:
+    command: bin/euscale-create-or-update-tags
+    plugs:
+      - home
+      - network
+  euscale-delete-auto-scaling-group:
+    command: bin/euscale-delete-auto-scaling-group
+    plugs:
+      - home
+      - network
+  euscale-delete-launch-config:
+    command: bin/euscale-delete-launch-config
+    plugs:
+      - home
+      - network
+  euscale-delete-notification-configuration:
+    command: bin/euscale-delete-notification-configuration
+    plugs:
+      - home
+      - network
+  euscale-delete-policy:
+    command: bin/euscale-delete-policy
+    plugs:
+      - home
+      - network
+  euscale-delete-scheduled-action:
+    command: bin/euscale-delete-scheduled-action
+    plugs:
+      - home
+      - network
+  euscale-delete-tags:
+    command: bin/euscale-delete-tags
+    plugs:
+      - home
+      - network
+  euscale-describe-account-limits:
+    command: bin/euscale-describe-account-limits
+    plugs:
+      - home
+      - network
+  euscale-describe-adjustment-types:
+    command: bin/euscale-describe-adjustment-types
+    plugs:
+      - home
+      - network
+  euscale-describe-auto-scaling-groups:
+    command: bin/euscale-describe-auto-scaling-groups
+    plugs:
+      - home
+      - network
+  euscale-describe-auto-scaling-instances:
+    command: bin/euscale-describe-auto-scaling-instances
+    plugs:
+      - home
+      - network
+  euscale-describe-auto-scaling-notification-types:
+    command: bin/euscale-describe-auto-scaling-notification-types
+    plugs:
+      - home
+      - network
+  euscale-describe-launch-configs:
+    command: bin/euscale-describe-launch-configs
+    plugs:
+      - home
+      - network
+  euscale-describe-metric-collection-types:
+    command: bin/euscale-describe-metric-collection-types
+    plugs:
+      - home
+      - network
+  euscale-describe-notification-configurations:
+    command: bin/euscale-describe-notification-configurations
+    plugs:
+      - home
+      - network
+  euscale-describe-policies:
+    command: bin/euscale-describe-policies
+    plugs:
+      - home
+      - network
+  euscale-describe-process-types:
+    command: bin/euscale-describe-process-types
+    plugs:
+      - home
+      - network
+  euscale-describe-scaling-activities:
+    command: bin/euscale-describe-scaling-activities
+    plugs:
+      - home
+      - network
+  euscale-describe-scheduled-actions:
+    command: bin/euscale-describe-scheduled-actions
+    plugs:
+      - home
+      - network
+  euscale-describe-tags:
+    command: bin/euscale-describe-tags
+    plugs:
+      - home
+      - network
+  euscale-describe-termination-policy-types:
+    command: bin/euscale-describe-termination-policy-types
+    plugs:
+      - home
+      - network
+  euscale-disable-metrics-collection:
+    command: bin/euscale-disable-metrics-collection
+    plugs:
+      - home
+      - network
+  euscale-enable-metrics-collection:
+    command: bin/euscale-enable-metrics-collection
+    plugs:
+      - home
+      - network
+  euscale-execute-policy:
+    command: bin/euscale-execute-policy
+    plugs:
+      - home
+      - network
+  euscale-put-notification-configuration:
+    command: bin/euscale-put-notification-configuration
+    plugs:
+      - home
+      - network
+  euscale-put-scaling-policy:
+    command: bin/euscale-put-scaling-policy
+    plugs:
+      - home
+      - network
+  euscale-put-scheduled-update-group-action:
+    command: bin/euscale-put-scheduled-update-group-action
+    plugs:
+      - home
+      - network
+  euscale-resume-processes:
+    command: bin/euscale-resume-processes
+    plugs:
+      - home
+      - network
+  euscale-set-desired-capacity:
+    command: bin/euscale-set-desired-capacity
+    plugs:
+      - home
+      - network
+  euscale-set-instance-health:
+    command: bin/euscale-set-instance-health
+    plugs:
+      - home
+      - network
+  euscale-suspend-processes:
+    command: bin/euscale-suspend-processes
+    plugs:
+      - home
+      - network
+  euscale-terminate-instance-in-auto-scaling-group:
+    command: bin/euscale-terminate-instance-in-auto-scaling-group
+    plugs:
+      - home
+      - network
+  euscale-update-auto-scaling-group:
+    command: bin/euscale-update-auto-scaling-group
+    plugs:
+      - home
+      - network
+  euwatch-delete-alarms:
+    command: bin/euwatch-delete-alarms
+    plugs:
+      - home
+      - network
+  euwatch-describe-alarm-history:
+    command: bin/euwatch-describe-alarm-history
+    plugs:
+      - home
+      - network
+  euwatch-describe-alarms:
+    command: bin/euwatch-describe-alarms
+    plugs:
+      - home
+      - network
+  euwatch-describe-alarms-for-metric:
+    command: bin/euwatch-describe-alarms-for-metric
+    plugs:
+      - home
+      - network
+  euwatch-disable-alarm-actions:
+    command: bin/euwatch-disable-alarm-actions
+    plugs:
+      - home
+      - network
+  euwatch-enable-alarm-actions:
+    command: bin/euwatch-enable-alarm-actions
+    plugs:
+      - home
+      - network
+  euwatch-get-stats:
+    command: bin/euwatch-get-stats
+    plugs:
+      - home
+      - network
+  euwatch-list-metrics:
+    command: bin/euwatch-list-metrics
+    plugs:
+      - home
+      - network
+  euwatch-put-data:
+    command: bin/euwatch-put-data
+    plugs:
+      - home
+      - network
+  euwatch-put-metric-alarm:
+    command: bin/euwatch-put-metric-alarm
+    plugs:
+      - home
+      - network
+  euwatch-set-alarm-state:
+    command: bin/euwatch-set-alarm-state
+    plugs:
+      - home
+      - network
+
+parts:
+  euca:
+    plugin: dump
+    source: ./
+  euca2ools:
+    plugin: python
+    python-version: python2
+    source: https://github.com/Corymbia/euca2ools.git
+    source-type: git
+    source-depth: 1
+    source-tag: v3.4.1
+
