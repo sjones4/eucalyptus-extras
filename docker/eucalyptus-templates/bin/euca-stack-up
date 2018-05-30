@@ -1,0 +1,31 @@
+#!/bin/bash
+# Script to create a stack from a template
+set -euo pipefail
+
+TEMPLATE="${TEMPLATE:-}"
+STACK=${STACK:-}
+DEFAULT_PARAMS="$(euform-get-template-summary --template-file ${TEMPLATE} \
+  | grep ^PARAMETER \
+  | awk -F'\t' '{print "-p " $2 "=${" $2 ":-" $4 "}" }' \
+  | xargs echo)"
+
+if [ -z "${STACK}" ] ; then
+  STACK="$(basename ${TEMPLATE})"
+  STACK="${STACK%%-template.json}-$RANDOM"
+fi
+
+echo "Creating stack"
+euform-create-stack \
+  --template-file ${TEMPLATE} \
+  --capabilities CAPABILITY_IAM \
+  $(eval echo ${DEFAULT_PARAMS}) \
+  "${@}" \
+  ${STACK}
+
+echo "To check on stack creation run:"
+echo ""
+echo "  euform-describe-stacks"
+echo ""
+echo "Stack creation in progress, this will take a minute..."
+echo ""
+
