@@ -1,0 +1,21 @@
+#!/bin/bash
+# Script to delete a stack
+set -euo pipefail
+
+STACK="${1:-}"
+
+if [ -z "${STACK}" ] ; then
+    echo "Please specify which stack to delete"
+    echo ""
+    echo "Usage:"
+    echo "    euca-stack-down <STACK>"
+    echo ""
+    euform-describe-stacks | grep STACK
+    exit 1
+fi
+
+echo "Deleting stack ${STACK}"
+euform-delete-stack "${STACK}"
+
+echo "Stack deletion in progress, this will take a minute..."
+
