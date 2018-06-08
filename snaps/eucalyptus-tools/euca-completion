@@ -1,0 +1,45 @@
+_euca()
+{
+    local cur prev
+
+    cur=${COMP_WORDS[COMP_CWORD]}
+    prev=${COMP_WORDS[COMP_CWORD-1]}
+
+    case "${COMP_CWORD}" in
+        1)
+            COMPREPLY=($(compgen -W "as autoscaling cf cloudformation cw cloudwatch ec2 elb iam version help" -- ${cur}))
+            ;;
+        2)
+            case ${prev} in
+                as|autoscaling|euscale)
+                    COMPREPLY=($(compgen -W "create-auto-scaling-group create-launch-config create-or-update-tags delete-auto-scaling-group delete-launch-config delete-notification-configuration delete-policy delete-scheduled-action delete-tags describe-account-limits describe-adjustment-types describe-auto-scaling-groups describe-auto-scaling-instances describe-auto-scaling-notification-types describe-launch-configs describe-metric-collection-types describe-notification-configurations describe-policies describe-process-types describe-scaling-activities describe-scheduled-actions describe-tags describe-termination-policy-types disable-metrics-collection enable-metrics-collection execute-policy put-notification-configuration put-scaling-policy put-scheduled-update-group-action resume-processes set-desired-capacity set-instance-health suspend-processes terminate-instance-in-auto-scaling-group update-auto-scaling-group" -- ${cur}))
+                    ;;
+                cf|cloudformation|euform)
+                    COMPREPLY=($(compgen -W "cancel-update-stack continue-rollback create-stack delete-stack describe-stack-events describe-stack-resource describe-stack-resources describe-stacks get-template get-template-summary list-stack-resources list-stacks update-stack validate-template" -- ${cur}))
+                    ;;
+                cw|cloudwatch|euwatch)
+                    COMPREPLY=($(compgen -W "delete-alarms describe-alarm-history describe-alarms describe-alarms-for-metric disable-alarm-actions enable-alarm-actions get-stats list-metrics put-data put-metric-alarm set-alarm-state" -- ${cur}))
+                    ;;
+                ec2|euca)
+                    COMPREPLY=($(compgen -W "accept-vpc-peering-connection allocate-address assign-private-ip-addresses associate-address associate-dhcp-options associate-route-table attach-internet-gateway attach-network-interface attach-volume attach-vpn-gateway authorize bundle-and-upload-image bundle-image bundle-instance bundle-vol cancel-bundle-task cancel-conversion-task confirm-product-instance copy-image create-customer-gateway create-dhcp-options create-group create-image create-internet-gateway create-keypair create-nat-gateway create-network-acl create-network-acl-entry create-network-interface create-route create-route-table create-snapshot create-subnet create-tags create-volume create-vpc create-vpc-peering-connection create-vpn-connection create-vpn-connection-route create-vpn-gateway delete-bundle delete-customer-gateway delete-dhcp-options delete-disk-image delete-group delete-internet-gateway delete-keypair delete-nat-gateway delete-network-acl delete-network-acl-entry delete-network-interface delete-route delete-route-table delete-snapshot delete-subnet delete-tags delete-volume delete-vpc delete-vpc-peering-connection delete-vpn-connection delete-vpn-connection-route delete-vpn-gateway deregister describe-account-attributes describe-addresses describe-availability-zones describe-bundle-tasks describe-conversion-tasks describe-customer-gateways describe-dhcp-options describe-group describe-groups describe-image-attribute describe-images describe-instance-attribute describe-instances describe-instance-status describe-instance-types describe-internet-gateways describe-keypairs describe-nat-gateways describe-network-acls describe-network-interface-attribute describe-network-interfaces describe-regions describe-route-tables describe-snapshot-attribute describe-snapshots describe-subnets describe-tags describe-volumes describe-vpc-attribute describe-vpc-peering-connections describe-vpcs describe-vpn-connections describe-vpn-gateways detach-internet-gateway detach-network-interface detach-volume detach-vpn-gateway disable-vgw-route-propagation disassociate-address disassociate-route-table download-and-unbundle download-bundle enable-vgw-route-propagation fingerprint-key generate-environment-config get-console-output get-password get-password-data import-instance import-keypair import-volume install-image modify-image-attribute modify-instance-attribute modify-instance-type modify-network-interface-attribute modify-snapshot-attribute modify-subnet-attribute modify-vpc-attribute monitor-instances reboot-instances register reject-vpc-peering-connection release-address replace-network-acl-association replace-network-acl-entry replace-route replace-route-table-association reset-image-attribute reset-instance-attribute reset-network-interface-attribute reset-snapshot-attribute resume-import revoke run-instances start-instances stop-instances terminate-instances unassign-private-ip-addresses unbundle unbundle-stream unmonitor-instances upload-bundle" -- ${cur}))
+                    ;;
+                elb|eulb)
+                    COMPREPLY=($(compgen -W "apply-security-groups-to-lb attach-lb-to-subnets configure-healthcheck create-app-cookie-stickiness-policy create-lb create-lb-cookie-stickiness-policy create-lb-listeners create-lb-policy create-tags delete-lb delete-lb-listeners delete-lb-policy delete-tags deregister-instances-from-lb describe-instance-health describe-lb-attributes describe-lb-policies describe-lb-policy-types describe-lbs describe-tags detach-lb-from-subnets disable-zones-for-lb enable-zones-for-lb modify-lb-attributes register-instances-with-lb set-lb-listener-ssl-cert set-lb-policies-for-backend-server set-lb-policies-of-listener" -- ${cur}))
+                    ;;
+                iam|euare)
+                    COMPREPLY=($(compgen -W "accountaliascreate accountaliasdelete accountaliaslist accountcreate accountdel accountdelpolicy accountgetpolicy accountgetsummary accountlist accountlistpolicies accountuploadpolicy assumerole getcallerid getldapsyncstatus groupaddpolicy groupadduser groupcreate groupdel groupdelpolicy groupgetpolicy grouplistbypath grouplistpolicies grouplistusers groupmod groupremoveuser groupuploadpolicy instanceprofileaddrole instanceprofilecreate instanceprofiledel instanceprofilegetattributes instanceprofilelistbypath instanceprofilelistforrole instanceprofileremoverole oidcprovideraddclientid oidcproviderchangethumbprint oidcprovidercreate oidcproviderdel oidcproviderdelclientid oidcprovidergetattributes oidcproviderlist releaserole roleaddpolicy rolecreate roledel roledelpolicy rolegetattributes rolegetpolicy rolelistbypath rolelistpolicies roleupdateassumepolicy roleuploadpolicy servercertdel servercertgetattributes servercertlistbypath servercertmod servercertupload useraddcert useraddkey useraddloginprofile useraddpolicy usercreate usercreatecert userdeactivatemfadevice userdel userdelcert userdelkey userdelloginprofile userdelpolicy userenablemfadevice usergetattributes usergetinfo usergetloginprofile usergetpolicy userlistbypath userlistcerts userlistgroups userlistkeys userlistmfadevices userlistpolicies usermod usermodcert usermodkey usermodloginprofile userresyncmfadevice userupdateinfo useruploadpolicy" -- ${cur}))
+                    ;;
+				*)
+				    COMPREPLY=()
+				    ;;
+            esac
+            ;;
+        *)
+            COMPREPLY=()
+            ;;
+    esac
+
+    return 0
+}
+
+complete -F _euca eucalyptus-tools.euca

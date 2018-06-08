@@ -15,6 +15,7 @@ description: |
 apps:
   euca:
     command: bin/euca.sh
+    completer: euca-completion
     plugs:
       - home
       - network
