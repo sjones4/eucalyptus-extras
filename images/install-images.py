@@ -49,10 +49,12 @@ from subprocess import Popen, PIPE, call
 class ImageManager:
     def __init__(self, user, region,
                  catalog="https://raw.githubusercontent.com/sjones4/eucalypt"
-                         "us-extras/master/images/image-catalog.json"):
+                         "us-extras/master/images/image-catalog.json",
+                 size=5):
         self.user = user
         self.region = region
         self.catalog = catalog
+        self.min_size = size
         self.temp_dir_prefix = "images"
 
     def check_dependencies(self):
@@ -72,7 +74,7 @@ class ImageManager:
             time.sleep(0.5)
             print_error("Euca2ools not found.\n")
             print_info("Install instructions can be found here:\n"
-                       "https://docs.eucalyptus.cloud/eucalyptus/4.4.2/"
+                       "https://docs.eucalyptus.cloud/eucalyptus/4.4.3/"
                        "#shared/installing_euca2ools.html")
             sys.exit("Bye")
         sys.stdout.flush()
@@ -257,6 +259,18 @@ class ImageManager:
             image_path = image_path[0:image_path.rindex(".")] + ".raw"
             print_info("Converted image can be found at: " + image_path)
 
+        # Increase size of image, if necessary
+        gb = 1024 * 1024 * 1024
+        min_size_bytes = gb * self.min_size
+        image_size_bytes = os.path.getsize(image_path)
+        if image_size_bytes < min_size_bytes:
+            pad_size_bytes = min_size_bytes - image_size_bytes
+            print_info("Padding image size by {0} bytes to {1} GiB(s)"
+                       .format(pad_size_bytes, self.min_size))
+            with open(image_path, "rb+") as image_out:
+                image_out.seek(min_size_bytes - 1, os.SEEK_SET)
+                image_out.write(b'\0')
+
         print_info("Installing image to bucket: " + image_name + "\n")
         install_cmd = "euca-install-image -r x86_64 -i {0} --virt hvm " \
                       "-b {1} -n {1} --region {2}@{3}". \
@@ -432,6 +446,8 @@ def main():
     parser = argparse.ArgumentParser(description='Process Arguments.')
     parser.add_argument('-c', '--catalog', default=argparse.SUPPRESS,
                         help='Image catalog json file')
+    parser.add_argument('-s', '--size', type=int, default=5,
+                        help='Image minimum size in GB')
     args = parser.parse_args()
 
     print_title()
