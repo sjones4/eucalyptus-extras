@@ -30,7 +30,8 @@
 
     "KeyName": {
       "Description" : "EC2 keypair for SSH access to instances",
-      "Type": "String"
+      "Type": "String",
+      "Default": ""
     },
 
     "ServerInstanceType" : {
@@ -51,6 +52,10 @@
       "Default" : "http://s3.internal:8773"
     }
 
+  },
+
+  "Conditions" : {
+    "UseKeyNameParameter" : {"Fn::Not": [{"Fn::Equals" : [{"Ref" : "KeyName"}, ""]}]}
   },
 
   "Resources" : {
@@ -167,7 +172,11 @@
         "ImageId"        : { "Ref" : "ImageId" },
         "InstanceType"   : { "Ref" : "ServerInstanceType" },
         "SecurityGroups" : [ {"Ref" : "RancherServerSecurityGroup"} ],
-        "KeyName"        : { "Ref" : "KeyName" },
+        "KeyName"        : { "Fn::If" : [
+          "UseKeyNameParameter",
+          { "Ref" : "KeyName" },
+          { "Ref" : "AWS::NoValue" }
+        ] },
         "UserData"       : { "Fn::Base64" : { "Fn::Join" : ["", [
           "#cloud-config\n",
           "write_files:\n",
@@ -400,7 +409,11 @@
         "ImageId"        : { "Ref" : "ImageId" },
         "SecurityGroups" : [ { "Ref" : "RancherHostSecurityGroup" } ],
         "InstanceType"   : { "Ref" : "ClusterInstanceType" },
-        "KeyName"        : { "Ref" : "KeyName" },
+        "KeyName"        : { "Fn::If" : [
+          "UseKeyNameParameter",
+          { "Ref" : "KeyName" },
+          { "Ref" : "AWS::NoValue" }
+        ] },
         "UserData"       : { "Fn::Base64" : { "Fn::Join" : ["", [
           "#cloud-config\n",
           "write_files:\n",
