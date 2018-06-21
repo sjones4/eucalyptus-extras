@@ -60,7 +60,8 @@
 
     "KeyName": {
       "Description" : "EC2 keypair for instance SSH access",
-      "Type": "String"
+      "Type": "String",
+      "Default": ""
     },
 
     "Zone": {
@@ -73,7 +74,8 @@
 
   "Conditions" : {
     "UseZoneParameter" : {"Fn::Not": [{"Fn::Equals" : [{"Ref" : "Zone"}, "auto-select"]}]},
-    "UseHttpProxy" : {"Fn::Not": [{"Fn::Equals" : [{"Ref" : "InstanceHttpProxy"}, ""]}]}
+    "UseHttpProxy" : {"Fn::Not": [{"Fn::Equals" : [{"Ref" : "InstanceHttpProxy"}, ""]}]},
+    "UseKeyNameParameter" : {"Fn::Not": [{"Fn::Equals" : [{"Ref" : "KeyName"}, ""]}]}
   },
 
   "Resources" : {
@@ -111,7 +113,11 @@
         "ImageId"        : { "Ref" : "ImageId" },
         "InstanceType"   : { "Ref" : "InstanceType" },
         "SecurityGroups" : [ {"Ref" : "SecurityGroup"} ],
-        "KeyName"        : { "Ref" : "KeyName" },
+        "KeyName"        : { "Fn::If" : [
+          "UseKeyNameParameter",
+          { "Ref" : "KeyName" },
+          { "Ref" : "AWS::NoValue" }
+        ] },
         "UserData"       : { "Fn::Base64" : { "Fn::Join" : ["", [
           "#cloud-config\n",
           "write_files:\n",
