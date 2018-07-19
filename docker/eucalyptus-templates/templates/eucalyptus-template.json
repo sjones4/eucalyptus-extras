@@ -1,0 +1,764 @@
+{
+    "AWSTemplateFormatVersion" : "2010-09-09",
+
+    "Description" : "Eucalyptus cloud on IaaS",
+
+    "Parameters": {
+        "ImageId": {
+            "Description":"CentOS 7.5 image for instances",
+            "Type":"String"
+        },
+
+        "InstanceType": {
+            "Description": "Instance type for instances",
+            "Type": "String",
+            "Default": "m2.4xlarge",
+            "AllowedValues": ["t1.micro", "t2.nano", "t2.micro", "t2.small", "t2.medium", "t2.large", "m1.small", "m1.medium", "m1.large", "m1.xlarge", "m2.xlarge", "m2.2xlarge", "m2.4xlarge", "m3.medium", "m3.large", "m3.xlarge", "m3.2xlarge", "m4.large", "m4.xlarge", "m4.2xlarge", "m4.4xlarge", "m4.10xlarge", "c1.medium", "c1.xlarge", "c3.large", "c3.xlarge", "c3.2xlarge", "c3.4xlarge", "c3.8xlarge", "c4.large", "c4.xlarge", "c4.2xlarge", "c4.4xlarge", "c4.8xlarge", "g2.2xlarge", "g2.8xlarge", "r3.large", "r3.xlarge", "r3.2xlarge", "r3.4xlarge", "r3.8xlarge", "i2.xlarge", "i2.2xlarge", "i2.4xlarge", "i2.8xlarge", "d2.xlarge", "d2.2xlarge", "d2.4xlarge", "d2.8xlarge", "hi1.4xlarge", "hs1.8xlarge", "cr1.8xlarge", "cc2.8xlarge", "cg1.4xlarge"],
+            "ConstraintDescription": "must be a valid EC2 instance type."
+        },
+
+        "KeyName": {
+            "Description":"User Key Pair for instances",
+            "Type":"String"
+        },
+
+        "YumRepoEucalyptus" : {
+            "Description": "Eucalyptus Yum Repository",
+            "Type": "String",
+            "Default": "http://downloads.eucalyptus.cloud/software/eucalyptus/4.4/rhel/7/x86_64/"
+        },
+
+        "YumRepoEuca2ools" : {
+            "Description": "Euca2ools Yum Repository",
+            "Type": "String",
+            "Default": "http://downloads.eucalyptus.cloud/software/euca2ools/3.4/rhel/7/x86_64/"
+        }
+    },
+
+    "Resources" : {
+        "S3User": {
+            "Type": "AWS::IAM::User",
+            "Properties": {
+                "Path": "/"
+            }
+        },
+
+        "Policy" : {
+          "Type" : "AWS::IAM::Policy",
+          "Properties" : {
+            "PolicyDocument" : {
+              "Version": "2012-10-17",
+              "Statement": [{
+                "Action": [ "s3:*" ],
+                "Effect": "Allow",
+                "Resource": [ "*" ]
+              }]
+            },
+            "PolicyName" : "s3-policy",
+            "Users" : [ { "Ref": "S3User" } ]
+          }
+        },
+
+        "S3AccessKey" : {
+          "Type": "AWS::IAM::AccessKey",
+          "Properties": {
+            "Status": "Active",
+            "UserName": { "Ref": "S3User" }
+          }
+        },
+
+        "S3Bucket" : {
+            "Type" : "AWS::S3::Bucket",
+            "DeletionPolicy" : "Retain"
+        },
+
+        "Vpc": {
+            "Type": "AWS::EC2::VPC",
+            "Properties" : {
+                "CidrBlock" : "10.0.0.0/16",
+                "EnableDnsSupport" : "True",
+                "EnableDnsHostnames" : "True"
+            }
+        },
+
+        "Subnet": {
+            "Type" : "AWS::EC2::Subnet",
+            "Properties" : {
+                "VpcId" : { "Ref" : "Vpc" },
+                "CidrBlock" : "10.0.0.0/24",
+                "AvailabilityZone" : { "Fn::Select" : [ "0", { "Fn::GetAZs" : { "Ref" : "AWS::Region" } } ] }
+            }
+        },
+
+        "InstanceSubnet": {
+            "Type" : "AWS::EC2::Subnet",
+            "Properties" : {
+                "VpcId" : { "Ref" : "Vpc" },
+                "CidrBlock" : "10.0.10.0/24",
+                "AvailabilityZone" : { "Fn::Select" : [ "0", { "Fn::GetAZs" : { "Ref" : "AWS::Region" } } ] }
+            }
+        },
+
+        "InternetGateway" : {
+            "Type" : "AWS::EC2::InternetGateway",
+            "Properties" : {
+                "Tags" : [ {"Key" : "Application", "Value" : { "Ref" : "AWS::StackId"} } ]
+            }
+        },
+
+        "AttachGateway" : {
+            "Type" : "AWS::EC2::VPCGatewayAttachment",
+            "Properties" : {
+                "VpcId" : { "Ref" : "Vpc" },
+                "InternetGatewayId" : { "Ref" : "InternetGateway" }
+            }
+        },
+
+        "RouteTable": {
+            "Type" : "AWS::EC2::RouteTable",
+            "Properties" : {
+                "VpcId" : { "Ref" : "Vpc" }
+            }
+        },
+
+        "GatewayRoute" : {
+            "Type" : "AWS::EC2::Route",
+            "DependsOn" : "AttachGateway",
+            "Properties" : {
+                "RouteTableId" : { "Ref" : "RouteTable" },
+                "DestinationCidrBlock" : "0.0.0.0/0",
+                "GatewayId" : { "Ref" : "InternetGateway" }
+            }
+        },
+
+        "InstancePrivateRoute" : {
+            "Type" : "AWS::EC2::Route",
+            "Properties" : {
+                "RouteTableId" : { "Ref" : "RouteTable" },
+                "DestinationCidrBlock" : "10.0.10.0/24",
+                "NetworkInterfaceId" : { "Ref" : "NodeControllerInstanceInterface" }
+            }
+        },
+
+        "InstancePublicRoute" : {
+            "Type" : "AWS::EC2::Route",
+            "Properties" : {
+                "RouteTableId" : { "Ref" : "RouteTable" },
+                "DestinationCidrBlock" : "10.0.20.0/24",
+                "NetworkInterfaceId" : { "Ref" : "NodeControllerInstanceInterface" }
+            }
+        },
+
+        "SubnetRouteTableAssociation" : {
+            "Type" : "AWS::EC2::SubnetRouteTableAssociation",
+            "Properties" : {
+                "SubnetId" : { "Ref" : "Subnet" },
+                "RouteTableId" : { "Ref" : "RouteTable" }
+            }
+        },
+
+        "InstanceSubnetRouteTableAssociation" : {
+            "Type" : "AWS::EC2::SubnetRouteTableAssociation",
+            "Properties" : {
+                "SubnetId" : { "Ref" : "InstanceSubnet" },
+                "RouteTableId" : { "Ref" : "RouteTable" }
+            }
+        },
+
+        "SecurityGroup": {
+            "Type": "AWS::EC2::SecurityGroup",
+            "Properties": {
+                "GroupDescription" : "Security Group with Ingress Rules for Instance",
+                "VpcId" : {"Ref" : "Vpc"},
+                "SecurityGroupIngress" : [
+                    {
+                        "IpProtocol" : "tcp",
+                        "FromPort" : "22",
+                        "ToPort" : "22",
+                        "CidrIp" : "0.0.0.0/0"
+                    },
+                    {
+                        "IpProtocol" : "tcp",
+                        "FromPort" : "53",
+                        "ToPort" : "53",
+                        "CidrIp" : "0.0.0.0/0"
+                    },
+                    {
+                        "IpProtocol" : "udp",
+                        "FromPort" : "53",
+                        "ToPort" : "53",
+                        "CidrIp" : "0.0.0.0/0"
+                    },
+                    {
+                        "IpProtocol" : "tcp",
+                        "FromPort" : "8700",
+                        "ToPort" : "8700",
+                        "CidrIp" : "0.0.0.0/0"
+                    },
+                    {
+                        "IpProtocol" : "tcp",
+                        "FromPort" : "8773",
+                        "ToPort" : "8775",
+                        "CidrIp" : "0.0.0.0/0"
+                    },
+                    {
+                        "IpProtocol" : "tcp",
+                        "FromPort" : "8777",
+                        "ToPort" : "8779",
+                        "CidrIp" : "0.0.0.0/0"
+                    }
+                ]
+            }
+        },
+
+        "InstanceSecurityGroup": {
+            "Type": "AWS::EC2::SecurityGroup",
+            "Properties": {
+                "GroupDescription" : "Security Group allowing all traffic to hosted instances",
+                "VpcId" : {"Ref" : "Vpc"},
+                "SecurityGroupIngress" : [
+                    {
+                        "IpProtocol" : "-1",
+                        "CidrIp" : "0.0.0.0/0"
+                    }
+                ]
+            }
+        },
+
+        "CloudControllerWaitConditionHandle" : {
+            "Type" : "AWS::CloudFormation::WaitConditionHandle"
+        },
+
+        "CloudControllerWaitCondition" : {
+            "Type" : "AWS::CloudFormation::WaitCondition",
+            "Properties" : {
+                "Handle" : { "Ref" : "CloudControllerWaitConditionHandle" },
+                "Timeout" : "1800"
+            }
+        },
+
+        "CompletedWaitConditionHandle" : {
+            "Type" : "AWS::CloudFormation::WaitConditionHandle"
+        },
+
+        "CompletedWaitCondition" : {
+            "Type" : "AWS::CloudFormation::WaitCondition",
+            "Properties" : {
+                "Handle" : { "Ref" : "CompletedWaitConditionHandle" },
+                "Count"  : 2,
+                "Timeout" : "2700"
+            }
+        },
+
+        "CloudControllerInstance": {
+            "Type": "AWS::EC2::Instance",
+            "DependsOn" : "AttachGateway",
+            "Properties": {
+                "ImageId" : { "Ref":"ImageId" },
+                "InstanceType" : { "Ref":"InstanceType" },
+                "UserData" : { "Fn::Base64" : { "Fn::Join" : ["",[
+                    "#cloud-config\n",
+                    "yum_repos:\n",
+                    "  epel:\n",
+                    "    name: Extra Packages for Enterprise Linux 7\n",
+                    "    baseurl: http://mirrors.rit.edu/fedora/epel/7/x86_64/\n",
+                    "    enabled: 1\n",
+                    "    gpgcheck: 0\n",
+                    "  eucalyptus:\n",
+                    "    name: Eucalyptus Package Repo\n",
+                    "    baseurl: ", { "Ref":"YumRepoEucalyptus" }, "\n",
+                    "    enabled: 1\n",
+                    "    gpgcheck: 0\n",
+                    "  euca2ools:\n",
+                    "    name: Euca2ools Package Repo\n",
+                    "    baseurl: ", { "Ref":"YumRepoEuca2ools" }, "\n",
+                    "    enabled: 1\n",
+                    "    gpgcheck: 0\n",
+                    "packages:\n",
+                    "  - awscli\n",
+                    "  - eucalyptus-cloud\n",
+                    "write_files:\n",
+                    "  - path: /etc/sysctl.d/80-noipv6.conf\n",
+                    "    permissions: \"0644\"\n",
+                    "    owner: root\n",
+                    "    content: |\n",
+                    "     # IPv6 support in the kernel, set to 0 by default\n",
+                    "     net.ipv6.conf.all.disable_ipv6 = 1\n",
+                    "     net.ipv6.conf.default.disable_ipv6 = 1\n",
+                    "  - path: /etc/sysconfig/network-scripts/ifcfg-eth0\n",
+                    "    permissions: \"0444\"\n",
+                    "    owner: root\n",
+                    "    content: |\n",
+                    "     DEVICE=eth0\n",
+                    "     TYPE=Ethernet\n",
+                    "     HWADDR=MAC_ADDRESS_GOES_HERE\n",
+                    "     BOOTPROTO=none\n",
+                    "     IPADDR=10.0.0.10\n",
+                    "     NETMASK=255.255.255.0\n",
+                    "     GATEWAY=10.0.0.1\n",
+                    "     ONBOOT=yes\n",
+                    "     NOZEROCONF=true\n",
+                    "     NM_CONTROLLED=no\n",
+                    "  - path: /etc/sysconfig/network-scripts/route-eth0\n",
+                    "    permissions: \"0444\"\n",
+                    "    owner: root\n",
+                    "    content: |\n",
+                    "     GATEWAY0=10.0.0.40\n",
+                    "     NETMASK0=255.255.255.0\n",
+                    "     ADDRESS0=10.0.20.0\n",
+                    "  - path: /etc/eucalyptus/eucalyptus.conf\n",
+                    "    permissions: \"0644\"\n",
+                    "    owner: root\n",
+                    "    content: |\n",
+                    "     CLOUD_OPTS=\" -Xmx2g -Djava.security.egd=file:/dev/./urandom --bootstrap-host=10.0.0.10 --bootstrap-host=10.0.0.20\"\n",
+                    "     LOGLEVEL=\"INFO\"\n",
+                    "  - path: /root/network.json\n",
+                    "    permissions: \"0644\"\n",
+                    "    owner: root\n",
+                    "    content: |\n",
+                    "     {\n",
+                    "       \"Mode\": \"EDGE\",\n",
+                    "       \"InstanceDnsServers\": [\n",
+                    "           \"10.0.0.10\"\n",
+                    "       ],\n",
+                    "       \"PublicIps\": [\n",
+                    "         \"10.0.20.200-10.0.20.250\"\n",
+                    "       ],\n",
+                    "       \"PrivateIps\": [\n",
+                    "         \"10.0.10.100-10.0.10.150\"\n",
+                    "       ],\n",
+                    "       \"Subnets\": [\n",
+                    "         {\n",
+                    "           \"Gateway\": \"10.0.10.1\",\n",
+                    "           \"Netmask\": \"255.255.255.0\",\n",
+                    "           \"Subnet\": \"10.0.10.0\"\n",
+                    "         }\n",
+                    "       ]\n",
+                    "     }\n",
+                    "  - path: /run/cloud-start.sh\n",
+                    "    permissions: \"0700\"\n",
+                    "    owner: root\n",
+                    "    content: |\n",
+                    "     #!/bin/bash\n",
+                    "     set -euxo pipefail\n",
+                    "\n",
+                    "     S3_ACCESS_KEY=\"", { "Ref" : "S3AccessKey" } ,"\"\n",
+                    "     S3_SECRET_KEY=\"", { "Fn::GetAtt" : [ "S3AccessKey", "SecretAccessKey"] } ,"\"\n",
+                    "     S3_BUCKET=\"",  { "Ref" : "S3Bucket" },"\"\n",
+                    "     WAITCONDURL=\"", { "Ref" : "CloudControllerWaitConditionHandle" }, "\"\n",
+                    "     MAC_ADDRESS=$(curl -s http://169.254.169.254/latest/meta-data/mac | tr A-Z a-z)\n",
+                    "\n",
+                    "     # setup awscli\n",
+                    "     aws configure set s3.signature_version s3v4\n",
+                    "     aws configure set region euca-1\n",
+                    "     aws configure set aws_access_key_id \"${S3_ACCESS_KEY}\"\n",
+                    "     aws configure set aws_secret_access_key \"${S3_SECRET_KEY}\"\n",
+                    "\n",
+                    "     # services\n",
+                    "     sysctl -p/etc/sysctl.d/80-noipv6.conf\n",
+                    "     sed --in-place \"s/MAC_ADDRESS_GOES_HERE/${MAC_ADDRESS}/\" /etc/sysconfig/network-scripts/ifcfg-eth0\n",
+                    "     systemctl restart network.service\n",
+                    "     #semanage permissive -a cloud_init_t\n",
+                    "     setenforce 0\n",
+                    "     clcadmin-initialize-cloud\n",
+                    "     setenforce 1\n",
+                    "     systemctl start eucalyptus-cloud\n",
+                    "\n",
+                    "     # get credentials\n",
+                    "     while ! clcadmin-assume-system-credentials&>/dev/null; do sleep 15; done\n",
+                    "     eval $(clcadmin-assume-system-credentials)\n",
+                    "\n",
+                    "     # register services\n",
+                    "     euserv-register-service -t user-api -h 10.0.0.10 API_10_0_0_10\n",
+                    "     euserv-register-service -t cluster  -h 10.0.0.20 -z euca-1a CC1A_10_0_0_20\n",
+                    "     euserv-register-service -t storage  -h 10.0.0.20 -z euca-1a SC1A_10_0_0_20\n",
+                    "\n",
+                    "     # configure properties\n",
+                    "     euctl system.dns.dnsdomain=euca-10-0-0-10.euca.me\n",
+                    "     euctl bootstrap.webservices.use_instance_dns=true\n",
+                    "     euctl bootstrap.webservices.use_dns_delegation=true\n",
+                    "     euctl dns.enabled=true\n",
+                    "     euctl dns.recursive.enabled=true\n",
+                    "     euctl dns.split_horizon.enabled=true\n",
+                    "     euctl region.region_name=euca-1\n",
+                    "     euctl cloud.network.network_configuration=@/root/network.json\n",
+                    "     #euctl euca-1a.storage.blockstoragemanager=overlay\n",
+                    "     euctl objectstorage.providerclient=riakcs\n",
+                    "     while ! euctl objectstorage.s3provider.s3endpoint=\"http://s3.internal:8773/\"; do sleep 15; done\n",
+                    "     euctl objectstorage.s3provider.s3accesskey=\"${S3_ACCESS_KEY}\"\n",
+                    "     euctl objectstorage.s3provider.s3secretkey=\"${S3_SECRET_KEY}\"\n",
+                    "\n",
+                    "     # setup admin credentials\n",
+                    "     mkdir -pv /root/.euca\n",
+                    "     euare-useraddkey -wld euca-10-0-0-10.euca.me admin > /root/.euca/eucalyptus-admin.ini\n",
+                    "     echo -e \"\\\\n[global]\\\\ndefault-region = euca-10-0-0-10.euca.me\" >> /root/.euca/eucalyptus-admin.ini\n",
+                    "\n",
+                    "     # upload shared keys (HTTPS, EUCA)\n",
+                    "     eval $(euare-releaserole)\n",
+                    "     aws --endpoint http://s3.internal:8773/ s3 sync /var/lib/eucalyptus/keys/ s3://${S3_BUCKET}/config/keys/\n",
+                    "     aws --endpoint http://s3.internal:8773/ s3 sync /root/.euca/ s3://${S3_BUCKET}/config/euca/\n",
+                    "\n",
+                    "     # signal cloudformation wait condition handle\n",
+                    "     curl -s -X PUT -H 'Content-Type:' \\\n",
+                    "       --data-binary '{\"Status\": \"SUCCESS\", \"UniqueId\": \"up\", \"Data\": \"-\", \"Reason\": \"Cloud controller up\" }' \\\n",
+                    "       ${WAITCONDURL}\n",
+                    "runcmd:\n",
+                    " - /run/cloud-start.sh\n",
+                    "\n"
+                ]]}},
+                "NetworkInterfaces" : [{
+                    "GroupSet" : [{ "Ref" : "SecurityGroup" }],
+                    "PrivateIpAddress" : "10.0.0.10",
+                    "AssociatePublicIpAddress" : "true",
+                    "DeviceIndex"  : "0",
+                    "SubnetId"  : { "Ref" : "Subnet" }
+                }],
+                "KeyName" : { "Ref" : "KeyName" }
+            }
+        },
+
+        "ClusterControllerInstance": {
+            "Type": "AWS::EC2::Instance",
+            "DependsOn" : "CloudControllerWaitCondition",
+            "Properties": {
+                "ImageId" : { "Ref":"ImageId" },
+                "InstanceType" : { "Ref":"InstanceType" },
+                "UserData" : { "Fn::Base64" : { "Fn::Join" : ["",[
+                    "#cloud-config\n",
+                    "yum_repos:\n",
+                    "  epel:\n",
+                    "    name: Extra Packages for Enterprise Linux 7\n",
+                    "    baseurl: http://mirrors.rit.edu/fedora/epel/7/x86_64/\n",
+                    "    enabled: 1\n",
+                    "    gpgcheck: 0\n",
+                    "  eucalyptus:\n",
+                    "    name: Eucalyptus Package Repo\n",
+                    "    baseurl: ", { "Ref":"YumRepoEucalyptus" }, "\n",
+                    "    enabled: 1\n",
+                    "    gpgcheck: 0\n",
+                    "  euca2ools:\n",
+                    "    name: Euca2ools Package Repo\n",
+                    "    baseurl: ", { "Ref":"YumRepoEuca2ools" }, "\n",
+                    "    enabled: 1\n",
+                    "    gpgcheck: 0\n",
+                    "packages:\n",
+                    "  - awscli\n",
+                    "  - eucalyptus-cc\n",
+                    "  - eucalyptus-sc\n",
+                    "  - eucalyptus-admin-tools\n",
+                    "write_files:\n",
+                    "  - path: /etc/sysctl.d/80-noipv6.conf\n",
+                    "    permissions: \"0644\"\n",
+                    "    owner: root\n",
+                    "    content: |\n",
+                    "     # IPv6 support in the kernel, set to 0 by default\n",
+                    "     net.ipv6.conf.all.disable_ipv6 = 1\n",
+                    "     net.ipv6.conf.default.disable_ipv6 = 1\n",
+                    "  - path: /etc/sysconfig/network-scripts/ifcfg-eth0\n",
+                    "    permissions: \"0444\"\n",
+                    "    owner: root\n",
+                    "    content: |\n",
+                    "     DEVICE=eth0\n",
+                    "     TYPE=Ethernet\n",
+                    "     HWADDR=MAC_ADDRESS_GOES_HERE\n",
+                    "     BOOTPROTO=none\n",
+                    "     IPADDR=10.0.0.20\n",
+                    "     NETMASK=255.255.255.0\n",
+                    "     GATEWAY=10.0.0.1\n",
+                    "     ONBOOT=yes\n",
+                    "     NOZEROCONF=true\n",
+                    "     NM_CONTROLLED=no\n",
+                    "  - path: /etc/eucalyptus/eucalyptus.conf\n",
+                    "    permissions: \"0644\"\n",
+                    "    owner: root\n",
+                    "    content: |\n",
+                    "     CLOUD_OPTS=\" -Xmx2g -Djava.security.egd=file:/dev/./urandom --bootstrap-host=10.0.0.10 --bootstrap-host=10.0.0.20\"\n",
+                    "     LOGLEVEL=\"INFO\"\n",
+                    "     MAX_INSTANCES_PER_CC=\"50\"\n",
+                    "     NODES=\"10.0.0.40\"\n",
+                    "     VNET_MODE=\"EDGE\"\n",
+                    "  - path: /run/cloud-start.sh\n",
+                    "    permissions: \"0700\"\n",
+                    "    owner: root\n",
+                    "    content: |\n",
+                    "     #!/bin/bash\n",
+                    "     set -euxo pipefail\n",
+                    "\n",
+                    "     S3_ACCESS_KEY=\"", { "Ref" : "S3AccessKey" } ,"\"\n",
+                    "     S3_SECRET_KEY=\"", { "Fn::GetAtt" : [ "S3AccessKey", "SecretAccessKey"] } ,"\"\n",
+                    "     S3_BUCKET=\"",  { "Ref" : "S3Bucket" },"\"\n",
+                    "     WAITCONDURL=\"", { "Ref" : "CompletedWaitConditionHandle" }, "\"\n",
+                    "     MAC_ADDRESS=$(curl -s http://169.254.169.254/latest/meta-data/mac | tr A-Z a-z)\n",
+                    "\n",
+                    "     # setup awscli\n",
+                    "     aws configure set s3.signature_version s3v4\n",
+                    "     aws configure set region euca-1\n",
+                    "     aws configure set aws_access_key_id \"${S3_ACCESS_KEY}\"\n",
+                    "     aws configure set aws_secret_access_key \"${S3_SECRET_KEY}\"\n",
+                    "\n",
+                    "     # get config from s3\n",
+                    "     aws --endpoint http://s3.internal:8773/ s3 sync s3://${S3_BUCKET}/config/keys/ /var/lib/eucalyptus/keys/\n",
+                    "     aws --endpoint http://s3.internal:8773/ s3 sync s3://${S3_BUCKET}/config/euca /root/.euca\n",
+                    "     cp -fv /var/lib/eucalyptus/keys/euca-1a/* /var/lib/eucalyptus/keys/\n",
+                    "     chown eucalyptus.eucalyptus /var/lib/eucalyptus/keys/*\n",
+                    "\n",
+                    "     # services\n",
+                    "     sysctl -p/etc/sysctl.d/80-noipv6.conf\n",
+                    "     setsebool -P eucalyptus_storage_controller 1\n",
+                    "     sed --in-place \"s/MAC_ADDRESS_GOES_HERE/${MAC_ADDRESS}/\" /etc/sysconfig/network-scripts/ifcfg-eth0\n",
+                    "     systemctl restart network.service\n",
+                    "     systemctl start tgtd\n",
+                    "     systemctl start eucalyptus-cluster\n",
+                    "     systemctl start eucalyptus-cloud\n",
+                    "\n",
+                    "     # configure properties\n",
+                    "     while ! euctl euca-1a.storage.blockstoragemanager=overlay; do sleep 15; done\n",
+                    "\n",
+                    "     # signal cloudformation wait condition handle\n",
+                    "     curl -s -X PUT -H 'Content-Type:' \\\n",
+                    "       --data-binary '{\"Status\": \"SUCCESS\", \"UniqueId\": \"up-cc\", \"Data\": \"-\", \"Reason\": \"Cluster controller up\" }' \\\n",
+                    "       ${WAITCONDURL}\n",
+                    "runcmd:\n",
+                    " - /run/cloud-start.sh\n",
+                    "\n"
+               ]]}},
+                "NetworkInterfaces" : [{
+                    "GroupSet" : [{ "Ref" : "SecurityGroup" }],
+                    "PrivateIpAddress" : "10.0.0.20",
+                    "AssociatePublicIpAddress" : "true",
+                    "DeviceIndex"  : "0",
+                    "SubnetId"  : { "Ref" : "Subnet" }
+                }],
+                "KeyName" : { "Ref" : "KeyName" }
+            }
+        },
+
+        "NodeControllerInstancePublicIp": {
+            "Type" : "AWS::EC2::EIP",
+            "Properties" : {
+                "Domain" : "vpc"
+            }
+        },
+
+        "NodeControllerMainPublicIp": {
+            "Type" : "AWS::EC2::EIP",
+            "Properties" : {
+                "Domain" : "vpc"
+            }
+        },
+
+        "NodeControllerInstancePublicIpAssociation": {
+            "Type" : "AWS::EC2::EIPAssociation",
+            "Properties" : {
+                "AllocationId": { "Fn::GetAtt" : [ "NodeControllerInstancePublicIp", "AllocationId"] },
+                "NetworkInterfaceId": { "Ref" : "NodeControllerInstanceInterface" }
+            }
+        },
+
+        "NodeControllerMainPublicIpAssociation": {
+            "Type" : "AWS::EC2::EIPAssociation",
+            "Properties" : {
+                "AllocationId": { "Fn::GetAtt" : [ "NodeControllerMainPublicIp", "AllocationId"] },
+                "NetworkInterfaceId": { "Ref" : "NodeControllerMainInterface" }
+            }
+        },
+
+        "NodeControllerMainInterface": {
+            "Type": "AWS::EC2::NetworkInterface",
+            "Properties": {
+                "GroupSet" : [{ "Ref" : "SecurityGroup" }],
+                "PrivateIpAddress" : "10.0.0.40",
+                "SubnetId"  : { "Ref" : "Subnet" },
+                "SourceDestCheck" : false
+            }
+        },
+
+        "NodeControllerInstanceInterface": {
+            "Type": "AWS::EC2::NetworkInterface",
+            "Properties": {
+                "Description" : "Network interface routing public ips to instances",
+                "GroupSet" : [{ "Ref" : "InstanceSecurityGroup" }],
+                "PrivateIpAddress" : "10.0.10.40",
+                "SubnetId"  : { "Ref" : "InstanceSubnet" },
+                "SourceDestCheck" : false
+            }
+        },
+
+        "NodeControllerInstance": {
+            "Type": "AWS::EC2::Instance",
+            "DependsOn" : "CloudControllerWaitCondition",
+            "Properties": {
+                "ImageId" : { "Ref":"ImageId" },
+                "InstanceType" : { "Ref":"InstanceType" },
+                "UserData" : { "Fn::Base64" : { "Fn::Join" : ["",[
+                    "#cloud-config\n",
+                    "yum_repos:\n",
+                    "  epel:\n",
+                    "    name: Extra Packages for Enterprise Linux 7\n",
+                    "    baseurl: http://mirrors.rit.edu/fedora/epel/7/x86_64/\n",
+                    "    enabled: 1\n",
+                    "    gpgcheck: 0\n",
+                    "  eucalyptus:\n",
+                    "    name: Eucalyptus Package Repo\n",
+                    "    baseurl: ", { "Ref":"YumRepoEucalyptus" }, "\n",
+                    "    enabled: 1\n",
+                    "    gpgcheck: 0\n",
+                    "  euca2ools:\n",
+                    "    name: Euca2ools Package Repo\n",
+                    "    baseurl: ", { "Ref":"YumRepoEuca2ools" }, "\n",
+                    "    enabled: 1\n",
+                    "    gpgcheck: 0\n",
+                    "packages:\n",
+                    "  - awscli\n",
+                    "  - eucalyptus-nc\n",
+                    "write_files:\n",
+                    "  - path: /etc/sysctl.d/80-noipv6.conf\n",
+                    "    permissions: \"0644\"\n",
+                    "    owner: root\n",
+                    "    content: |\n",
+                    "     # IPv6 support in the kernel, set to 0 by default\n",
+                    "     net.ipv6.conf.all.disable_ipv6 = 1\n",
+                    "     net.ipv6.conf.default.disable_ipv6 = 1\n",
+                    "  - path: /etc/sysconfig/network-scripts/ifcfg-br0\n",
+                    "    permissions: \"0444\"\n",
+                    "    owner: root\n",
+                    "    content: |\n",
+                    "     DEVICE=br0\n",
+                    "     TYPE=Bridge\n",
+                    "     BOOTPROTO=none\n",
+                    "     IPADDR=10.0.10.40\n",
+                    "     NETMASK=255.255.255.0\n",
+                    "     GATEWAY=10.0.10.1\n",
+                    "     ONBOOT=yes\n",
+                    "     NOZEROCONF=true\n",
+                    "     NM_CONTROLLED=no\n",
+                    "  - path: /etc/sysconfig/network-scripts/ifcfg-eth0\n",
+                    "    permissions: \"0444\"\n",
+                    "    owner: root\n",
+                    "    content: |\n",
+                    "     DEVICE=eth0\n",
+                    "     TYPE=Ethernet\n",
+                    "     HWADDR=MAC_ADDRESS_GOES_HERE\n",
+                    "     BOOTPROTO=none\n",
+                    "     IPADDR=10.0.0.40\n",
+                    "     NETMASK=255.255.255.0\n",
+                    "     NOZEROCONF=true\n",
+                    "     NM_CONTROLLED=no\n",
+                    "  - path: /etc/sysconfig/network-scripts/ifcfg-eth1\n",
+                    "    permissions: \"0444\"\n",
+                    "    owner: root\n",
+                    "    content: |\n",
+                    "     DEVICE=eth1\n",
+                    "     TYPE=Ethernet\n",
+                    "     HWADDR=MAC_ADDRESS_GOES_HERE\n",
+                    "     BRIDGE=br0\n",
+                    "     ONBOOT=yes\n",
+                    "     NOZEROCONF=true\n",
+                    "     NM_CONTROLLED=no\n",
+                    "  - path: /etc/eucalyptus/eucalyptus.conf\n",
+                    "    permissions: \"0644\"\n",
+                    "    owner: root\n",
+                    "    content: |\n",
+                    "     DISABLE_TUNNELING=\"Y\"\n",
+                    "     HYPERVISOR=\"kvm\"\n",
+                    "     INSTANCE_PATH=\"/mnt/eucalyptus/instances\"\n",
+                    "     LIBVIRT_USE_POLICY_KIT=\"-1\"\n",
+                    "     LOGLEVEL=\"INFO\"\n",
+                    "     MAX_CORES=\"64\"\n",
+                    "     METADATA_USE_VM_PRIVATE=\"N\"\n",
+                    "     NC_CACHE_SIZE=-1\n",
+                    "     NC_ROUTER_IP=\"10.0.10.40\"\n",
+                    "     NC_ROUTER=\"Y\"\n",
+                    "     NC_WORK_SIZE=100000\n",
+                    "     USE_CPU_PASSTHROUGH=\"1\"\n",
+                    "     USE_VIRTIO_DISK=\"1\"\n",
+                    "     USE_VIRTIO_NET=\"1\"\n",
+                    "     USE_VIRTIO_ROOT=\"1\"\n",
+                    "     VNET_BRIDGE=\"br0\"\n",
+                    "     VNET_DHCPDAEMON=\"/usr/sbin/dhcpd\"\n",
+                    "     VNET_MODE=\"EDGE\"\n",
+                    "     VNET_PRIVINTERFACE=\"eth1\"\n",
+                    "     VNET_PUBINTERFACE=\"eth1\"\n",
+                    "  - path: /run/cloud-start.sh\n",
+                    "    permissions: \"0700\"\n",
+                    "    owner: root\n",
+                    "    content: |\n",
+                    "     #!/bin/bash\n",
+                    "     set -euxo pipefail\n",
+                    "\n",
+                    "     S3_ACCESS_KEY=\"", { "Ref" : "S3AccessKey" } ,"\"\n",
+                    "     S3_SECRET_KEY=\"", { "Fn::GetAtt" : [ "S3AccessKey", "SecretAccessKey"] } ,"\"\n",
+                    "     S3_BUCKET=\"",  { "Ref" : "S3Bucket" },"\"\n",
+                    "     WAITCONDURL=\"", { "Ref" : "CompletedWaitConditionHandle" }, "\"\n",
+                    "     MAC_ADDRESS=$(curl -s http://169.254.169.254/latest/meta-data/mac | tr A-Z a-z)\n",
+                    "     MAC_ADDRESS2=$(curl -s http://169.254.169.254/latest/meta-data/network/interfaces/macs/ | tr '/' ' ' | grep -v ${MAC_ADDRESS} | xargs echo)\n",
+                    "\n",
+                    "     # setup awscli\n",
+                    "     aws configure set s3.signature_version s3v4\n",
+                    "     aws configure set region euca-1\n",
+                    "     aws configure set aws_access_key_id \"${S3_ACCESS_KEY}\"\n",
+                    "     aws configure set aws_secret_access_key \"${S3_SECRET_KEY}\"\n",
+                    "\n",
+                    "     # get config from s3\n",
+                    "     aws --endpoint http://s3.internal:8773/ s3 sync s3://${S3_BUCKET}/config/keys/ /var/lib/eucalyptus/keys/\n",
+                    "     cp -fv /var/lib/eucalyptus/keys/euca-1a/* /var/lib/eucalyptus/keys/\n",
+                    "     chown eucalyptus.eucalyptus /var/lib/eucalyptus/keys/*\n",
+                    "\n",
+                    "     # services\n",
+                    "     sysctl -p/etc/sysctl.d/80-noipv6.conf\n",
+                    "     rm -rf /var/lib/eucalyptus/instances\n",
+                    "     mkdir -p /mnt/eucalyptus/instances\n",
+                    "     chown eucalyptus.eucalyptus /mnt/eucalyptus/instances\n",
+                    "     chmod 775 /mnt/eucalyptus/instances\n",
+                    "     chcon -R -t virt_image_t /mnt/eucalyptus/instances\n",
+                    "     ln -s /mnt/eucalyptus/instances /var/lib/eucalyptus/instances\n",
+                    "     sed --in-place \"s/MAC_ADDRESS_GOES_HERE/${MAC_ADDRESS}/\" /etc/sysconfig/network-scripts/ifcfg-eth0\n",
+                    "     sed --in-place \"s/MAC_ADDRESS_GOES_HERE/${MAC_ADDRESS2}/\" /etc/sysconfig/network-scripts/ifcfg-eth1\n",
+                    "     systemctl restart network.service\n",
+                    "     systemctl start libvirtd\n",
+                    "     virsh net-destroy default\n",
+                    "     virsh net-undefine default\n",
+                    "     systemctl start eucanetd\n",
+                    "     systemctl start eucalyptus-node\n",
+                    "\n",
+                    "     # signal cloudformation wait condition handle\n",
+                    "     curl -s -X PUT -H 'Content-Type:' \\\n",
+                    "       --data-binary '{\"Status\": \"SUCCESS\", \"UniqueId\": \"up-nc\", \"Data\": \"-\", \"Reason\": \"Node controller up\" }' \\\n",
+                    "       ${WAITCONDURL}\n",
+                    "runcmd:\n",
+                    " - /run/cloud-start.sh\n",
+                    "\n"
+                ]]}},
+                "NetworkInterfaces" : [
+                    {
+                        "DeviceIndex"  : "0",
+                        "NetworkInterfaceId": { "Ref" : "NodeControllerMainInterface" }
+                    },
+                    {
+                        "DeviceIndex"  : "1",
+                        "NetworkInterfaceId": { "Ref" : "NodeControllerInstanceInterface" }
+                    }
+                ],
+                "KeyName" : { "Ref" : "KeyName" }
+            }
+        }
+    },
+
+    "Outputs" : {
+        "InstanceId" : {
+            "Description" : "Eucalyptus cloud controller instance",
+            "Value" : { "Ref" : "CloudControllerInstance" }
+        },
+
+        "Ip" : {
+            "Description" : "Eucalyptus cloud controller instance ip",
+            "Value" : { "Fn::GetAtt" : [ "CloudControllerInstance", "PublicIp"] }
+        },
+
+        "Hostname" : {
+            "Description" : "Eucalyptus cloud controller instance host",
+            "Value" : { "Fn::GetAtt" : [ "CloudControllerInstance", "PublicDnsName"] }
+        }
+    }
+}
+
