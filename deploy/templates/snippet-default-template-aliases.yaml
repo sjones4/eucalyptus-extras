@@ -18,6 +18,7 @@ alias-eucalyptus-cloud-properties: &alias_eucalyptus_cloud_properties
     services.loadbalancing.worker.ntp_server: ETP_NTP_SERVER
 alias-eucalyptus-cc: &alias_eucalyptus_cc
     max-instances-per-cc: ETP_CLUSTER_MAX_INSTANCES
+    native: ETP_CLUSTER_NATIVE
     scheduling-policy: ETP_CLUSTER_SCHEDULING_POLICY
 alias-eucalyptus-nc: &alias_eucalyptus_nc
     max-cores: ETP_NODE_MAX_CORES
