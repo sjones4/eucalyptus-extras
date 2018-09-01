@@ -1,0 +1,174 @@
+{
+  "AWSTemplateFormatVersion" : "2010-09-09",
+
+  "Description" : "Eucalyptus FastStart template",
+
+  "Parameters" : {
+
+    "FastStartUrl" : {
+      "Description" : "URL for Eucalyptus FastStart script",
+      "Type" : "String",
+      "Default" : "https://eucalyptus.cloud/install"
+    },
+
+    "CiabPublicIpStart" : {
+      "Description" : "Start for the Public IP address range",
+      "Type" : "String"
+    },
+
+    "CiabPublicIpEnd" : {
+      "Description" : "End for the Public IP address range",
+      "Type" : "String"
+    },
+
+    "InstanceType" : {
+      "Description" : "Instance type to use",
+      "Type" : "String",
+      "Default" : "m3.medium"
+    },
+
+    "ImageId": {
+      "Description" : "CentOS 7.5 image",
+      "Type": "String"
+    },
+
+    "KeyName": {
+      "Description" : "EC2 keypair for instance SSH access",
+      "Type": "String",
+      "Default": ""
+    },
+
+    "Zone": {
+      "Description" : "Availability zone to use",
+      "Type": "String",
+      "Default": "auto-select"
+    }
+
+  },
+
+  "Conditions" : {
+    "UseZoneParameter" : {"Fn::Not": [{"Fn::Equals" : [{"Ref" : "Zone"}, "auto-select"]}]},
+    "UseKeyNameParameter" : {"Fn::Not": [{"Fn::Equals" : [{"Ref" : "KeyName"}, ""]}]}
+  },
+
+  "Resources" : {
+
+    "WaitConditionHandle" : {
+      "Type" : "AWS::CloudFormation::WaitConditionHandle"
+    },
+
+    "WaitCondition" : {
+      "Type" : "AWS::CloudFormation::WaitCondition",
+      "Properties" : {
+        "Handle" : { "Ref" : "WaitConditionHandle" },
+        "Timeout" : "3600"
+      }
+    },
+
+    "SecurityGroup" : {
+      "Type" : "AWS::EC2::SecurityGroup",
+      "Properties" : {
+        "GroupDescription" : "Eucalyptus security group",
+        "SecurityGroupIngress" : [
+          {"IpProtocol" : "tcp", "FromPort" : "22", "ToPort" : "22", "CidrIp" : "0.0.0.0/0"},
+          {"IpProtocol" : "tcp", "FromPort" : "53", "ToPort" : "53", "CidrIp" : "0.0.0.0/0"},
+          {"IpProtocol" : "tcp", "FromPort" : "80", "ToPort" : "80", "CidrIp" : "0.0.0.0/0"},
+          {"IpProtocol" : "tcp", "FromPort" : "443", "ToPort" : "443", "CidrIp" : "0.0.0.0/0"},
+          {"IpProtocol" : "tcp", "FromPort" : "8773", "ToPort" : "8773", "CidrIp" : "0.0.0.0/0"}
+        ]
+      }
+    },
+
+    "Instance" : {
+      "Type": "AWS::EC2::Instance",
+      "Properties": {
+        "AvailabilityZone": { "Fn::If" : [
+          "UseZoneParameter",
+          { "Ref" : "Zone" },
+          { "Fn::Select" : [ "0", { "Fn::GetAZs" : { "Ref" : "AWS::Region" } } ] }
+        ] },
+        "ImageId"        : { "Ref" : "ImageId" },
+        "InstanceType"   : { "Ref" : "InstanceType" },
+        "SecurityGroups" : [ {"Ref" : "SecurityGroup"} ],
+        "KeyName"        : { "Fn::If" : [
+          "UseKeyNameParameter",
+          { "Ref" : "KeyName" },
+          { "Ref" : "AWS::NoValue" }
+        ] },
+        "UserData"       : { "Fn::Base64" : { "Fn::Join" : ["", [
+          "#cloud-config\n",
+          "write_files:\n",
+          "  - path: /root/cloud-bootstrap.sh\n",
+          "    permissions: \"0700\"\n",
+          "    owner: root\n",
+          "    content: |\n",
+          "     #!/bin/bash\n",
+          "     set -euxo pipefail\n",
+          "\n",
+          "     WAITCONDURL=\"", { "Ref" : "WaitConditionHandle" }, "\"\n",
+          "     FASTSTARTURL=\"", { "Ref" : "FastStartUrl" }, "\"\n",
+          "     CIAB_IP1=\"", { "Ref" : "CiabPublicIpStart" }, "\"\n",
+          "     CIAB_IP2=\"", { "Ref" : "CiabPublicIpEnd" }, "\"\n",
+          "     COND_STATUS='FAILURE'\n",
+          "     COND_DATA='init'\n",
+          "     COND_REASON='Eucalyptus not up'\n",
+          "\n",
+          "     function cleanup {\n",
+          "       # Signal cloudformation wait condition handle\n",
+          "       curl -s -X PUT -H 'Content-Type:' \\\n",
+          "         --data-binary '{\"Status\": \"'\"${COND_STATUS}\"'\", \"UniqueId\": \"FastStart\", \"Data\": \"'\"${COND_DATA}\"'\", \"Reason\": \"'\"${COND_REASON}\"'\" }' \\\n",
+          "         ${WAITCONDURL}\n",
+          "     }\n",
+          "     trap cleanup EXIT\n",
+          "\n",
+          "     # Run FastStart\n",
+          "     COND_DATA='begin faststart'\n",
+          "     cd /root\n",
+          "     ciab_ips1=\"${CIAB_IP1}\" ciab_ips2=\"${CIAB_IP2}\" bash <(curl -Ls \"${FASTSTARTURL}\") --batch\n",
+          "\n",
+          "     # Describe services\n",
+          "     COND_DATA='describe services'\n",
+          "     euserv-describe-services\n",
+          "     COND_STATUS='SUCCESS'\n",
+          "     COND_DATA='complete'\n",
+          "     COND_REASON='Eucalyptus up'\n",
+          "\n",
+          "runcmd:\n",
+          " - /root/cloud-bootstrap.sh\n",
+          "\n"
+        ]]}}
+      }
+    }
+
+  },
+
+  "Outputs" : {
+
+    "BootstrapStatus" : {
+      "Description" : "Eucalyptus faststart/up status",
+      "Value" : { "Fn::GetAtt" : [ "WaitCondition", "Data" ]}
+    },
+
+    "InstanceId" : {
+      "Description" : "Eucalyptus CIAB instance",
+      "Value" : { "Ref" : "Instance" }
+    },
+
+    "Ip" : {
+      "Description" : "Eucalyptus CIAB instance ip",
+      "Value" : { "Fn::GetAtt" : [ "Instance", "PublicIp"] }
+    },
+
+    "Hostname" : {
+      "Description" : "Eucalyptus CIAB instance host",
+      "Value" : { "Fn::GetAtt" : [ "Instance", "PublicDnsName"] }
+    },
+
+    "Dashboard" : {
+      "Description" : "Eucalyptus dashboard url",
+      "Value" : { "Fn::Join" : ["", ["https://", { "Fn::GetAtt" : [ "Instance", "PublicDnsName"] }, "/"]] }
+    }
+
+  }
+}
+
