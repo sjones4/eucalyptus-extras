@@ -28,6 +28,15 @@
       "image-format": "qcow2"
     },
     {
+      "description": "Ubuntu Bionic",
+      "login": "ubuntu",
+      "url": "https://cloud-images.ubuntu.com/bionic/current/bionic-server-cloudimg-amd64.img",
+      "updates": "yes",
+      "architecture": "x86_64",
+      "os": "ubuntu-bionic",
+      "image-format": "qcow2"
+    },
+    {
       "description": "Fedora Atomic Host 28",
       "login": "fedora",
       "url": "https://getfedora.org/atomic_raw_latest",
@@ -49,7 +58,7 @@
     {
       "description": "CentOS 7",
       "login": "centos",
-      "url": "http://cloud.centos.org/centos/7/images/CentOS-7-x86_64-GenericCloud.raw.tar.gz",
+      "url": "https://cloud.centos.org/centos/7/images/CentOS-7-x86_64-GenericCloud.raw.tar.gz",
       "updates": "no",
       "architecture": "x86_64",
       "os": "centos-7",
@@ -58,7 +67,7 @@
     {
       "description": "CentOS Atomic Host 7",
       "login": "centos",
-      "url": "https://cloud.centos.org/centos/7/atomic/images/CentOS-Atomic-Host-7-GenericCloud.qcow2.xz",
+      "url": "https://cloud.centos.org/centos/7/atomic/images/CentOS-Atomic-Host-GenericCloud.qcow2.xz",
       "updates": "no",
       "architecture": "x86_64",
       "os": "centos-atomic-7",
@@ -83,6 +92,6 @@
       "image-format": "qcow2"
     }
   ],
-  "version": "sjones4-06-20-18"
+  "version": "sjones4-09-29-18"
 }
 
