@@ -1,0 +1,12 @@
+#!/bin/bash
+
+# Create required directory structure
+LOG_DIR="${SNAP_USER_DATA}/log"
+RUN_DIR="${SNAP_USER_DATA}/run"
+
+[ -d "${LOG_DIR}" ] || mkdir "${LOG_DIR}"
+[ -d "${RUN_DIR}" ] || mkdir "${RUN_DIR}"
+
+# Install configuration defaults
+cp "${SNAP}/usr/share/eucaconsole/console.default.ini" "${SNAP_USER_DATA}/console.ini"
+

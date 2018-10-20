@@ -1,0 +1,62 @@
+---
+name: eucalyptus-console
+version: '4.4.4-1'
+confinement: strict
+grade: stable
+icon: eucalyptus_icon.png
+summary: Eucalyptus management console for use with your Eucalyptus cloud
+description: |
+  The Eucalyptus Management Console is a web-based interface to a local
+  Eucalyptus cloud and/or AWS services.
+
+apps:
+  eucaconsole:
+    command: bin/eucaconsole
+    plugs:
+      - network-bind
+      - network
+
+parts:
+  eucaconsole:
+    plugin: python
+    python-version: python2
+    source: https://github.com/Corymbia/eucaconsole.git
+    source-type: git
+    source-depth: 1
+    source-tag: v4.4.4
+    override-pull: |
+      snapcraftctl pull
+      sed --in-place '/M2Crypto/d' setup.py
+      sed --in-place '/import logging/a import os' eucaconsole/views/__init__.py
+      sed --in-place 's/magic.Magic(mime=True)/magic.Magic(mime=True, magic_file=os.path.join(os.environ["SNAP"], "usr\/share\/file\/magic.mgc"))/'   eucaconsole/views/__init__.py
+      sed --in-place 's/magic.Magic(mime=False)/magic.Magic(mime=False, magic_file=os.path.join(os.environ["SNAP"], "usr\/share\/file\/magic.mgc"))/' eucaconsole/views/__init__.py
+      sed --in-place 's/route_dir = '''.*'''/route_dir = os.path.join(os.environ["SNAP_USER_DATA"], "run")/' eucaconsole/config.py
+    stage-packages:
+      - libmagic1
+      - python-m2crypto
+      - python-pylibmc
+  eucaconsole-rpmfiles:
+    plugin: dump
+    source: https://github.com/Corymbia/eucaconsole.git
+    source-type: git
+    source-depth: 1
+    source-tag: v4.4.4
+    override-pull: |
+      snapcraftctl pull
+      sed --in-place '/sys.path.insert/d'                                      rpm/eucaconsole
+      sed --in-place 's/python -tt/env python2/'                               rpm/eucaconsole
+      sed --in-place 's/"\/var\/run/os.environ["SNAP_USER_DATA"] + "\/run/'    rpm/eucaconsole
+      sed --in-place 's/"\/etc\/eucaconsole/os.environ["SNAP_USER_DATA"] + "/' rpm/eucaconsole
+      sed --in-place 's/"\/var\/log/os.environ["SNAP_USER_DATA"] + "\/log/'    rpm/eucaconsole
+      sed --in-place '/workers = 4/a sendfile = False'                conf/console.default.ini
+      chmod +x rpm/eucaconsole
+    organize:
+      conf/console.default.ini: usr/share/eucaconsole/console.default.ini
+      rpm/eucaconsole: bin/eucaconsole
+    stage:
+      - bin/eucaconsole
+      - usr/share/eucaconsole/console.default.ini
+  eucaconsole-files:
+    plugin: dump
+    source: ./files/
+
