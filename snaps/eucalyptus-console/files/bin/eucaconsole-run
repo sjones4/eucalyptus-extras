@@ -1,0 +1,14 @@
+#!/bin/sh
+# Run entry point for eucalyptus console
+
+# Initialize config files and directory structure for user
+${SNAP}/meta/hooks/install "${SNAP_USER_DATA}"
+
+# Set configuration for user
+${SNAP}/meta/hooks/configure "${SNAP_USER_DATA}"
+
+# Run attached to console (ctrl-c exit)
+exec eucaconsole \
+  --config "${SNAP_USER_DATA}/console.ini" \
+  --logfile "${SNAP_USER_DATA}/log/eucaconsole_startup.log" \
+  --pidfile "${SNAP_USER_DATA}/run/eucaconsole.pid"

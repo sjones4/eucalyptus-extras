@@ -11,7 +11,7 @@ description: |
 
 apps:
   eucaconsole:
-    command: bin/eucaconsole
+    command: eucaconsole-run
     plugs:
       - network-bind
       - network
@@ -30,7 +30,10 @@ parts:
       sed --in-place '/import logging/a import os' eucaconsole/views/__init__.py
       sed --in-place 's/magic.Magic(mime=True)/magic.Magic(mime=True, magic_file=os.path.join(os.environ["SNAP"], "usr\/share\/file\/magic.mgc"))/'   eucaconsole/views/__init__.py
       sed --in-place 's/magic.Magic(mime=False)/magic.Magic(mime=False, magic_file=os.path.join(os.environ["SNAP"], "usr\/share\/file\/magic.mgc"))/' eucaconsole/views/__init__.py
-      sed --in-place 's/route_dir = '''.*'''/route_dir = os.path.join(os.environ["SNAP_USER_DATA"], "run")/' eucaconsole/config.py
+      sed --in-place 's/route_dir = '''.*'''/route_dir = settings.get("run_dir", None)/' eucaconsole/config.py
+    override-build: |
+      snapcraftctl build
+      sed --in-place '/os.chown/d' ../install/lib/python2.7/site-packages/gunicorn/util.py
     stage-packages:
       - libmagic1
       - python-m2crypto
@@ -45,10 +48,8 @@ parts:
       snapcraftctl pull
       sed --in-place '/sys.path.insert/d'                                      rpm/eucaconsole
       sed --in-place 's/python -tt/env python2/'                               rpm/eucaconsole
-      sed --in-place 's/"\/var\/run/os.environ["SNAP_USER_DATA"] + "\/run/'    rpm/eucaconsole
-      sed --in-place 's/"\/etc\/eucaconsole/os.environ["SNAP_USER_DATA"] + "/' rpm/eucaconsole
-      sed --in-place 's/"\/var\/log/os.environ["SNAP_USER_DATA"] + "\/log/'    rpm/eucaconsole
-      sed --in-place '/workers = 4/a sendfile = False'                conf/console.default.ini
+      sed --in-place '/^file.uploads.enabled/a run_dir = /var/run/eucaconsole' conf/console.default.ini
+      sed --in-place '/workers = 4/a sendfile = False'                         conf/console.default.ini
       chmod +x rpm/eucaconsole
     organize:
       conf/console.default.ini: usr/share/eucaconsole/console.default.ini

@@ -1,5 +1,8 @@
 #!/bin/bash
 
+#
+DATA_DIR="${1:-$SNAP_DATA}"
+
 # Listener configuration
 CONSOLE_HOST="$(snapctl get host)"
 CONSOLE_PORT="$(snapctl get port)"
@@ -16,7 +19,8 @@ sed --in-place 's/^port = .*/port = '${CONSOLE_PORT:-$DEFAULT_CONSOLE_PORT}'/' "
 sed --in-place 's/^ufshost = .*/ufshost = '${UFS_HOST:-$DEFAULT_UFS_HOST}'/'   "${SNAP_USER_DATA}/console.ini"
 sed --in-place 's/^ufsport = .*/ufsport = '${UFS_PORT:-$DEFAULT_UFS_PORT}'/'   "${SNAP_USER_DATA}/console.ini"
 
-# Update version specific paths
-sed --in-place 's/^args = (.*eucaconsole.log/args = ('"'${SNAP_USER_DATA////\\/}"'\/log\/eucaconsole.log/'               "${SNAP_USER_DATA}/console.ini"
-sed --in-place 's/^session.keyini = .*session-keys.ini/session.keyini = '"${SNAP_USER_DATA////\\/}"'\/session-keys.ini/' "${SNAP_USER_DATA}/console.ini"
+# Update paths
+sed --in-place 's/^args = (.*eucaconsole.log/args = ('"'${DATA_DIR////\\/}"'\/log\/eucaconsole.log/'               "${SNAP_USER_DATA}/console.ini"
+sed --in-place 's/^session.keyini = .*session-keys.ini/session.keyini = '"${DATA_DIR////\\/}"'\/session-keys.ini/' "${SNAP_USER_DATA}/console.ini"
+sed --in-place 's/^run_dir = .*/run_dir = '"${DATA_DIR////\\/}"'\/run/' "${SNAP_USER_DATA}/console.ini"
 
