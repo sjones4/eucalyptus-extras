@@ -37,22 +37,22 @@
       "image-format": "qcow2"
     },
     {
-      "description": "Fedora Atomic Host 28",
+      "description": "Fedora Atomic Host 29",
       "login": "fedora",
       "url": "https://getfedora.org/atomic_raw_latest",
       "url-name": "https://getfedora.org/atomic_raw_latest_filename",
       "updates": "no",
       "architecture": "x86_64",
-      "os": "fedora-atomic-28",
+      "os": "fedora-atomic-29",
       "image-format": "raw"
     },
     {
-      "description": "Fedora 28",
+      "description": "Fedora 29",
       "login": "fedora",
-      "url": "https://download.fedoraproject.org/pub/fedora/linux/releases/28/Cloud/x86_64/images/Fedora-Cloud-Base-28-1.1.x86_64.raw.xz",
+      "url": "https://download.fedoraproject.org/pub/fedora/linux/releases/29/Cloud/x86_64/images/Fedora-Cloud-Base-29-1.2.x86_64.raw.xz",
       "updates": "no",
       "architecture": "x86_64",
-      "os": "fedora-28",
+      "os": "fedora-29",
       "image-format": "raw"
     },
     {
