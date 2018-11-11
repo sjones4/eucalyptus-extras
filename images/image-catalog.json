@@ -19,21 +19,21 @@
       "image-format": "qcow2"
     },
     {
-      "description": "Ubuntu Artful",
-      "login": "ubuntu",
-      "url": "https://cloud-images.ubuntu.com/artful/current/artful-server-cloudimg-amd64.img",
-      "updates": "yes",
-      "architecture": "x86_64",
-      "os": "ubuntu-artful",
-      "image-format": "qcow2"
-    },
-    {
       "description": "Ubuntu Bionic",
       "login": "ubuntu",
       "url": "https://cloud-images.ubuntu.com/bionic/current/bionic-server-cloudimg-amd64.img",
       "updates": "yes",
       "architecture": "x86_64",
       "os": "ubuntu-bionic",
+      "image-format": "qcow2"
+    },
+    {
+      "description": "Ubuntu Cosmic",
+      "login": "ubuntu",
+      "url": "https://cloud-images.ubuntu.com/cosmic/current/cosmic-server-cloudimg-amd64.img",
+      "updates": "yes",
+      "architecture": "x86_64",
+      "os": "ubuntu-cosmic",
       "image-format": "qcow2"
     },
     {
@@ -92,6 +92,6 @@
       "image-format": "qcow2"
     }
   ],
-  "version": "sjones4-09-29-18"
+  "version": "sjones4-11-10-18"
 }
 
