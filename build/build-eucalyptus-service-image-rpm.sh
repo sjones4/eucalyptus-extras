@@ -25,6 +25,7 @@ REQUIRE=(
     "autoconf"
     "createrepo"
     "git"
+    "hostname"
     "httpd"
     "libguestfs-tools-c" # for virt-sparsify virt-sysprep
     "libvirt-daemon-config-network"
@@ -42,7 +43,7 @@ set -ex
 if [ "${MODE}" != "build-only" ] ; then
   rm -rf /var/www/eucalyptus-packages.??????????
 
-  yum ${YUM_OPTS} erase 'eucalyptus-*' 'load-balancer-servo'
+  yum ${YUM_OPTS} erase 'eucalyptus-*' 'load-balancer-servo' || true
 
   yum ${YUM_OPTS} install "${REQUIRE[@]}"
 fi
@@ -111,15 +112,9 @@ mkdir -p "${EUCALYPTUS_BUILD_REPO_DIR}"
 
 EUCALYPTUS_BUILD_REPO_YUM_CONF=$(mktemp -t "yum.conf.XXXXXXXXXX")
 cat > "${EUCALYPTUS_BUILD_REPO_YUM_CONF}" << HERE
-[localeuca]
-name=localeuca
-baseurl=file://${EUCALYPTUS_BUILD_REPO_DIR}
-enabled=1
-
 [mirroreuca]
 name=mirroreuca
 baseurl=${EUCALYPTUS_MIRROR}
-enabled=1
 HERE
 
 cp -v "${RPMBUILD}/RPMS"/*/*.rpm "${EUCALYPTUS_BUILD_REPO_DIR}"
@@ -128,28 +123,20 @@ cp -v "${RPMBUILD}/RPMS"/*/*.rpm "${EUCALYPTUS_BUILD_REPO_DIR}"
 for RPMFILE in "${EUCALYPTUS_BUILD_REPO_DIR}"/* ; do
   if [ -f "${RPMFILE}" ] ; then
 cat >> "${EUCALYPTUS_BUILD_REPO_YUM_CONF}" << HERE
-exclude=eucalyptus-* load-balancer-servo*
+exclude=eucaconsole-* eucalyptus-* eucanetd-* load-balancer-servo*
 HERE
     break
   fi
 done
 
-createrepo "${EUCALYPTUS_BUILD_REPO_DIR}"
-
-yumdownloader \
-  --assumeyes \
-  --resolve \
+reposync \
+  --arch=x86_64 \
+  --newest-only \
+  --tempcache \
   --config="${EUCALYPTUS_BUILD_REPO_YUM_CONF}" \
-  --exclude=euca2ools \
-  --destdir "${EUCALYPTUS_BUILD_REPO_DIR}" \
-  eucalyptus-imaging-worker load-balancer-servo ec2-net-utils
-
-rm -rf "${EUCALYPTUS_BUILD_REPO_DIR}/repodata"
-yum \
-  --config="${EUCALYPTUS_BUILD_REPO_YUM_CONF}" \
-  --disablerepo=* \
-  --enablerepo=localeuca \
-  clean all
+  --repoid=mirroreuca \
+  --norepopath \
+  --download_path="${EUCALYPTUS_BUILD_REPO_DIR}"/
 
 createrepo "${EUCALYPTUS_BUILD_REPO_DIR}"
 
