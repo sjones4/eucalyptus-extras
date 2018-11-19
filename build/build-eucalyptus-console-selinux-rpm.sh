@@ -22,7 +22,7 @@ set -ex
 
 # dependencies
 if [ "${MODE}" != "build-only" ] ; then
-  yum ${YUM_OPTS} erase 'eucaconsole-*'
+  yum ${YUM_OPTS} erase 'eucaconsole-*' || true
 
   yum ${YUM_OPTS} install "${REQUIRE[@]}"
 fi

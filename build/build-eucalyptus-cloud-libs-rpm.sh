@@ -18,9 +18,9 @@ set -ex
 
 # dependencies
 if [ "${MODE}" != "build-only" ] ; then
-  yum ${YUM_OPTS} erase 'eucalyptus-*'
+  yum ${YUM_OPTS} erase 'eucalyptus-*' || true
 
-  yum ${YUM_OPTS} install epel-release # for gengetopt
+  yum ${YUM_OPTS} install epel-release || true # for gengetopt
 
   yum ${YUM_OPTS} install "${REQUIRE[@]}"
 fi

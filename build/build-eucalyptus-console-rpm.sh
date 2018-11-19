@@ -41,9 +41,9 @@ set -ex
 
 # dependencies
 if [ "${MODE}" != "build-only" ] ; then
-  yum ${YUM_OPTS} erase 'eucaconsole-*'
+  yum ${YUM_OPTS} erase 'eucaconsole-*' || true
 
-  yum ${YUM_OPTS} install "epel-release"
+  yum ${YUM_OPTS} install epel-release || true
 
   yum ${YUM_OPTS} install "${REQUIRE[@]}"
 

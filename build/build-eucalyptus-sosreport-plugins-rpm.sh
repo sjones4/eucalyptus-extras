@@ -18,7 +18,7 @@ set -ex
 
 # dependencies
 if [ "${MODE}" != "build-only" ] ; then
-  yum ${YUM_OPTS} erase 'eucalyptus-*'
+  yum ${YUM_OPTS} erase 'eucalyptus-*' || true
 
   yum ${YUM_OPTS} install "${REQUIRE[@]}"
 fi

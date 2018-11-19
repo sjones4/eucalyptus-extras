@@ -18,7 +18,7 @@ set -ex
 
 # dependencies
 if [ "${MODE}" != "build-only" ] ; then
-  yum ${YUM_OPTS} erase 'eucalyptus-*' 'load-balancer-servo'
+  yum ${YUM_OPTS} erase 'eucalyptus-*' 'load-balancer-servo' || true
 
   yum ${YUM_OPTS} install "${REQUIRE[@]}"
 fi
