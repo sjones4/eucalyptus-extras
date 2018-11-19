@@ -1,9 +1,11 @@
-FROM centos:7.3.1611
+FROM fedora:29
 
 ADD [ "build-*.sh", "rpm-*.sh", "/root/bin/" ]
 
 ENV PATH=/root/bin:$PATH \
-    RPM_OUT="/eucalyptus/rpms"
+    RPM_OUT="/eucalyptus/rpms" \
+    RPM_DIST=fc29 \
+    YUM_OPTS="--assumeyes --noautoremove"
 
 RUN chown --recursive root:root /root/bin/*.sh \
  && chmod 755 /root/bin/*.sh \
