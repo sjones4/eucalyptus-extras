@@ -1,0 +1,221 @@
+{
+  "AWSTemplateFormatVersion" : "2010-09-09",
+
+  "Description" : "Appscale cloud storage template for developers",
+
+  "Parameters" : {
+
+    "KeyName": {
+      "Description" : "EC2 keypair for instance SSH access",
+      "Type": "String",
+      "Default": ""
+    },
+
+    "ImageId": {
+      "Description" : "Identifier for a xenial image",
+      "Type": "String"
+    },
+
+    "InstanceType" : {
+      "Description" : "Instance type to use",
+      "Type" : "String",
+      "Default" : "m3.xlarge"
+    },
+
+    "Zone": {
+      "Description" : "Availability zone to use",
+      "Type": "String",
+      "Default": "auto-select"
+    }
+
+  },
+
+  "Conditions" : {
+    "UseKeyNameParameter" : {"Fn::Not": [{"Fn::Equals" : [{"Ref" : "KeyName"}, ""]}]},
+    "UseZoneParameter" : {"Fn::Not": [{"Fn::Equals" : [{"Ref" : "Zone"}, "auto-select"]}]}
+  },
+
+  "Resources" : {
+
+    "StorageWaitConditionHandle" : {
+      "Type" : "AWS::CloudFormation::WaitConditionHandle"
+    },
+
+    "StorageWaitCondition" : {
+      "Type" : "AWS::CloudFormation::WaitCondition",
+      "Properties" : {
+        "Handle" : { "Ref" : "StorageWaitConditionHandle" },
+        "Timeout" : "900"
+      }
+    },
+
+    "StorageSecurityGroup" : {
+      "Type" : "AWS::EC2::SecurityGroup",
+      "Properties" : {
+        "GroupDescription" : "appscale cloud storage security group",
+        "SecurityGroupIngress" : [ {
+          "IpProtocol" : "tcp",
+          "FromPort" : "22",
+          "ToPort" : "22",
+          "CidrIp" : "0.0.0.0/0"
+        }, {
+          "IpProtocol" : "tcp",
+          "FromPort" : "5000",
+          "ToPort" : "5000",
+          "CidrIp" : "0.0.0.0/0"
+        }  ]
+      }
+    },
+
+    "StorageInstance" : {
+      "Type": "AWS::EC2::Instance",
+      "Properties": {
+        "AvailabilityZone"   : { "Fn::If" : [
+		  "UseZoneParameter",
+		  { "Ref" : "Zone" },
+		  { "Fn::Select" : [ "0", { "Fn::GetAZs" : { "Ref" : "AWS::Region" } } ] }
+		] },
+        "ImageId"            : { "Ref" : "ImageId" },
+        "InstanceType"       : { "Ref" : "InstanceType" },
+        "SecurityGroups"     : [ {"Ref" : "StorageSecurityGroup"} ],
+        "KeyName"            : { "Fn::If" : [
+          "UseKeyNameParameter",
+          { "Ref" : "KeyName" },
+          { "Ref" : "AWS::NoValue" }
+        ] },
+        "UserData"           : { "Fn::Base64" : { "Fn::Join" : ["", [
+          "#cloud-config\n",
+          "packages:\n",
+          "  - docker-compose\n",
+          "write_files:\n",
+          "  - path: /root/acs/docker-compose.yaml\n",
+          "    permissions: \"0644\"\n",
+          "    owner: root\n",
+          "    content: |\n",
+          "      version: \"2.0\"\n",
+          "      services:\n",
+          "        riakkv:\n",
+          "          image: basho/riak-kv\n",
+          "          ports:\n",
+          "            - \"8087:8087\"\n",
+          "            - \"8098:8098\"\n",
+          "          labels:\n",
+          "            - \"com.basho.riak.cluster.name=riakkv\"\n",
+          "          volumes:\n",
+          "            - schemas:/etc/riak/schemas\n",
+          "            - ./riak-user.conf:/etc/riak/user.conf\n",
+          "          environment:\n",
+          "            CLUSTER_NAME: 'riakkv'\n",
+          "        minio:\n",
+          "          image: minio/minio\n",
+          "          ports:\n",
+          "            - \"9000:9000\"\n",
+          "          volumes:\n",
+          "            - ./data/minio:/data\n",
+          "          environment:\n",
+          "            MINIO_BROWSER: 'on' # admin interface\n",
+          "            MINIO_ACCESS_KEY: AKIAA2VWIAJRGFDZQ8SS\n",
+          "            MINIO_SECRET_KEY: XQp7ptBbHPrOrdzKhxy12igKZRe6jVM75P5WVHiz\n",
+          "          command: server /data\n",
+          "        acs:\n",
+          "          build: .\n",
+          "          depends_on:\n",
+          "            - minio\n",
+          "            - riakkv\n",
+          "          ports:\n",
+          "            - \"5000:5000\"\n",
+          "          volumes:\n",
+          "            - ./:/config:ro\n",
+          "          environment:\n",
+          "            FLASK_ENV: development\n",
+          "            APPSCALE_CLOUD_STORAGE_SETTINGS: /config/acs-settings.cfg\n",
+          "          command: flask run --host=acs\n",
+          "      volumes:\n",
+          "        config:\n",
+          "        data:\n",
+          "        schemas:\n",
+          "  - path: /root/acs/Dockerfile\n",
+          "    permissions: \"0644\"\n",
+          "    owner: root\n",
+          "    content: |\n",
+          "      FROM ubuntu:bionic\n",
+          "      ENV FLASK_APP=appscale.cloud_storage \\\n",
+          "          LC_ALL=C.UTF-8 \\\n",
+          "          LANG=C.UTF-8\n",
+          "      RUN apt --assume-yes update \\\n",
+          "       && apt --assume-yes install git python3-pip \\\n",
+          "       && pip3 install git+git://github.com/appscale/appscale-cloud-storage.git#egg=appscale-cloud-storage \\\n",
+          "       && apt autoremove --assume-yes perl \\\n",
+          "       && apt-get --assume-yes clean all\n",
+          "  - path: /root/acs/acs-settings.cfg\n",
+          "    permissions: \"0644\"\n",
+          "    owner: root\n",
+          "    content: |\n",
+          "      # S3 backend administrative credentials\n",
+          "      S3_ADMIN_CREDS = {'access_key': 'AKIAA2VWIAJRGFDZQ8SS',\n",
+          "                        'secret_key': 'XQp7ptBbHPrOrdzKhxy12igKZRe6jVM75P5WVHiz'}\n",
+          "\n",
+          "      # S3 backend endpoint\n",
+          "      S3_HOST = 'minio'\n",
+          "      S3_PORT = 9000\n",
+          "      S3_USE_SSL = False\n",
+          "\n",
+          "      # Riak KV nodes for storing bucket metadata and session state\n",
+          "      RIAK_KV_NODES = [{'host': 'riakkv', 'pb_port': 8087}]\n",
+          "\n",
+          "      # AppScale Cloud Storage endpoint\n",
+          "      SERVER_NAME = 'localhost:5000'\n",
+          "\n",
+          "      # User accounts authorized to use AppScale Cloud Storage.\n",
+          "      USERS = {}\n",
+          "  - path: /root/acs/riak-user.conf\n",
+          "    permissions: \"0644\"\n",
+          "    owner: root\n",
+          "    content: |\n",
+          "      storage_backend = leveldb\n",
+          "  - path: /root/cloud-start.sh\n",
+          "    permissions: \"0700\"\n",
+          "    owner: root\n",
+          "    content: |\n",
+          "     #!/bin/bash\n",
+          "     set -euxo pipefail\n",
+          "\n",
+          "     WAITCONDURL=\"", { "Ref" : "StorageWaitConditionHandle" }, "\"\n",
+          "\n",
+          "     # Configure ips for master\n",
+          "     PRIVATE_IP=$(curl http://169.254.169.254/latest/meta-data/local-ipv4)\n",
+          "     PUBLIC_IP=$(curl http://169.254.169.254/latest/meta-data/public-ipv4)\n",
+          "\n",
+          "     # Start cloud storage\n",
+          "     docker-compose -f /root/acs/docker-compose.yaml up -d\n",
+          "\n",
+          "     # Signal cloudformation wait condition handle\n",
+          "     curl -s -X PUT -H 'Content-Type:' \\\n",
+          "       --data-binary '{\"Status\": \"SUCCESS\", \"UniqueId\": \"up\", \"Data\": \"-\", \"Reason\": \"AppScale storage up\" }' \\\n",
+          "       ${WAITCONDURL}\n",
+          "runcmd:\n",
+          " - /root/cloud-start.sh\n",
+          "\n"
+        ]]}}
+      }
+    }
+  },
+
+  "Outputs" : {
+    "StorageInstanceId" : {
+      "Description" : "Appscale storage instance",
+      "Value" : { "Ref" : "StorageInstance" }
+    },
+
+    "StorageIp" : {
+      "Description" : "Appscale storage ip",
+      "Value" : { "Fn::GetAtt" : [ "StorageInstance", "PublicIp"] }
+    },
+
+    "StorageHostname" : {
+      "Description" : "Appscale storage host",
+      "Value" : { "Fn::GetAtt" : [ "StorageInstance", "PublicDnsName"] }
+    }
+  }
+}
+
