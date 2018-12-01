@@ -1,0 +1,559 @@
+{
+  "AWSTemplateFormatVersion" : "2010-09-09",
+
+  "Description" : "Appscale template using euca infrastructure with cloud storage",
+
+  "Parameters" : {
+
+    "AdminUserEmail" : {
+      "Description" : "AppScale admin user",
+      "Type" : "String",
+      "Default" : "a@a.com"
+    },
+
+    "AdminUserPassword" : {
+      "Description" : "AppScale admin password",
+      "Type" : "String",
+      "Default" : "password"
+    },
+
+    "InstanceType" : {
+      "Description" : "Instance type to use",
+      "Type" : "String",
+      "Default" : "m3.xlarge"
+    },
+
+    "ImageId": {
+      "Description" : "Identifier for the appscale image",
+      "Type": "String"
+    },
+
+    "KeyName": {
+      "Description" : "EC2 keypair for instance SSH access",
+      "Type": "String",
+      "Default": ""
+    },
+
+    "ManagementInstanceType" : {
+      "Description" : "Instance type to use for management host",
+      "Type" : "String",
+      "Default" : "m1.xlarge"
+    },
+
+    "ManagementSSHLocation" : {
+      "Description" : "The IP address range that can be used to SSH to the management instance",
+      "Type": "String",
+      "MinLength": "9",
+      "MaxLength": "18",
+      "Default": "0.0.0.0/0",
+      "AllowedPattern": "(\\d{1,3})\\.(\\d{1,3})\\.(\\d{1,3})\\.(\\d{1,3})/(\\d{1,2})",
+      "ConstraintDescription": "must be a valid IP CIDR range of the form x.x.x.x/x."
+    },
+
+    "ManagementUp" : {
+      "Description" : "Perform appscale up on stack creation",
+      "Type": "String",
+      "Default": "yes",
+      "AllowedValues" : [ "yes", "no" ],
+      "ConstraintDescription": "'yes' for up, 'no' to run manually later"
+    },
+
+    "StorageImageId": {
+      "Description" : "Identifier for a xenial image",
+      "Type": "String"
+    },
+
+    "StorageInstanceType" : {
+      "Description" : "Instance type to use",
+      "Type" : "String",
+      "Default" : "InstanceType"
+    },
+
+    "Zone": {
+      "Description" : "Availability zone to use",
+      "Type": "String",
+      "Default": "auto-select"
+    }
+
+  },
+
+  "Conditions" : {
+    "UseKeyNameParameter" : {"Fn::Not": [{"Fn::Equals" : [{"Ref" : "KeyName"}, ""]}]},
+    "UseStorageInstanceTypeParameter" : {"Fn::Not": [{"Fn::Equals" : [{"Ref" : "StorageInstanceType"}, "InstanceType"]}]},
+    "UseZoneParameter" : {"Fn::Not": [{"Fn::Equals" : [{"Ref" : "Zone"}, "auto-select"]}]}
+  },
+
+  "Resources" : {
+
+    "WaitConditionHandle" : {
+      "Type" : "AWS::CloudFormation::WaitConditionHandle"
+    },
+
+    "WaitCondition" : {
+      "Type" : "AWS::CloudFormation::WaitCondition",
+      "Properties" : {
+        "Handle" : { "Ref" : "WaitConditionHandle" },
+        "Timeout" : "1200"
+      }
+    },
+
+    "SecurityGroup" : {
+      "Type" : "AWS::EC2::SecurityGroup",
+      "Properties" : {
+        "GroupDescription" : "appscale management security group",
+        "SecurityGroupIngress" : [ {
+          "IpProtocol" : "tcp",
+          "FromPort" : "22",
+          "ToPort" : "22",
+          "CidrIp" : { "Ref" : "ManagementSSHLocation"}
+        } ],
+        "Tags"               : [ {
+		  "Key" : "appscale:type",
+		  "Value" : "management"
+	    } ]
+      }
+    },
+
+    "InstanceProfile" : {
+      "Type": "AWS::IAM::InstanceProfile",
+      "Properties": {
+        "Path": "/appscale/",
+        "Roles": [ { "Ref": "Role" } ]
+      }
+    },
+
+    "Role" : {
+      "Type": "AWS::IAM::Role",
+      "Properties": {
+        "AssumeRolePolicyDocument": {
+          "Version" : "2012-10-17",
+          "Statement": [ {
+            "Effect": "Allow",
+            "Principal": {
+              "Service": [ "ec2.amazonaws.com" ]
+            },
+            "Action": [ "sts:AssumeRole" ]
+          } ]
+        },
+        "Path": "/appscale/"
+      }
+    },
+
+    "User" : {
+      "Type": "AWS::IAM::User",
+      "Properties": {
+        "Path": "/appscale/"
+      }
+    },
+
+    "Policy" : {
+      "Type" : "AWS::IAM::Policy",
+      "Properties" : {
+		"PolicyDocument" : {
+	      "Version": "2012-10-17",
+	      "Statement": [ {
+	        "Action": [
+	          "ec2:*"
+	        ],
+	        "Effect": "Allow",
+	        "Resource": [
+	          "*"
+	        ]
+	      }, {
+	        "Action": [
+	          "autoscaling:Describe*",
+	          "cloudformation:Describe*",
+	          "cloudformation:Get*",
+	          "cloudwatch:Describe*",
+	          "cloudwatch:Get*",
+	          "cloudwatch:List*",
+	          "elasticloadbalancing:Describe*",
+	          "iam:Get*",
+	          "iam:List*",
+	          "s3:Get*",
+	          "s3:List*",
+	          "sts:GetCallerIdentity"
+	        ],
+	        "Effect": "Allow",
+	        "Resource": [
+	          "*"
+	        ]
+	      } ]
+	    },
+	    "PolicyName" : "ec2-all",
+        "Roles" : [ { "Ref": "Role" } ],
+        "Users" : [ { "Ref": "User" } ]
+      }
+    },
+
+    "AccessKey" : {
+	  "Type": "AWS::IAM::AccessKey",
+	  "Properties": {
+	    "UserName": { "Ref" : "User" }
+	  }
+	},
+
+    "Instance" : {
+      "Type": "AWS::EC2::Instance",
+      "Properties": {
+        "AvailabilityZone"   : { "Fn::If" : [
+		  "UseZoneParameter",
+		  { "Ref" : "Zone" },
+		  { "Fn::Select" : [ "0", { "Fn::GetAZs" : { "Ref" : "AWS::Region" } } ] }
+		] },
+		"IamInstanceProfile" : { "Ref" : "InstanceProfile" },
+        "ImageId"            : { "Ref" : "ImageId" },
+        "InstanceType"       : { "Ref" : "ManagementInstanceType" },
+        "SecurityGroups"     : [ {"Ref" : "SecurityGroup"} ],
+        "KeyName"            : { "Fn::If" : [
+          "UseKeyNameParameter",
+          { "Ref" : "KeyName" },
+          { "Ref" : "AWS::NoValue" }
+        ] },
+        "Tags"               : [ {
+		  "Key" : "appscale:type",
+		  "Value" : "management"
+	    } ],
+        "UserData"           : { "Fn::Base64" : { "Fn::Join" : ["", [
+          "#cloud-config\n",
+          "write_files:\n",
+          "  - path: /root/AppScalefile\n",
+          "    permissions: \"0644\"\n",
+          "    owner: root\n",
+          "    content: |\n",
+          "     ---\n",
+          "     # Each service/role can run on one or multiple machines.\n",
+          "     # Primary roles: master, compute, database, zookeeper\n",
+          "     # Optional roles: loadbalancer, taskqueue, search\n",
+          "     # For each role other than master you can specify multiple machines.\n",
+          "     # Use the IPs of existing machines,\n",
+          "     # or node-X notation if you want AppScale to start new machines on the\n",
+          "     # Infrastructure of choice.\n",
+          "     ips_layout:\n",
+          "       - roles: [master]\n",
+          "         nodes: 1\n",
+          "       - roles: [compute]\n",
+          "         nodes: 1\n",
+          "       - roles: [database, zookeeper]\n",
+          "         nodes: 1\n",
+          "\n",
+          "     infrastructure : euca\n",
+          "     gcs:\n",
+          "       host: ", { "Fn::GetAtt" : [ "StorageInstance", "PublicIp" ] }, "\n",
+          "     zone : '", { "Fn::If" : [
+		    "UseZoneParameter",
+		    { "Ref" : "Zone" },
+		    { "Fn::Select" : [ "0", { "Fn::GetAZs" : { "Ref" : "AWS::Region" } } ] }
+		  ] }, "'\n",
+          "     machine : ", { "Ref" : "ImageId" } ,"\n",
+          "     instance_type : ", { "Ref" : "InstanceType" } ,"\n",
+          "\n",
+          "     EC2_ACCESS_KEY: '", { "Ref" : "AccessKey" } ,"'\n",
+          "     EC2_SECRET_KEY: '", { "Fn::GetAtt" : [ "AccessKey", "SecretAccessKey"] } ,"'\n",
+          "     EC2_URL: 'http://ec2.internal:8773/'\n",
+          "\n",
+          "     admin_user : '", { "Ref" : "AdminUserEmail" } ,"'\n",
+          "     admin_pass : '", { "Ref" : "AdminUserPassword" } ,"'\n",
+          "\n",
+          "     #verbose : True\n",
+          "     #test : True\n",
+          "  - path: /etc/bash_completion.d/aws\n",
+          "    permissions: \"0644\"\n",
+          "    owner: root\n",
+          "    content: |\n",
+          "     complete -C aws_completer aws\n",
+          "  - path: /root/.aws/config\n",
+          "    permissions: \"0644\"\n",
+          "    owner: root\n",
+          "    content: |\n",
+          "     [default]\n",
+          "     output = text\n",
+          "     region = eucalyptus\n",
+          "     autoscaling =\n",
+          "         endpoint_url = http://autoscaling.internal:8773/\n",
+          "     cloudformation =\n",
+          "         endpoint_url = http://cloudformation.internal:8773/\n",
+          "     cloudwatch =\n",
+          "         endpoint_url = http://monitoring.internal:8773/\n",
+          "     ec2 =\n",
+          "         endpoint_url = http://ec2.internal:8773/\n",
+          "     elb =\n",
+          "         endpoint_url = http://elasticloadbalancing.internal:8773/\n",
+          "     iam =\n",
+          "         endpoint_url = http://iam.internal:8773/\n",
+          "     s3 =\n",
+          "         endpoint_url = http://s3.internal:8773/\n",
+          "     s3api =\n",
+          "         endpoint_url = http://s3.internal:8773/\n",
+          "     sts =\n",
+          "         endpoint_url = http://sts.internal:8773/\n",
+          "     [plugins]\n",
+          "     endpoint = awscli_plugin_endpoint\n",
+          "  - path: /root/.euca/internal.ini\n",
+          "    permissions: \"0644\"\n",
+          "    owner: root\n",
+          "    content: |\n",
+          "     [region internal]\n",
+          "     autoscaling-url = http://autoscaling.internal:8773/\n",
+          "     bootstrap-url = http://bootstrap.internal:8773/\n",
+          "     cloudformation-url = http://cloudformation.internal:8773/\n",
+          "     ec2-url = http://ec2.internal:8773/\n",
+          "     elasticloadbalancing-url = http://elasticloadbalancing.internal:8773/\n",
+          "     iam-url = http://iam.internal:8773/\n",
+          "     monitoring-url = http://monitoring.internal:8773/\n",
+          "     properties-url = http://properties.internal:8773/\n",
+          "     reporting-url = http://reporting.internal:8773/\n",
+          "     s3-url = http://s3.internal:8773/\n",
+          "     sts-url = http://sts.internal:8773/\n",
+          "     \n",
+          "     [global]\n",
+          "     default-region = internal\n",
+          "  - path: /root/cloud-start.sh\n",
+          "    permissions: \"0700\"\n",
+          "    owner: root\n",
+          "    content: |\n",
+          "     #!/bin/bash\n",
+          "     set -euxo pipefail\n",
+          "\n",
+          "     WAITCONDURL=\"", { "Ref" : "WaitConditionHandle" }, "\"\n",
+          "     APPSCALE_UP=\"", { "Ref" : "ManagementUp" }, "\"\n",
+          "\n",
+          "     # Configure ips for master\n",
+          "     PRIVATE_IP=$(curl http://169.254.169.254/latest/meta-data/local-ipv4)\n",
+          "     PUBLIC_IP=$(curl http://169.254.169.254/latest/meta-data/public-ipv4)\n",
+          "     sed --in-place \"s/PRIVATE_IP_HERE/${PRIVATE_IP}/\" /root/AppScalefile\n",
+          "     sed --in-place \"s/PUBLIC_IP_HERE/${PUBLIC_IP}/\" /root/AppScalefile\n",
+          "\n",
+          "     # Configure ssh for root\n",
+          "     export HOME=/root\n",
+          "     mkdir -pv \"${HOME}/.ssh\" || true\n",
+          "     chmod 700 \"${HOME}/.ssh\"\n",
+          "     test -e \"${HOME}/.ssh/id_rsa.pub\" || ssh-keygen -q -t rsa -f \"${HOME}/.ssh/id_rsa\" -N \"\"\n",
+          "     cat \"${HOME}/.ssh/id_rsa.pub\" >> \"${HOME}/.ssh/authorized_keys\"\n",
+          "     chmod 600 \"${HOME}/.ssh/authorized_keys\"\n",
+          "     if [ -e \"${HOME}/.ssh/known_hosts\" ]; then\n",
+          "       ssh-keygen -R ${PUBLIC_IP}\n",
+          "       ssh-keygen -R ${PRIVATE_IP}\n",
+          "     fi\n",
+          "     ssh-keyscan ${PUBLIC_IP} ${PRIVATE_IP} 2> /dev/null >> \"${HOME}/.ssh/known_hosts\"\n",
+          "\n",
+          "     # Start appscale\n",
+          "     if [ ${APPSCALE_UP} == \"yes\" ] ; then\n",
+          "       cd /root\n",
+          "       sleep 60\n",
+          "       yes | appscale up || true\n",
+          "       while ! appscale status; do echo \"Waiting for appscale status success\"; sleep 30; done\n",
+          "       SHADOW_IP=\"$(appscale status -v | grep shadow | grep login | awk '{print $1}')\" || true\n",
+          "       echo \"Adding gcs configuration for shadow [${SHADOW_IP}]\"\n",
+          "       ssh -i /root/.appscale/appscale*.key -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null \\\n",
+          "           root@${SHADOW_IP} 'echo '\"'\"'{\"host\": \"",
+          { "Fn::GetAtt" : [ "StorageInstance", "PublicIp" ] },
+          "\"}'\"'\"' > /etc/appscale/gcs && monit restart controller' || true\n",
+          "     fi\n",
+          "\n",
+          "     # Signal cloudformation wait condition handle\n",
+          "     curl -s -X PUT -H 'Content-Type:' \\\n",
+          "       --data-binary '{\"Status\": \"SUCCESS\", \"UniqueId\": \"up\", \"Data\": \"-\", \"Reason\": \"AppScale up\" }' \\\n",
+          "       ${WAITCONDURL}\n",
+          "runcmd:\n",
+          " - PIP_NO_INPUT=1 pip install awscli-plugin-endpoint\n",
+          " - /root/cloud-start.sh\n",
+          "\n"
+        ]]}}
+      }
+    },
+
+    "StorageWaitConditionHandle" : {
+      "Type" : "AWS::CloudFormation::WaitConditionHandle"
+    },
+
+    "StorageWaitCondition" : {
+      "Type" : "AWS::CloudFormation::WaitCondition",
+      "Properties" : {
+        "Handle" : { "Ref" : "StorageWaitConditionHandle" },
+        "Timeout" : "1200"
+      }
+    },
+
+    "StorageSecurityGroup" : {
+      "Type" : "AWS::EC2::SecurityGroup",
+      "Properties" : {
+        "GroupDescription" : "appscale cloud storage security group",
+        "SecurityGroupIngress" : [ {
+          "IpProtocol" : "tcp",
+          "FromPort" : "22",
+          "ToPort" : "22",
+          "CidrIp" : "0.0.0.0/0"
+        }, {
+          "IpProtocol" : "tcp",
+          "FromPort" : "5000",
+          "ToPort" : "5000",
+          "CidrIp" : "0.0.0.0/0"
+        }  ],
+        "Tags"               : [ {
+		  "Key" : "appscale:type",
+		  "Value" : "storage"
+	    } ]
+      }
+    },
+
+    "StorageInstance" : {
+      "Type": "AWS::EC2::Instance",
+      "Properties": {
+        "AvailabilityZone"   : { "Fn::If" : [
+		  "UseZoneParameter",
+		  { "Ref" : "Zone" },
+		  { "Fn::Select" : [ "0", { "Fn::GetAZs" : { "Ref" : "AWS::Region" } } ] }
+		] },
+        "ImageId"            : { "Ref" : "StorageImageId" },
+        "InstanceType"       : { "Fn::If" : [
+		  "UseStorageInstanceTypeParameter",
+		  { "Ref" : "StorageInstanceType" },
+		  { "Ref" : "InstanceType" }
+		] },
+        "SecurityGroups"     : [ {"Ref" : "StorageSecurityGroup"} ],
+        "KeyName"            : { "Fn::If" : [
+          "UseKeyNameParameter",
+          { "Ref" : "KeyName" },
+          { "Ref" : "AWS::NoValue" }
+        ] },
+        "Tags"               : [ {
+		  "Key" : "appscale:type",
+		  "Value" : "storage"
+	    } ],
+        "UserData"           : { "Fn::Base64" : { "Fn::Join" : ["", [
+          "#cloud-config\n",
+          "packages:\n",
+          "  - docker-compose\n",
+          "write_files:\n",
+          "  - path: /root/acs/docker-compose.yaml\n",
+          "    permissions: \"0644\"\n",
+          "    owner: root\n",
+          "    content: |\n",
+          "      version: \"2.0\"\n",
+          "      services:\n",
+          "        riakkv:\n",
+          "          image: basho/riak-kv\n",
+          "          ports:\n",
+          "            - \"8087:8087\"\n",
+          "            - \"8098:8098\"\n",
+          "          labels:\n",
+          "            - \"com.basho.riak.cluster.name=riakkv\"\n",
+          "          volumes:\n",
+          "            - schemas:/etc/riak/schemas\n",
+          "            - ./riak-user.conf:/etc/riak/user.conf\n",
+          "          environment:\n",
+          "            CLUSTER_NAME: 'riakkv'\n",
+          "        minio:\n",
+          "          image: minio/minio\n",
+          "          ports:\n",
+          "            - \"9000:9000\"\n",
+          "          volumes:\n",
+          "            - ./data/minio:/data\n",
+          "          environment:\n",
+          "            MINIO_BROWSER: 'on' # admin interface\n",
+          "            MINIO_ACCESS_KEY: AKIAA2VWIAJRGFDZQ8SS\n",
+          "            MINIO_SECRET_KEY: XQp7ptBbHPrOrdzKhxy12igKZRe6jVM75P5WVHiz\n",
+          "          command: server /data\n",
+          "        acs:\n",
+          "          build: .\n",
+          "          depends_on:\n",
+          "            - minio\n",
+          "            - riakkv\n",
+          "          ports:\n",
+          "            - \"5000:5000\"\n",
+          "          volumes:\n",
+          "            - ./:/config:ro\n",
+          "          environment:\n",
+          "            FLASK_ENV: development\n",
+          "            APPSCALE_CLOUD_STORAGE_SETTINGS: /config/acs-settings.cfg\n",
+          "          command: flask run --host=acs\n",
+          "      volumes:\n",
+          "        config:\n",
+          "        data:\n",
+          "        schemas:\n",
+          "  - path: /root/acs/Dockerfile\n",
+          "    permissions: \"0644\"\n",
+          "    owner: root\n",
+          "    content: |\n",
+          "      FROM ubuntu:bionic\n",
+          "      ENV FLASK_APP=appscale.cloud_storage \\\n",
+          "          LC_ALL=C.UTF-8 \\\n",
+          "          LANG=C.UTF-8\n",
+          "      RUN apt --assume-yes update \\\n",
+          "       && apt --assume-yes install git python3-pip \\\n",
+          "       && pip3 install git+git://github.com/sjones4/appscale-cloud-storage.git@topic-acs-deploy#egg=appscale-cloud-storage \\\n",
+          "       && apt autoremove --assume-yes perl \\\n",
+          "       && apt-get --assume-yes clean all\n",
+          "  - path: /root/acs/acs-settings.cfg\n",
+          "    permissions: \"0644\"\n",
+          "    owner: root\n",
+          "    content: |\n",
+          "      # S3 backend administrative credentials\n",
+          "      S3_ADMIN_CREDS = {'access_key': 'AKIAA2VWIAJRGFDZQ8SS',\n",
+          "                        'secret_key': 'XQp7ptBbHPrOrdzKhxy12igKZRe6jVM75P5WVHiz'}\n",
+          "\n",
+          "      # S3 backend endpoint\n",
+          "      S3_HOST = 'minio'\n",
+          "      S3_PORT = 9000\n",
+          "      S3_USE_SSL = False\n",
+          "\n",
+          "      # Riak KV nodes for storing bucket metadata and session state\n",
+          "      RIAK_KV_NODES = [{'host': 'riakkv', 'pb_port': 8087}]\n",
+          "\n",
+          "      # AppScale Cloud Storage endpoint\n",
+          "      SERVER_NAME = 'localhost:5000'\n",
+          "\n",
+          "      # User accounts authorized to use AppScale Cloud Storage.\n",
+          "      USERS = {}\n",
+          "  - path: /root/acs/riak-user.conf\n",
+          "    permissions: \"0644\"\n",
+          "    owner: root\n",
+          "    content: |\n",
+          "      storage_backend = leveldb\n",
+          "  - path: /root/cloud-start.sh\n",
+          "    permissions: \"0700\"\n",
+          "    owner: root\n",
+          "    content: |\n",
+          "     #!/bin/bash\n",
+          "     set -euxo pipefail\n",
+          "\n",
+          "     WAITCONDURL=\"", { "Ref" : "StorageWaitConditionHandle" }, "\"\n",
+          "\n",
+          "     # Configure ips for master\n",
+          "     PRIVATE_IP=$(curl http://169.254.169.254/latest/meta-data/local-ipv4)\n",
+          "     PUBLIC_IP=$(curl http://169.254.169.254/latest/meta-data/public-ipv4)\n",
+          "\n",
+          "     # Start cloud storage\n",
+          "     docker-compose -f /root/acs/docker-compose.yaml up -d\n",
+          "\n",
+          "     # Signal cloudformation wait condition handle\n",
+          "     curl -s -X PUT -H 'Content-Type:' \\\n",
+          "       --data-binary '{\"Status\": \"SUCCESS\", \"UniqueId\": \"up\", \"Data\": \"-\", \"Reason\": \"AppScale storage up\" }' \\\n",
+          "       ${WAITCONDURL}\n",
+          "runcmd:\n",
+          " - /root/cloud-start.sh\n",
+          "\n"
+        ]]}}
+      }
+    }
+  },
+
+  "Outputs" : {
+    "InstanceId" : {
+      "Description" : "Appscale management instance",
+      "Value" : { "Ref" : "Instance" }
+    },
+
+    "Ip" : {
+      "Description" : "Appscale management ip",
+      "Value" : { "Fn::GetAtt" : [ "Instance", "PublicIp"] }
+    },
+
+    "Hostname" : {
+      "Description" : "Appscale management host",
+      "Value" : { "Fn::GetAtt" : [ "Instance", "PublicDnsName"] }
+    }
+  }
+}
+
