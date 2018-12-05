@@ -1,0 +1,51 @@
+---
+kernel:
+  image: linuxkit/kernel:4.14.81
+  cmdline: "console=ttyS0 root=/dev/vda1"
+init:
+  - linuxkit/init:c563953a2277eb73a89d89f70e4b6dcdcfebc2d1
+  - linuxkit/runc:83d0edb4552b1a5df1f0976f05f442829eac38fe
+  - linuxkit/containerd:326b096cd5fbab0f864e52721d036cade67599d6
+  - linuxkit/ca-certificates:v0.6
+onboot:
+  - name: sysctl
+    image: linuxkit/sysctl:v0.6
+  - name: dhcpcd
+    image: linuxkit/dhcpcd:v0.6
+    command: ["/sbin/dhcpcd", "--nobackground", "-f", "/dhcpcd.conf", "-1"]
+  - name: extend
+    image: linuxkit/extend:v0.6
+  - name: metadata
+    image: linuxkit/metadata:v0.6
+services:
+  - name: rngd
+    image: linuxkit/rngd:v0.6
+  - name: ntpd
+    image: linuxkit/openntpd:v0.6
+  - name: sshd
+    image: linuxkit/sshd:c4bc89cf0d66733c923ab9cb46198b599eb99320
+    binds:
+     - /run/config/ssh/authorized_keys:/root/.ssh/authorized_keys
+  - name: eucaconsole
+    image: sjones4/eucalyptus-console:4.4
+    capabilities:
+     - CAP_NET_BIND_SERVICE
+     - CAP_CHOWN
+     - CAP_SETUID
+     - CAP_SETGID
+     - CAP_DAC_OVERRIDE
+    binds:
+     - /etc/resolv.conf:/etc/resolv.conf
+     - /etc/eucaconsole/console-main.ini:/etc/eucaconsole/console-main.ini
+    command: ["eucaconsole"]
+files:
+  - path: /etc/eucaconsole/console-main.ini
+    mode: "0600"
+    contents: |
+      [app:main]
+      use = config:/etc/eucaconsole/console-main-defaults.ini
+trust:
+  org:
+    - linuxkit
+    - library
+
