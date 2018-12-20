@@ -22,6 +22,15 @@ services:
     image: linuxkit/sshd:c4bc89cf0d66733c923ab9cb46198b599eb99320
     binds:
      - /run/config/ssh/authorized_keys:/root/.ssh/authorized_keys
+     - /run/config/ssh/sshd_config:/etc/ssh/sshd_config
+files:
+  - path: /run/config/ssh/sshd_config
+    mode: "0664"
+    contents: |
+      AuthorizedKeysFile .ssh/authorized_keys
+      ChallengeResponseAuthentication no
+      ForceCommand nsenter --target 1 --mount
+      PasswordAuthentication no
 trust:
   org:
     - linuxkit
