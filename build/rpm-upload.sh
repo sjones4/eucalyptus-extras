@@ -13,21 +13,21 @@ PACK_DEFAULT_REPO="sjones4/eucalyptus"
 # meta
 declare -A PACK_BRANCH_MAP=(
   ["eucaconsole"]="devel-4.4"
-  ["eucaconsole-selinux"]="master"
-  ["eucalyptus-imaging-worker"]="maint-0.2"
+  ["eucaconsole-selinux"]="devel-4.4"
+  ["eucalyptus-imaging-worker"]="devel-4.4"
   ["eucalyptus-java-deps"]="devel-4.4"
-  ["eucalyptus-selinux"]="devel"
-  ["eucalyptus-service-image"]="maint-3"
-  ["load-balancer-servo"]="maint-1.4"
+  ["eucalyptus-selinux"]="devel-4.4"
+  ["eucalyptus-service-image"]="devel-4.4"
+  ["load-balancer-servo"]="devel-4.4"
 )
 declare -A PACK_REPO_MAP=(
   ["eucaconsole"]="sjones4/eucaconsole"
-  ["eucaconsole-selinux"]="eucalyptus/eucaconsole-selinux"
-  ["eucalyptus-imaging-worker"]="eucalyptus/eucalyptus-imaging-worker"
+  ["eucaconsole-selinux"]="sjones4/eucaconsole-selinux"
+  ["eucalyptus-imaging-worker"]="sjones4/eucalyptus-imaging-worker"
   ["eucalyptus-java-deps"]="sjones4/eucalyptus-cloud-libs"
   ["eucalyptus-selinux"]="sjones4/eucalyptus-selinux"
   ["eucalyptus-service-image"]="sjones4/eucalyptus-service-image"
-  ["load-balancer-servo"]="eucalyptus/load-balancer-servo"
+  ["load-balancer-servo"]="sjones4/load-balancer-servo"
 )
 
 # checks
