@@ -1,0 +1,435 @@
+{
+  "AWSTemplateFormatVersion" : "2010-09-09",
+
+  "Description" : "K3S kubernetes cluster template",
+
+  "Parameters" : {
+
+    "ImageId": {
+      "Description" : "Identifier for an image (Linux 3.10+)",
+      "Type": "String"
+    },
+
+    "KeyName": {
+      "Description" : "EC2 keypair for SSH access to instances",
+      "Type": "String",
+      "Default": ""
+    },
+
+    "K3SNodeCount": {
+      "Description" : "Number of K3S nodes to launch",
+      "Type": "String",
+      "Default" : "1"
+    },
+
+    "K3SNodeInstanceType" : {
+      "Description" : "K3S node instance type",
+      "Type" : "String",
+      "Default" : "m3.xlarge"
+    },
+
+    "K3SServerInstanceType" : {
+      "Description" : "K3S server instance type",
+      "Type" : "String",
+      "Default" : "m3.xlarge"
+    },
+
+    "S3Endpoint": {
+      "Description" : "Endpoint for the S3 service",
+      "Type": "String",
+      "Default" : "http://s3.internal:8773"
+    }
+
+  },
+
+  "Conditions" : {
+    "UseKeyNameParameter" : {"Fn::Not": [{"Fn::Equals" : [{"Ref" : "KeyName"}, ""]}]}
+  },
+
+  "Resources" : {
+
+    "Bucket" : {
+      "Type" : "AWS::S3::Bucket",
+      "DeletionPolicy" : "Retain",
+      "Properties" : {
+        "LifecycleConfiguration" : {
+          "Rules" : [ {
+            "ExpirationInDays": 1,
+            "Status" : "Enabled"
+          } ]
+        }
+      }
+    },
+
+    "K3SServerWaitConditionHandle" : {
+      "Type" : "AWS::CloudFormation::WaitConditionHandle"
+    },
+
+    "K3SServerWaitCondition" : {
+      "Type" : "AWS::CloudFormation::WaitCondition",
+      "Properties" : {
+        "Handle" : { "Ref" : "K3SServerWaitConditionHandle" },
+        "Timeout" : "900"
+      }
+    },
+
+    "KubeConfigWaitConditionHandle" : {
+      "Type" : "AWS::CloudFormation::WaitConditionHandle"
+    },
+
+    "KubeConfigWaitCondition" : {
+      "Type" : "AWS::CloudFormation::WaitCondition",
+      "Properties" : {
+        "Handle" : { "Ref" : "KubeConfigWaitConditionHandle" },
+        "Timeout" : "900"
+      }
+    },
+
+    "K3SServerSecurityGroup" : {
+      "Type" : "AWS::EC2::SecurityGroup",
+      "Properties" : {
+        "GroupDescription" : "K3S server security group",
+        "SecurityGroupIngress" : [
+          {"IpProtocol" : "tcp", "FromPort" : "22", "ToPort" : "22", "CidrIp" : "0.0.0.0/0"},
+          {"IpProtocol" : "tcp", "FromPort" : "6443", "ToPort" : "6443", "CidrIp" : "0.0.0.0/0"}
+        ]
+      }
+    },
+
+    "K3SServerRole" : {
+      "Type": "AWS::IAM::Role",
+      "Properties": {
+        "AssumeRolePolicyDocument": {
+          "Version" : "2012-10-17",
+          "Statement": [ {
+            "Effect": "Allow",
+            "Principal": {
+              "Service": [ "ec2.amazonaws.com" ]
+            },
+            "Action": [ "sts:AssumeRole" ]
+          } ]
+        },
+        "Path": "/k3s-kubernetes/"
+      }
+    },
+
+    "K3SServerPolicy" : {
+      "Type" : "AWS::IAM::Policy",
+      "Properties" : {
+        "PolicyDocument" : {
+          "Version": "2012-10-17",
+          "Statement": [ {
+            "Action": [
+              "s3:Get*",
+              "s3:List*"
+            ],
+            "Effect": "Allow",
+            "Resource": [
+              { "Fn::Join" : ["", [ "arn:aws:s3:::", { "Ref" : "Bucket" } ] ] },
+              { "Fn::Join" : ["", [ "arn:aws:s3:::", { "Ref" : "Bucket" }, "/*" ] ] }
+            ]
+          }, {
+            "Action": [
+              "s3:GetObject",
+              "s3:PutObject"
+            ],
+            "Effect": "Allow",
+            "Resource": [
+              { "Fn::Join" : ["", [ "arn:aws:s3:::", { "Ref" : "Bucket" }, "/kube-config.yaml" ] ] }
+            ]
+          } ]
+        },
+        "PolicyName" : "master",
+        "Roles" : [ { "Ref": "K3SServerRole" } ]
+      }
+    },
+
+    "K3SServerInstanceProfile" : {
+      "Type": "AWS::IAM::InstanceProfile",
+      "Properties": {
+        "Path": "/k3s-kubernetes/",
+        "Roles": [ {"Ref": "K3SServerRole"} ]
+      }
+    },
+
+    "K3SServerInstance" : {
+      "Type": "AWS::EC2::Instance",
+      "Properties": {
+        "IamInstanceProfile": { "Ref" : "K3SServerInstanceProfile" },
+        "ImageId"        : { "Ref" : "ImageId" },
+        "InstanceType"   : { "Ref" : "K3SServerInstanceType" },
+        "SecurityGroups" : [ {"Ref" : "K3SServerSecurityGroup"} ],
+        "KeyName"        : { "Fn::If" : [
+          "UseKeyNameParameter",
+          { "Ref" : "KeyName" },
+          { "Ref" : "AWS::NoValue" }
+        ] },
+        "UserData"       : { "Fn::Base64" : { "Fn::Join" : ["", [
+          "#cloud-config\n",
+          "packages:\n",
+          " - jq\n",
+          "write_files:\n",
+          "  - path: /root/.mc/config.json\n",
+          "    permissions: \"0600\"\n",
+          "    owner: root\n",
+          "    content: |\n",
+          "     {\n",
+          "         \"version\": \"9\",\n",
+          "         \"hosts\": {\n",
+          "             \"es3\": {\n",
+          "                 \"url\": \"",
+          { "Ref" : "S3Endpoint" },
+          "\",\n",
+          "                 \"api\": \"S3v4\",\n",
+          "                 \"lookup\": \"auto\",\n",
+          "                 \"credentialsProvider\": \"profile\"\n",
+          "             }\n",
+          "         }\n",
+          "     }\n",
+          "  - path: /etc/rc.local\n",
+          "    permissions: \"0755\"\n",
+          "    owner: root\n",
+          "    content: |\n",
+          "     #!/bin/bash\n",
+          "     /root/start-k3s.sh &> /var/log/start-k3s.log &\n",
+          "  - path: /root/install-k3s.sh\n",
+          "    permissions: \"0755\"\n",
+          "    owner: root\n",
+          "    content: |\n",
+          "     #!/bin/bash\n",
+          "     set -euxo pipefail\n",
+          "\n",
+          "     cd /root\n",
+          "\n",
+          "     wget https://github.com/sjones4/eucalyptus-extras/raw/1410f73595f73b89e9318c98209e394e8a77f4ae/docker/minio-client/mc\n",
+          "     echo \"4c54cf2f5df7202a660135d848d08bdb608396051f6d34b31c397a14b1db6e0e  mc\" | sha256sum --check\n",
+          "     chmod +x mc\n",
+          "\n",
+          "     wget https://github.com/rancher/k3s/releases/download/v0.1.0/k3s\n",
+          "     echo \"6af58a878d0c8ed595c63d46884231ec2d66199ca2d06681218d062a5b8a0cbf  k3s\" | sha256sum --check\n",
+          "     chmod +x k3s\n",
+          "\n",
+          "  - path: /root/start-k3s.sh\n",
+          "    permissions: \"0755\"\n",
+          "    owner: root\n",
+          "    content: |\n",
+          "     #!/bin/bash\n",
+          "     set -euxo pipefail\n",
+          "\n",
+          "     function cleanup {\n",
+          "       if [ \"true\" == \"${SUCCESS}\" ] ; then\n",
+          "         sudo rm -fv /etc/rc.local\n",
+          "       else\n",
+          "         sleep 30\n",
+          "         reboot\n",
+          "       fi\n",
+          "     }\n",
+          "     trap cleanup EXIT\n",
+          "\n",
+          "     SUCCESS=\"false\"\n",
+          "\n",
+          "     WAITCONDURL=\"",
+          { "Ref" : "K3SServerWaitConditionHandle" },
+          "\"\n",
+          "     WAITCONDKCURL=\"",
+          { "Ref" : "KubeConfigWaitConditionHandle" },
+          "\"\n",
+          "     BUCKETNAME=\"",
+          { "Ref" : "Bucket" },
+          "\"\n",
+          "     EC2_HOST=$(wget -O - --quiet http://169.254.169.254/latest/meta-data/public-hostname)\n",
+          "     K3SSERVER=\"https://${EC2_HOST}:6443\"\n",
+          "\n",
+          "     echo \"Waiting for cloud init completion\"\n",
+          "     cloud-init status -w\n",
+          "\n",
+          "     echo \"Starting K3S\"\n",
+          "     /root/k3s server --disable-agent &\n",
+          "\n",
+          "     echo \"Waiting for k3s.yaml\"\n",
+          "     ATTEMPTS=0\n",
+          "     while ! test -f /etc/rancher/k3s/k3s.yaml; do\n",
+          "       [ ${ATTEMPTS} -lt 12 ] || break; \n",
+          "       ATTEMPTS=$((ATTEMPTS+1))\n",
+          "       sleep 5\n",
+          "     done\n",
+          "\n",
+          "     # Edit config and upload\n",
+          "     ATTEMPTS=0\n",
+          "     while ! sed 's/server: https:\\/\\/localhost/server: https:\\/\\/'${EC2_HOST}'/' /etc/rancher/k3s/k3s.yaml | /root/mc pipe es3/${BUCKETNAME}/kube-config.yaml; do\n",
+          "       [ ${ATTEMPTS} -lt 12 ] || break; \n",
+          "       ATTEMPTS=$((ATTEMPTS+1))\n",
+          "       sleep 5\n",
+          "     done\n",
+          "\n",
+          "     KUBECONFIGURL=$(/root/mc --json share download es3/${BUCKETNAME}/kube-config.yaml | jq -r .share)\n",
+          "     curl -s -X PUT -H 'Content-Type:' \\\n",
+          "       --data-binary '{\"Status\": \"SUCCESS\", \"UniqueId\": \"kube-config.yaml\", \"Data\": \"'${KUBECONFIGURL}'\", \"Reason\": \"Kubernetes configuration url\" }' \\\n",
+          "       ${WAITCONDKCURL}\n",
+          "\n",
+          "     # Signal cloudformation wait condition handle\n",
+          "     NODETOKEN=$(</var/lib/rancher/k3s/server/node-token)\n",
+          "     curl -s -X PUT -H 'Content-Type:' \\\n",
+          "       --data-binary '{\"Status\": \"SUCCESS\", \"UniqueId\": \"token\", \"Data\": \"'${NODETOKEN}'\", \"Reason\": \"Node token\" }' \\\n",
+          "       ${WAITCONDURL}\n",
+          "\n",
+          "     SUCCESS=\"true\"\n",
+          "\n",
+          "runcmd:\n",
+          " - /root/install-k3s.sh\n"
+        ]]}}
+      }
+    },
+
+    "K3SNodeWaitConditionHandle" : {
+      "Type" : "AWS::CloudFormation::WaitConditionHandle"
+    },
+
+    "K3SNodeWaitCondition" : {
+      "Type" : "AWS::CloudFormation::WaitCondition",
+      "Properties" : {
+        "Handle" : { "Ref" : "K3SNodeWaitConditionHandle" },
+        "Timeout" : "900"
+      }
+    },
+
+    "K3SNodeSecurityGroup" : {
+      "Type" : "AWS::EC2::SecurityGroup",
+      "Properties" : {
+        "GroupDescription" : "K3S node security group",
+        "SecurityGroupIngress" : [
+          {"IpProtocol" : "tcp", "FromPort" : "1", "ToPort" : "65535", "CidrIp" : "0.0.0.0/0"},
+          {"IpProtocol" : "udp", "FromPort" : "4789", "ToPort" : "4789", "CidrIp" : "0.0.0.0/0"}
+        ]
+      }
+    },
+
+    "K3SNodeLaunchConfiguration"  : {
+      "Type" : "AWS::AutoScaling::LaunchConfiguration",
+      "Properties" : {
+        "ImageId"        : { "Ref" : "ImageId" },
+        "SecurityGroups" : [ { "Ref" : "K3SNodeSecurityGroup" } ],
+        "InstanceType"   : { "Ref" : "K3SNodeInstanceType" },
+        "KeyName"        : { "Fn::If" : [
+          "UseKeyNameParameter",
+          { "Ref" : "KeyName" },
+          { "Ref" : "AWS::NoValue" }
+        ] },
+        "UserData"       : { "Fn::Base64" : { "Fn::Join" : ["", [
+          "#cloud-config\n",
+          "packages:\n",
+          " - jq\n",
+          "write_files:\n",
+          "  - path: /etc/rc.local\n",
+          "    permissions: \"0755\"\n",
+          "    owner: root\n",
+          "    content: |\n",
+          "     #!/bin/bash\n",
+          "     /root/start-k3s.sh &> /var/log/start-k3s.log &\n",
+          "  - path: /root/install-k3s.sh\n",
+          "    permissions: \"0755\"\n",
+          "    owner: root\n",
+          "    content: |\n",
+          "     #!/bin/bash\n",
+          "     set -euxo pipefail\n",
+          "\n",
+          "     cd /root\n",
+          "\n",
+          "     wget https://github.com/sjones4/eucalyptus-extras/raw/1410f73595f73b89e9318c98209e394e8a77f4ae/docker/minio-client/mc\n",
+          "     echo \"4c54cf2f5df7202a660135d848d08bdb608396051f6d34b31c397a14b1db6e0e  mc\" | sha256sum --check\n",
+          "     chmod +x mc\n",
+          "\n",
+          "     wget https://github.com/rancher/k3s/releases/download/v0.1.0/k3s\n",
+          "     echo \"6af58a878d0c8ed595c63d46884231ec2d66199ca2d06681218d062a5b8a0cbf  k3s\" | sha256sum --check\n",
+          "     chmod +x k3s\n",
+          "\n",
+          "  - path: /root/start-k3s.sh\n",
+          "    permissions: \"0755\"\n",
+          "    owner: root\n",
+          "    content: |\n",
+          "     #!/bin/bash\n",
+          "     set -euxo pipefail\n",
+          "\n",
+          "     function cleanup {\n",
+          "       if [ \"true\" == \"${SUCCESS}\" ] ; then\n",
+          "         sudo rm -fv /etc/rc.local\n",
+          "       else\n",
+          "         sleep 30\n",
+          "         reboot\n",
+          "       fi\n",
+          "     }\n",
+          "     trap cleanup EXIT\n",
+          "\n",
+          "     SUCCESS=\"false\"\n",
+          "\n",
+          "     WAITCONDURL=\"",
+          { "Ref" : "K3SNodeWaitConditionHandle" },
+          "\"\n",
+          "     K3SSERVER=\"",
+          { "Fn::Join" : ["", ["https://", {
+            "Fn::GetAtt" : [ "K3SServerInstance", "PublicDnsName" ]
+          }, ":6443/"]] },
+          "\"\n",
+          "     NODETOKENJSON='",
+          { "Fn::GetAtt" : [ "K3SServerWaitCondition", "Data" ]},
+          "'\n",
+          "     NODETOKEN=$(echo \"${NODETOKENJSON}\" | jq -r .token)\n",
+          "\n",
+          "     echo \"Waiting for cloud init completion\"\n",
+          "     cloud-init status -w\n",
+          "\n",
+          "     echo \"Starting K3S node\"\n",
+          "     /root/k3s agent —server ${K3SSERVER} —token ${NODETOKEN} &\n",
+          "\n",
+          "     echo \"Notifying wait condition\"\n",
+          "     ATTEMPTS=0\n",
+          "     while ! curl -s -X PUT -H 'Content-Type:' \\\n",
+          "             --data-binary '{ \"Status\" : \"SUCCESS\", \"UniqueId\" : \"node\", \"Data\" : \"up\", \"Reason\" : \"K3S node started\" }' \\\n",
+          "             ${WAITCONDURL}; do\n",
+          "       [ ${ATTEMPTS} -lt 12 ] || break; \n",
+          "       ATTEMPTS=$((ATTEMPTS+1))\n",
+          "       sleep 5\n",
+          "     done\n",
+          "\n",
+          "     SUCCESS=\"true\"\n",
+          "\n",
+          "runcmd:\n",
+          " - /root/install-k3s.sh\n"
+        ]]}}
+      }
+    },
+
+    "K3SNodeAutoScalingGroup" : {
+      "Type" : "AWS::AutoScaling::AutoScalingGroup",
+      "Properties" : {
+        "AvailabilityZones" : [{ "Fn::Select" : [ "0", { "Fn::GetAZs" : { "Ref" : "AWS::Region" } } ] }],
+        "LaunchConfigurationName" : { "Ref" : "K3SNodeLaunchConfiguration"  },
+        "MinSize" : 0,
+        "MaxSize" : 50,
+        "DesiredCapacity" : { "Ref" : "K3SNodeCount" }
+      }
+    }
+  },
+
+  "Outputs" : {
+    "KubeConfigUrl" : {
+      "Description" : "Kubernetes configuration download url",
+      "Value" : { "Fn::GetAtt" : [ "KubeConfigWaitCondition", "Data" ]}
+    },
+
+    "K3SServerInstanceInstanceId" : {
+      "Description" : "K3S server instance",
+      "Value" : { "Ref" : "K3SServerInstance" }
+    },
+
+    "K3SNodeAutoScalingGroupName" : {
+      "Description" : "K3S node auto scaling group",
+      "Value" : { "Ref" : "K3SNodeAutoScalingGroup" }
+    },
+
+    "K3SNodeCapacityCommand" : {
+      "Description" : "Command to set the capacity for this cluster",
+      "Value" : { "Fn::Join" : ["", ["euscale-set-desired-capacity -c <HOST_COUNT> ", { "Ref" : "K3SNodeAutoScalingGroup"  }]] }
+    }
+  }
+}
