@@ -1,16 +1,7 @@
 {
   "images": [
     {
-      "description": "Ubuntu Trusty",
-      "login": "ubuntu",
-      "url": "https://cloud-images.ubuntu.com/trusty/current/trusty-server-cloudimg-amd64-disk1.img",
-      "updates": "yes",
-      "architecture": "x86_64",
-      "os": "ubuntu-trusty",
-      "image-format": "qcow2"
-    },
-    {
-      "description": "Ubuntu Xenial",
+      "description": "Ubuntu 16.04/Xenial",
       "login": "ubuntu",
       "url": "https://cloud-images.ubuntu.com/xenial/current/xenial-server-cloudimg-amd64-disk1.img",
       "updates": "yes",
@@ -19,7 +10,7 @@
       "image-format": "qcow2"
     },
     {
-      "description": "Ubuntu Bionic",
+      "description": "Ubuntu 18.04/Bionic",
       "login": "ubuntu",
       "url": "https://cloud-images.ubuntu.com/bionic/current/bionic-server-cloudimg-amd64.img",
       "updates": "yes",
@@ -28,12 +19,12 @@
       "image-format": "qcow2"
     },
     {
-      "description": "Ubuntu Cosmic",
+      "description": "Ubuntu 19.04/Disco",
       "login": "ubuntu",
-      "url": "https://cloud-images.ubuntu.com/cosmic/current/cosmic-server-cloudimg-amd64.img",
+      "url": "https://cloud-images.ubuntu.com/disco/current/disco-server-cloudimg-amd64.img",
       "updates": "yes",
       "architecture": "x86_64",
-      "os": "ubuntu-cosmic",
+      "os": "ubuntu-disco",
       "image-format": "qcow2"
     },
     {
@@ -47,12 +38,12 @@
       "image-format": "raw"
     },
     {
-      "description": "Fedora 29",
+      "description": "Fedora 30",
       "login": "fedora",
-      "url": "https://download.fedoraproject.org/pub/fedora/linux/releases/29/Cloud/x86_64/images/Fedora-Cloud-Base-29-1.2.x86_64.raw.xz",
+      "url": "https://download.fedoraproject.org/pub/fedora/linux/releases/30/Cloud/x86_64/images/Fedora-Cloud-Base-30-1.2.x86_64.raw.xz",
       "updates": "no",
       "architecture": "x86_64",
-      "os": "fedora-29",
+      "os": "fedora-30",
       "image-format": "raw"
     },
     {
@@ -92,6 +83,6 @@
       "image-format": "qcow2"
     }
   ],
-  "version": "sjones4-11-10-18"
+  "version": "sjones4-05-01-19"
 }
 
