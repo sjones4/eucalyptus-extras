@@ -1,22 +1,29 @@
 #!/bin/bash
 
 # Listener configuration
-CONSOLE_HOST="$(snapctl get host)"
-CONSOLE_PORT="$(snapctl get port)"
+CONSOLE_HOST="$(snapctl get console-host)"
+CONSOLE_PORT="$(snapctl get console-port)"
+LISTEN_HOST="$(snapctl get host)"
+LISTEN_HTTP_PORT="$(snapctl get http-port)"
+LISTEN_HTTPS_PORT="$(snapctl get https-port)"
 UFS_HOST="$(snapctl get ufshost)"
 UFS_PORT="$(snapctl get ufsport)"
 
 DEFAULT_CONSOLE_HOST="127.0.0.1"
 DEFAULT_CONSOLE_PORT="8888"
+DEFAULT_LISTEN_HOST="0.0.0.0"
+DEFAULT_LISTEN_HTTP_PORT="80"
+DEFAULT_LISTEN_HTTPS_PORT="443"
 DEFAULT_UFS_HOST="localhost"
 DEFAULT_UFS_PORT="8773"
 
-sed --in-place 's/^host = .*/host = '${CONSOLE_HOST:-$DEFAULT_CONSOLE_HOST}'/' "${SNAP_USER_DATA}/console.ini"
-sed --in-place 's/^port = .*/port = '${CONSOLE_PORT:-$DEFAULT_CONSOLE_PORT}'/' "${SNAP_USER_DATA}/console.ini"
-sed --in-place 's/^ufshost = .*/ufshost = '${UFS_HOST:-$DEFAULT_UFS_HOST}'/'   "${SNAP_USER_DATA}/console.ini"
-sed --in-place 's/^ufsport = .*/ufsport = '${UFS_PORT:-$DEFAULT_UFS_PORT}'/'   "${SNAP_USER_DATA}/console.ini"
+SED="sed --in-place --regexp-extended"
 
-# Update version specific paths
-sed --in-place 's/^args = (.*eucaconsole.log/args = ('"'${SNAP_USER_DATA////\\/}"'\/log\/eucaconsole.log/'               "${SNAP_USER_DATA}/console.ini"
-sed --in-place 's/^session.keyini = .*session-keys.ini/session.keyini = '"${SNAP_USER_DATA////\\/}"'\/session-keys.ini/' "${SNAP_USER_DATA}/console.ini"
+$SED 's/^host = .*/host = '${CONSOLE_HOST:-$DEFAULT_CONSOLE_HOST}'/' "${SNAP_DATA}/etc/console.ini"
+$SED 's/^port = .*/port = '${CONSOLE_PORT:-$DEFAULT_CONSOLE_PORT}'/' "${SNAP_DATA}/etc/console.ini"
+$SED 's/^ufshost = .*/ufshost = '${UFS_HOST:-$DEFAULT_UFS_HOST}'/'   "${SNAP_DATA}/etc/console.ini"
+$SED 's/^ufsport = .*/ufsport = '${UFS_PORT:-$DEFAULT_UFS_PORT}'/'   "${SNAP_DATA}/etc/console.ini"
+$SED 's/^([[:space:]]*)listen .* default;/\1listen '${LISTEN_HOST:-$DEFAULT_LISTEN_HOST}:${LISTEN_HTTP_PORT:-$DEFAULT_LISTEN_HTTP_PORT}' default;/' "${SNAP_DATA}/etc/nginx.conf"
+$SED 's/^([[:space:]]*)listen .* ssl;/\1listen '${LISTEN_HOST:-$DEFAULT_LISTEN_HOST}:${LISTEN_HTTPS_PORT:-$DEFAULT_LISTEN_HTTPS_PORT}' ssl;/'       "${SNAP_DATA}/etc/nginx.conf"
+$SED 's/^([[:space:]]*)proxy_pass .*;/\1proxy_pass http:\/\/'${CONSOLE_HOST:-$DEFAULT_CONSOLE_HOST}:${CONSOLE_PORT:-$DEFAULT_CONSOLE_PORT}';/'      "${SNAP_DATA}/etc/nginx.conf"
 

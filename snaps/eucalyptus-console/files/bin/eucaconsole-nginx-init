@@ -1,0 +1,83 @@
+#!/bin/bash
+
+RUN_DIR="/run/snap.eucalyptus-console"
+
+[ -d "${RUN_DIR}" ] || mkdir -p "${RUN_DIR}"
+
+# nginx defaults
+NGINX_CACHESIZE=64
+NGINX_MAXCONN=1024
+NGINX_ARGS=""
+
+CERT_CN_COUNTRY="US"
+CERT_CN_STATE="CA"
+CERT_CN_LOCATION="Santa Barbara"
+CERT_CN_ORG="AppScale Systems, Inc."
+CERT_CN_UNIT="Eucalyptus User Console"
+
+if [ -f "${SNAP_DATA}/etc/services.conf" ]; then
+  . "${SNAP_DATA}/etc/services.conf"
+fi
+
+generate_cert() {
+  local key="/etc/eucaconsole/eucaconsole.key"
+  local cert="/etc/eucaconsole/eucaconsole.crt"
+
+  if [ -f "${key}" ] && [ -f "${cert}" ]; then
+    return
+  fi
+
+  echo "Generating self-signed certificate"
+  rm -f "${key}" "${cert}"
+
+  local csr="$(mktemp)"
+  local cn=
+
+  if nslookup $(hostname) &>/dev/null; then
+    cn=$(nslookup $(hostname) 2>&1 | tail -3 | grep Name | sed -e 's@^Name:\s*@@')
+  else
+    cn=$(hostname)
+  fi
+
+  local country="${CERT_CN_COUNTRY}"
+  local state="${CERT_CN_STATE}"
+  local location="${CERT_CN_LOCATION}"
+  local org="${CERT_CN_ORG}"
+  local unit="${CERT_CN_UNIT}"
+
+  if ! openssl genpkey -algorithm rsa -pkeyopt rsa_keygen_bits:2048 -out "${key}" &>/dev/null; then
+    rm -f "${csr}"
+    echo "Error generating RSA key"
+    exit 1
+  fi
+
+  openssl req -new -key "${key}" -sha512 -out "${csr}" &>/dev/null <<EOF
+$country
+$state
+$location
+$org
+$unit
+$cn
+$USER@$cn
+
+
+EOF
+
+  if [ $? -ne 0 ]; then
+    rm -f "${key}" "${csr}"
+    echo "Error generating certificate request"
+    exit 1
+  fi
+
+  if ! openssl x509 -req -in "${csr}" -signkey "${key}" -days 3650 -sha512 -out "${cert}" &>/dev/null; then
+    rm -f "${key}" "${csr}"
+    echo "Error generating certificate"
+    exit 1
+  fi
+
+  rm -f "${csr}"
+}
+
+generate_cert
+
+exec $SNAP/usr/sbin/nginx -c "/etc/eucaconsole/nginx.conf" -g "user root root;" $NGINX_ARGS

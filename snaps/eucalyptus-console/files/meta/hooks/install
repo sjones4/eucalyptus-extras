@@ -1,12 +1,20 @@
 #!/bin/bash
 
 # Create required directory structure
-LOG_DIR="${SNAP_USER_DATA}/log"
-RUN_DIR="${SNAP_USER_DATA}/run"
+ETC_DIR="${SNAP_DATA}/etc"
+LIB_DIR="${SNAP_DATA}/lib"
+LOG_DIR="${SNAP_COMMON}/log"
+RUN_DIR="${SNAP_DATA}/run"
 
-[ -d "${LOG_DIR}" ] || mkdir "${LOG_DIR}"
-[ -d "${RUN_DIR}" ] || mkdir "${RUN_DIR}"
+[ -d "${ETC_DIR}" ] || mkdir -p "${ETC_DIR}"
+[ -d "${LIB_DIR}" ] || mkdir -p "${LIB_DIR}"
+[ -d "${LOG_DIR}" ] || mkdir -p "${LOG_DIR}"
+[ -d "${RUN_DIR}" ] || mkdir -p "${RUN_DIR}"
+
+# Subdirectories
+[ -d "${LIB_DIR}/nginx" ] || mkdir -p "${LIB_DIR}/nginx"
 
 # Install configuration defaults
-cp "${SNAP}/usr/share/eucaconsole/console.default.ini" "${SNAP_USER_DATA}/console.ini"
+cp "${SNAP}/usr/share/eucaconsole/nginx.default.conf" "${ETC_DIR}/nginx.conf"
+cp "${SNAP}/usr/share/eucaconsole/console.default.ini" "${ETC_DIR}/console.ini"
 

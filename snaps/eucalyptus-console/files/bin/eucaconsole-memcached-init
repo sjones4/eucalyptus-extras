@@ -1,0 +1,16 @@
+#!/bin/bash
+
+RUN_DIR="/run/snap.eucalyptus-console"
+
+[ -d "${RUN_DIR}" ] || mkdir -p "${RUN_DIR}"
+
+# memcached defaults
+MEMCACHED_CACHESIZE=64
+MEMCACHED_MAXCONN=1024
+MEMCACHED_ARGS="-s ${RUN_DIR}/memcached.sock -a 0700 -d"
+
+if [ -f "${SNAP_DATA}/etc/services.conf" ]; then
+  . "${SNAP_DATA}/etc/services.conf"
+fi
+
+exec $SNAP/usr/bin/memcached -u root -m $MEMCACHED_CACHESIZE -c $MEMCACHED_MAXCONN $MEMCACHED_ARGS
