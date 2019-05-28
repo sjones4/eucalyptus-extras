@@ -1,20 +1,115 @@
 ---
 name: eucalyptus-console
-version: '4.4.4-1'
+version: '4.4.5-1'
 confinement: strict
 grade: stable
+base: core18
 icon: eucalyptus_icon.png
 summary: Eucalyptus management console for use with your Eucalyptus cloud
 description: |
   The Eucalyptus Management Console is a web-based interface to a local
   Eucalyptus cloud and/or AWS services.
 
+  This snap includes services configured for multiple users and a command
+  to launch the console for local use.
+
 apps:
-  eucaconsole:
+  console:
     command: bin/eucaconsole
+    adapter: full
+    environment:
+      LD_LIBRARY_PATH: '$LD_LIBRARY_PATH:$SNAP/lib/x86_64-linux-gnu:$SNAP/usr/lib/x86_64-linux-gnu:$SNAP/usr/lib/x86_64-linux-gnu/openssl-1.0.0/engines:$SNAP/usr/lib/x86_64-linux-gnu/sasl2'
+      SENDFILE: 'no'
     plugs:
       - network-bind
       - network
+  nginx:
+    command: bin/eucaconsole-nginx-init
+    adapter: full
+    daemon: forking
+    stop-timeout: 60s
+    restart-condition: on-abnormal
+    environment:
+      LD_LIBRARY_PATH: '$LD_LIBRARY_PATH:$SNAP/lib/x86_64-linux-gnu:$SNAP/usr/lib/x86_64-linux-gnu:$SNAP/usr/lib/x86_64-linux-gnu/openssl-1.0.0/engines:$SNAP/usr/lib/x86_64-linux-gnu/sasl2'
+    plugs:
+      - network-bind
+      - network
+  memcached:
+    command: bin/eucaconsole-memcached-init
+    adapter: full
+    daemon: forking
+    stop-timeout: 60s
+    restart-condition: on-abnormal
+    environment:
+      LD_LIBRARY_PATH: '$LD_LIBRARY_PATH:$SNAP/lib/x86_64-linux-gnu:$SNAP/usr/lib/x86_64-linux-gnu:$SNAP/usr/lib/x86_64-linux-gnu/openssl-1.0.0/engines:$SNAP/usr/lib/x86_64-linux-gnu/sasl2'
+    after:
+      - nginx
+    plugs:
+      - network-bind
+      - network
+  service:
+    command: bin/eucaconsole-service-init
+    adapter: full
+    daemon: forking
+    stop-timeout: 60s
+    restart-condition: on-abnormal
+    environment:
+      LD_LIBRARY_PATH: '$LD_LIBRARY_PATH:$SNAP/lib/x86_64-linux-gnu:$SNAP/usr/lib/x86_64-linux-gnu:$SNAP/usr/lib/x86_64-linux-gnu/openssl-1.0.0/engines:$SNAP/usr/lib/x86_64-linux-gnu/sasl2'
+      SENDFILE: 'no'
+    after:
+      - memcached
+    plugs:
+      - network-bind
+      - network
+
+layout:
+  # Application
+  /etc/eucaconsole:
+    bind: $SNAP_DATA/etc
+  /var/lib/eucaconsole:
+    bind: $SNAP_DATA/lib
+  /var/log/eucaconsole:
+    bind: $SNAP_COMMON/log
+  # Deps
+  /usr/share/file/magic.mgc:
+    symlink: $SNAP/usr/share/file/magic.mgc
+  /usr/share/misc/magic.mgc:
+    symlink: $SNAP/usr/share/file/magic.mgc
+  # Memcached
+  /usr/bin/memcached:
+    symlink: $SNAP/usr/bin/memcached
+  /usr/lib/x86_64-linux-gnu/libmemcached.so.11:
+    symlink: $SNAP/usr/lib/x86_64-linux-gnu/libmemcached.so.11.0.0
+  /usr/lib/x86_64-linux-gnu/libmemcached.so.11.0.0:
+    symlink: $SNAP/usr/lib/x86_64-linux-gnu/libmemcached.so.11.0.0
+  /usr/share/memcached:
+    bind: $SNAP/usr/share/memcached
+  # Nginx
+  /etc/nginx:
+    bind: $SNAP/etc/nginx
+  /usr/sbin/nginx:
+    symlink: $SNAP/usr/sbin/nginx
+  /usr/share/nginx:
+    bind: $SNAP/etc/nginx
+  /var/lib/nginx:
+    bind: $SNAP_DATA/lib/nginx
+  /var/log/nginx:
+    bind: $SNAP_COMMON/log
+  # Python
+  /usr/bin/python:
+    symlink: $SNAP/usr/bin/python2.7
+  /usr/bin/python2:
+    symlink: $SNAP/usr/bin/python2.7
+  /usr/bin/python2.7:
+    symlink: $SNAP/usr/bin/python2.7
+  /etc/python2.7:
+    bind: $SNAP/etc/python2.7
+  /lib/python2.7:
+    bind: $SNAP/lib/python2.7
+  /usr/lib/python2.7:
+    bind: $SNAP/usr/lib/python2.7
+  /usr/share/python:
+    bind: $SNAP/usr/share/python
 
 parts:
   eucaconsole:
@@ -23,16 +118,15 @@ parts:
     source: https://github.com/Corymbia/eucaconsole.git
     source-type: git
     source-depth: 1
-    source-tag: v4.4.4
+    source-tag: v4.4.5
     override-pull: |
       snapcraftctl pull
-      sed --in-place '/M2Crypto/d' setup.py
-      sed --in-place '/import logging/a import os' eucaconsole/views/__init__.py
-      sed --in-place 's/magic.Magic(mime=True)/magic.Magic(mime=True, magic_file=os.path.join(os.environ["SNAP"], "usr\/share\/file\/magic.mgc"))/'   eucaconsole/views/__init__.py
-      sed --in-place 's/magic.Magic(mime=False)/magic.Magic(mime=False, magic_file=os.path.join(os.environ["SNAP"], "usr\/share\/file\/magic.mgc"))/' eucaconsole/views/__init__.py
-      sed --in-place 's/route_dir = '''.*'''/route_dir = os.path.join(os.environ["SNAP_USER_DATA"], "run")/' eucaconsole/config.py
+      sed --in-place "/M2Crypto/d" setup.py
+      sed --in-place "s/route_dir = '.*'/route_dir = '\/var\/lib\/eucaconsole'/" eucaconsole/config.py
     stage-packages:
       - libmagic1
+      - memcached
+      - nginx
       - python-m2crypto
       - python-pylibmc
   eucaconsole-rpmfiles:
@@ -40,22 +134,26 @@ parts:
     source: https://github.com/Corymbia/eucaconsole.git
     source-type: git
     source-depth: 1
-    source-tag: v4.4.4
+    source-tag: v4.4.5
     override-pull: |
       snapcraftctl pull
-      sed --in-place '/sys.path.insert/d'                                      rpm/eucaconsole
-      sed --in-place 's/python -tt/env python2/'                               rpm/eucaconsole
-      sed --in-place 's/"\/var\/run/os.environ["SNAP_USER_DATA"] + "\/run/'    rpm/eucaconsole
-      sed --in-place 's/"\/etc\/eucaconsole/os.environ["SNAP_USER_DATA"] + "/' rpm/eucaconsole
-      sed --in-place 's/"\/var\/log/os.environ["SNAP_USER_DATA"] + "\/log/'    rpm/eucaconsole
-      sed --in-place '/workers = 4/a sendfile = False'                conf/console.default.ini
+      sed --in-place "s/\/var\/log\/eucaconsole.log/\/var\/log\/eucaconsole\/eucaconsole.log/" conf/console.default.ini
+      sed --in-place "s/\/var\/run\/eucaconsole/\/run\/snap.eucalyptus-console/"               conf/console.default.ini
+      sed --in-place "s/\/var\/run\/eucaconsole/\/run\/snap.eucalyptus-console/"                        conf/nginx.conf
+      sed --in-place "s/\/etc\/pki\/tls\/certs\/eucaconsole.crt/\/etc\/eucaconsole\/eucaconsole.crt/"   conf/nginx.conf
+      sed --in-place "s/\/etc\/pki\/tls\/private\/eucaconsole.key/\/etc\/eucaconsole\/eucaconsole.key/" conf/nginx.conf
+      sed --in-place "s/# include \/etc\/nginx\/mime.types;/include \/etc\/nginx\/mime.types;/"         conf/nginx.conf
+      sed --in-place "s/location \/static\/\.\*/location ~ ^\/static\/(?:[0-9.]+)\/(.*)\$/"             conf/nginx.conf
+      sed --in-place "s/root                    \/path\/to\/eucaconsole\/static;/alias                   \/lib\/python2.7\/site-packages\/eucaconsole\/static\/\$1;/" conf/nginx.conf
       chmod +x rpm/eucaconsole
     organize:
       conf/console.default.ini: usr/share/eucaconsole/console.default.ini
+      conf/nginx.conf: usr/share/eucaconsole/nginx.default.conf
       rpm/eucaconsole: bin/eucaconsole
     stage:
       - bin/eucaconsole
       - usr/share/eucaconsole/console.default.ini
+      - usr/share/eucaconsole/nginx.default.conf
   eucaconsole-files:
     plugin: dump
     source: ./files/
