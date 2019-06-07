@@ -1,0 +1,447 @@
+{
+    "AWSTemplateFormatVersion": "2010-09-09",
+    "Description": "Docker v2 registry template using s3 storage",
+    "Parameters": {
+        "BucketName": {
+            "Type": "String",
+            "Default": "",
+            "Description": "Name for the bucket to use"
+        },
+        "ElasticIp": {
+            "Type": "String",
+            "Default": "",
+            "Description": "Elastic IP to use"
+        },
+        "KeyName": {
+            "Description": "EC2 keypair for instance SSH access",
+            "Type": "String",
+            "Default": ""
+        },
+        "ImageId": {
+            "Description": "Identifier for a xenial image",
+            "Type": "String"
+        },
+        "InstanceType": {
+            "Description": "Instance type to use",
+            "Type": "String",
+            "Default": "m3.xlarge"
+        },
+        "Zone": {
+            "Description": "Availability zone to use",
+            "Type": "String",
+            "Default": "auto-select"
+        }
+    },
+    "Conditions": {
+        "UseBucketNameParameter": {
+            "Fn::Not": [
+                {
+                    "Fn::Equals": [
+                        {
+                            "Ref": "BucketName"
+                        },
+                        ""
+                    ]
+                }
+            ]
+        },
+        "UseElasticIpParameter": {
+            "Fn::Not": [
+                {
+                    "Fn::Equals": [
+                        {
+                            "Ref": "ElasticIp"
+                        },
+                        ""
+                    ]
+                }
+            ]
+        },
+        "UseKeyNameParameter": {
+            "Fn::Not": [
+                {
+                    "Fn::Equals": [
+                        {
+                            "Ref": "KeyName"
+                        },
+                        ""
+                    ]
+                }
+            ]
+        },
+        "UseZoneParameter": {
+            "Fn::Not": [
+                {
+                    "Fn::Equals": [
+                        {
+                            "Ref": "Zone"
+                        },
+                        "auto-select"
+                    ]
+                }
+            ]
+        },
+        "CreateBucket": {
+            "Fn::Not": [
+                {
+                    "Condition": "UseBucketNameParameter"
+                }
+            ]
+        },
+        "CreateElasticIp": {
+            "Fn::Not": [
+                {
+                    "Condition": "UseElasticIpParameter"
+                }
+            ]
+        }
+    },
+    "Resources": {
+        "RegistryRole": {
+            "Type": "AWS::IAM::Role",
+            "Properties": {
+                "AssumeRolePolicyDocument": {
+                    "Version": "2012-10-17",
+                    "Statement": [
+                        {
+                            "Effect": "Allow",
+                            "Principal": {
+                                "Service": [
+                                    "ec2.amazonaws.com"
+                                ]
+                            },
+                            "Action": [
+                                "sts:AssumeRole"
+                            ]
+                        }
+                    ]
+                },
+                "Path": "/registry/"
+            }
+        },
+        "RegistryInstanceProfile": {
+            "Type": "AWS::IAM::InstanceProfile",
+            "Properties": {
+                "Path": "/registry/",
+                "Roles": [
+                    {
+                        "Ref": "RegistryRole"
+                    }
+                ]
+            }
+        },
+        "RegistryPolicy": {
+            "Type": "AWS::IAM::Policy",
+            "Properties": {
+                "PolicyName": "RegistryS3",
+                "PolicyDocument": {
+                    "Version": "2012-10-17",
+                    "Statement": [
+                        {
+                            "Effect": "Allow",
+                            "Action": [
+                                "s3:ListAllMyBuckets"
+                            ],
+                            "Resource": "arn:aws:s3:::*"
+                        },
+                        {
+                            "Effect": "Allow",
+                            "Action": [
+                                "s3:ListBucket",
+                                "s3:ListBucketMultipartUploads",
+                                "s3:GetBucketLocation"
+                            ],
+                            "Resource": {
+                                "Fn::Sub": [
+                                    "arn:aws:s3:::${Bucket}",
+                                    {
+                                        "Bucket": {
+                                            "Fn::If": [
+                                                "UseBucketNameParameter",
+                                                {
+                                                    "Ref": "BucketName"
+                                                },
+                                                {
+                                                    "Ref": "RegistryBucket"
+                                                }
+                                            ]
+                                        }
+                                    }
+                                ]
+                            }
+                        },
+                        {
+                            "Effect": "Allow",
+                            "Action": [
+                                "s3:DeleteObject",
+                                "s3:GetObject",
+                                "s3:ListMultipartUploadParts",
+                                "s3:PutObject",
+                                "s3:PutObjectAcl"
+                            ],
+                            "Resource": {
+                                "Fn::Sub": [
+                                    "arn:aws:s3:::${Bucket}/*",
+                                    {
+                                        "Bucket": {
+                                            "Fn::If": [
+                                                "UseBucketNameParameter",
+                                                {
+                                                    "Ref": "BucketName"
+                                                },
+                                                {
+                                                    "Ref": "RegistryBucket"
+                                                }
+                                            ]
+                                        }
+                                    }
+                                ]
+                            }
+                        }
+                    ]
+                },
+                "Roles": [
+                    {
+                        "Ref": "RegistryRole"
+                    }
+                ]
+            }
+        },
+        "RegistryBucket": {
+            "Type": "AWS::S3::Bucket",
+            "Condition": "CreateBucket",
+            "DeletionPolicy": "Retain",
+            "Properties": {
+                "BucketName": {
+                    "Fn::If": [
+                        "UseBucketNameParameter",
+                        {
+                            "Ref": "BucketName"
+                        },
+                        {
+                            "Ref": "AWS::NoValue"
+                        }
+                    ]
+                }
+            }
+        },
+        "RegistryIp": {
+            "Type": "AWS::EC2::EIP",
+            "Condition": "CreateElasticIp",
+            "DeletionPolicy": "Retain"
+        },
+        "RegistryIpAssociation": {
+            "Type": "AWS::EC2::EIPAssociation",
+            "Properties": {
+                "EIP": {
+                    "Fn::If": [
+                        "UseElasticIpParameter",
+                        {
+                            "Ref": "ElasticIp"
+                        },
+                        {
+                            "Ref": "RegistryIp"
+                        }
+                    ]
+                },
+                "InstanceId": {
+                    "Ref": "RegistryInstance"
+                }
+            }
+        },
+        "RegistryWaitConditionHandle": {
+            "Type": "AWS::CloudFormation::WaitConditionHandle"
+        },
+        "RegistryWaitCondition": {
+            "Type": "AWS::CloudFormation::WaitCondition",
+            "Properties": {
+                "Handle": {
+                    "Ref": "RegistryWaitConditionHandle"
+                },
+                "Timeout": "900"
+            }
+        },
+        "RegistrySecurityGroup": {
+            "Type": "AWS::EC2::SecurityGroup",
+            "Properties": {
+                "GroupDescription": "Docker registry security group",
+                "SecurityGroupIngress": [
+                    {
+                        "IpProtocol": "tcp",
+                        "FromPort": "22",
+                        "ToPort": "22",
+                        "CidrIp": "0.0.0.0/0"
+                    },
+                    {
+                        "IpProtocol": "tcp",
+                        "FromPort": "80",
+                        "ToPort": "80",
+                        "CidrIp": "0.0.0.0/0"
+                    }
+                ]
+            }
+        },
+        "RegistryInstance": {
+            "Type": "AWS::EC2::Instance",
+            "Properties": {
+                "AvailabilityZone": {
+                    "Fn::If": [
+                        "UseZoneParameter",
+                        {
+                            "Ref": "Zone"
+                        },
+                        {
+                            "Fn::Select": [
+                                "0",
+                                {
+                                    "Fn::GetAZs": {
+                                        "Ref": "AWS::Region"
+                                    }
+                                }
+                            ]
+                        }
+                    ]
+                },
+                "IamInstanceProfile": {
+                    "Ref": "RegistryInstanceProfile"
+                },
+                "ImageId": {
+                    "Ref": "ImageId"
+                },
+                "InstanceType": {
+                    "Ref": "InstanceType"
+                },
+                "SecurityGroups": [
+                    {
+                        "Ref": "RegistrySecurityGroup"
+                    }
+                ],
+                "KeyName": {
+                    "Fn::If": [
+                        "UseKeyNameParameter",
+                        {
+                            "Ref": "KeyName"
+                        },
+                        {
+                            "Ref": "AWS::NoValue"
+                        }
+                    ]
+                },
+                "UserData": {
+                    "Fn::Base64": {
+                        "Fn::Join": [
+                            "",
+                            [
+                                "#cloud-config\n",
+                                "packages:\n",
+                                "  - docker-compose\n",
+                                "write_files:\n",
+                                "  - path: /etc/docker/daemon.json\n",
+                                "    permissions: \"0644\"\n",
+                                "    owner: root\n",
+                                "    content: |\n",
+                                "      {\n",
+                                "        \"insecure-registries\" : [\"localhost\"]\n",
+                                "      }\n",
+                                "  - path: /root/registry/docker-compose.yaml\n",
+                                "    permissions: \"0644\"\n",
+                                "    owner: root\n",
+                                "    content: |\n",
+                                "      version: \"2.0\"\n",
+                                "      services:\n",
+                                "        docker-registry:\n",
+                                "          image: registry:2\n",
+                                "          ports:\n",
+                                "            - \"80:5000\"\n",
+                                "          environment:\n",
+                                "            REGISTRY_STORAGE: \"s3\"\n",
+                                "            REGISTRY_STORAGE_S3_BUCKET: \"",
+                                {
+                                    "Fn::If": [
+                                        "UseBucketNameParameter",
+                                        {
+                                            "Ref": "BucketName"
+                                        },
+                                        {
+                                            "Ref": "RegistryBucket"
+                                        }
+                                    ]
+                                },
+                                "\"\n",
+                                "            REGISTRY_STORAGE_S3_ENCRYPT: \"false\"\n",
+                                "            REGISTRY_STORAGE_S3_REGION: \"eucalyptus\"\n",
+                                "            REGISTRY_STORAGE_S3_REGIONENDPOINT: \"http://s3.internal:8773\"\n",
+                                "            REGISTRY_STORAGE_S3_SECURE: \"false\"\n",
+                                "\n",
+                                "  - path: /root/cloud-start.sh\n",
+                                "    permissions: \"0700\"\n",
+                                "    owner: root\n",
+                                "    content: |\n",
+                                "     #!/bin/bash\n",
+                                "     set -euxo pipefail\n",
+                                "\n",
+                                "     WAITCONDURL=\"",
+                                {
+                                    "Ref": "RegistryWaitConditionHandle"
+                                },
+                                "\"\n",
+                                "\n",
+                                "     # Start registry\n",
+                                "     docker-compose -f /root/registry/docker-compose.yaml up -d\n",
+                                "\n",
+                                "     # Signal cloudformation wait condition handle\n",
+                                "     curl -s -X PUT -H 'Content-Type:' \\\n",
+                                "       --data-binary '{\"Status\": \"SUCCESS\", \"UniqueId\": \"up\", \"Data\": \"-\", \"Reason\": \"Docker registry up\" }' \\\n",
+                                "       ${WAITCONDURL}\n",
+                                "runcmd:\n",
+                                " - /root/cloud-start.sh\n",
+                                "\n"
+                            ]
+                        ]
+                    }
+                }
+            }
+        }
+    },
+    "Outputs": {
+        "RegistryInstanceId": {
+            "Description": "Docker registry instance",
+            "Value": {
+                "Ref": "RegistryInstance"
+            }
+        },
+        "RegistryIp": {
+            "Description": "Docker registry ip",
+            "Value": {
+                "Fn::GetAtt": [
+                    "RegistryInstance",
+                    "PublicIp"
+                ]
+            }
+        },
+        "RegistryHostname": {
+            "Description": "Docker registry host",
+            "Value": {
+                "Fn::GetAtt": [
+                    "RegistryInstance",
+                    "PublicDnsName"
+                ]
+            }
+        },
+        "RegistryBucket": {
+            "Description": "Docker registry bucket",
+            "Value": {
+                "Fn::If": [
+                    "UseBucketNameParameter",
+                    {
+                        "Ref": "BucketName"
+                    },
+                    {
+                        "Ref": "RegistryBucket"
+                    }
+                ]
+            }
+        }
+    }
+}
+
