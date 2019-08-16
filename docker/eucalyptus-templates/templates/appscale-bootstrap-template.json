@@ -5,6 +5,12 @@
 
   "Parameters" : {
 
+    "AppScaleBootstrapUrl" : {
+      "Description" : "AppScale bootstrap script location",
+      "Type" : "String",
+      "Default" : "https://raw.githubusercontent.com/AppScale/appscale/master/bootstrap.sh"
+    },
+
     "AppScaleRepo" : {
       "Description" : "AppScale git repository",
       "Type" : "String",
@@ -25,6 +31,18 @@
 
     "AppScaleToolsBranch" : {
       "Description" : "AppScale tools git repository branch",
+      "Type" : "String",
+      "Default" : "master"
+    },
+
+    "AppScaleAgentsRepo" : {
+      "Description" : "AppScale agents git repository",
+      "Type" : "String",
+      "Default" : "git://github.com/AppScale/appscale-agents.git"
+    },
+
+    "AppScaleAgentsBranch" : {
+      "Description" : "AppScale agents git repository branch",
       "Type" : "String",
       "Default" : "master"
     },
@@ -158,10 +176,13 @@
           "\n",
           "     HTTPPROXY=\"", { "Ref" : "InstanceHttpProxy" }, "\"\n",
           "     WAITCONDURL=\"", { "Ref" : "WaitConditionHandle" }, "\"\n",
+          "     BOOTSTRAP_URL=\"", { "Ref" : "AppScaleBootstrapUrl" }, "\"\n",
           "     BOOTSTRAP_REPO=\"", { "Ref" : "AppScaleRepo" }, "\"\n",
           "     BOOTSTRAP_BRANCH=\"", { "Ref" : "AppScaleBranch" }, "\"\n",
           "     BOOTSTRAP_TOOLS_REPO=\"", { "Ref" : "AppScaleToolsRepo" }, "\"\n",
           "     BOOTSTRAP_TOOLS_BRANCH=\"", { "Ref" : "AppScaleToolsBranch" }, "\"\n",
+          "     BOOTSTRAP_AGENTS_REPO=\"", { "Ref" : "AppScaleAgentsRepo" }, "\"\n",
+          "     BOOTSTRAP_AGENTS_BRANCH=\"", { "Ref" : "AppScaleAgentsBranch" }, "\"\n",
           "     COND_DATA='init'\n",
           "     COND_REASON='AppScale not up'\n",
           "\n",
@@ -198,17 +219,19 @@
           "     COND_DATA='configure bootstrap'\n",
           "     cd /root\n",
           "     apt-get update\n",
-          "     wget -O bootstrap.sh https://bootstrap.appscale.com\n",
+          "     wget -O bootstrap.sh ${BOOTSTRAP_URL}\n",
           "     COND_DATA='run bootstrap'\n",
           "     BOOTSTRAP_TAG_OPT=''\n",
           "     [ \"${BOOTSTRAP_BRANCH}\" != \"master\" ] || BOOTSTRAP_TAG_OPT=\"--tag dev\"\n",
           "     [ -z \"${HTTPPROXY}\" ] || export http_proxy=${HTTPPROXY}\n",
           "     bash bootstrap.sh \\\n",
           "       ${BOOTSTRAP_TAG_OPT} \\\n",
-          "       --repo         ${BOOTSTRAP_REPO} \\\n",
-          "       --branch       ${BOOTSTRAP_BRANCH} \\\n",
-          "       --tools-repo   ${BOOTSTRAP_TOOLS_REPO} \\\n",
-          "       --tools-branch ${BOOTSTRAP_TOOLS_BRANCH}\n",
+          "       --repo          ${BOOTSTRAP_REPO} \\\n",
+          "       --branch        ${BOOTSTRAP_BRANCH} \\\n",
+          "       --tools-repo    ${BOOTSTRAP_TOOLS_REPO} \\\n",
+          "       --tools-branch  ${BOOTSTRAP_TOOLS_BRANCH} \\\n",
+          "       --agents-repo   ${BOOTSTRAP_AGENTS_REPO} \\\n",
+          "       --agents-branch ${BOOTSTRAP_AGENTS_BRANCH}\n",
           "\n",
           "     # Start appscale\n",
           "     COND_DATA='run appscale up'\n",
