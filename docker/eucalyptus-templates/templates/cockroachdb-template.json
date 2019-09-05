@@ -1,0 +1,130 @@
+{
+  "AWSTemplateFormatVersion" : "2010-09-09",
+
+  "Description" : "CockroachDB database instance template",
+
+  "Parameters" : {
+
+    "CockroachDBLabel" : {
+      "Description" : "CockroachDB image label, see https://hub.docker.com/r/cockroachdb/cockroach",
+      "Type" : "String",
+      "Default" : "v19.1.4"
+    },
+
+    "InstanceType" : {
+      "Description" : "Instance type to use",
+      "Type" : "String",
+      "Default" : "m1.small"
+    },
+
+    "ImageId": {
+      "Description" : "Identifier for the RancherOS image",
+      "Type": "String"
+    },
+
+    "KeyName": {
+      "Description" : "EC2 keypair for instance SSH access",
+      "Type": "String",
+      "Default": ""
+    },
+
+    "Zone": {
+      "Description" : "Availability zone to use",
+      "Type": "String",
+      "Default": "auto-select"
+    }
+
+  },
+
+  "Conditions" : {
+    "UseZoneParameter" : {"Fn::Not": [{"Fn::Equals" : [{"Ref" : "Zone"}, "auto-select"]}]},
+    "UseKeyNameParameter" : {"Fn::Not": [{"Fn::Equals" : [{"Ref" : "KeyName"}, ""]}]}
+  },
+
+  "Resources" : {
+
+    "SecurityGroup" : {
+      "Type" : "AWS::EC2::SecurityGroup",
+      "Properties" : {
+        "GroupDescription" : "CockroachDB security group",
+        "SecurityGroupIngress" : [
+          {"IpProtocol" : "tcp", "FromPort" : "22", "ToPort" : "22", "CidrIp" : "0.0.0.0/0"},
+          {"IpProtocol" : "tcp", "FromPort" : "8080", "ToPort" : "8080", "CidrIp" : "0.0.0.0/0"},
+          {"IpProtocol" : "tcp", "FromPort" : "26257", "ToPort" : "26257", "CidrIp" : "0.0.0.0/0"}
+        ]
+      }
+    },
+
+    "Instance" : {
+      "Type": "AWS::EC2::Instance",
+      "Properties": {
+        "AvailabilityZone": { "Fn::If" : [
+          "UseZoneParameter",
+          { "Ref" : "Zone" },
+          { "Fn::Select" : [ "0", { "Fn::GetAZs" : { "Ref" : "AWS::Region" } } ] }
+        ] },
+        "ImageId"        : { "Ref" : "ImageId" },
+        "InstanceType"   : { "Ref" : "InstanceType" },
+        "SecurityGroups" : [ {"Ref" : "SecurityGroup"} ],
+        "KeyName"        : { "Fn::If" : [
+          "UseKeyNameParameter",
+          { "Ref" : "KeyName" },
+          { "Ref" : "AWS::NoValue" }
+        ] },
+        "UserData"       : { "Fn::Base64" : { "Fn::Join" : ["", [
+          "#cloud-config\n",
+          "write_files:\n",
+          "  - path: /etc/rc.local\n",
+          "    permissions: \"0755\"\n",
+          "    owner: root\n",
+          "    content: |\n",
+          "      #!/bin/bash\n",
+          "      export COCKROACHDB_LABEL=\"",{ "Ref" : "CockroachDBLabel" },"\"\n",
+          "      wait-for-docker\n",
+
+          "      docker run \\\n",
+          "        --name=cockroachdb \\\n",
+          "        --restart=always \\\n",
+          "        --detach \\\n",
+          "        --publish=8080:8080 \\\n",
+          "        --publish=26257:26257 \\\n",
+          "        registry.hub.docker.com/cockroachdb/cockroach:${COCKROACHDB_LABEL:-v19.1.4} start --insecure\n",
+          "\n"
+        ]]}}
+      }
+    }
+
+  },
+
+  "Outputs" : {
+
+    "InstanceId" : {
+      "Description" : "CockroachDB instance",
+      "Value" : { "Ref" : "Instance" }
+    },
+
+    "Ip" : {
+      "Description" : "CockroachDB instance ip",
+      "Value" : { "Fn::GetAtt" : [ "Instance", "PublicIp"] }
+    },
+
+    "Hostname" : {
+      "Description" : "CockroachDB instance host",
+      "Value" : { "Fn::GetAtt" : [ "Instance", "PublicDnsName"] }
+    },
+
+    "PostgresDSN" : {
+      "Description" : "Postgres DSN",
+      "Value" : { "Fn::Join" : ["", [
+        "dbname=postgres",
+        " user=root",
+        " password=changeme",
+        " host=",
+        { "Fn::GetAtt" : [ "Instance", "PublicDnsName"] },
+        " port=26257"
+      ] ] }
+    }
+
+  }
+}
+
