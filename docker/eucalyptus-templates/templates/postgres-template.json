@@ -1,0 +1,171 @@
+{
+  "AWSTemplateFormatVersion" : "2010-09-09",
+
+  "Description" : "PostgreSQL database instance template",
+
+  "Parameters" : {
+
+    "PostgresUser" : {
+      "Description" : "Postgres user",
+      "Type" : "String",
+      "Default" : ""
+    },
+
+    "PostgresPassword" : {
+      "Description" : "Postgres password",
+      "Type" : "String",
+      "Default" : ""
+    },
+
+    "PostgresDatabase" : {
+      "Description" : "Postgres database",
+      "Type" : "String",
+      "Default" : ""
+    },
+
+    "PostgresLabel" : {
+      "Description" : "Postgres image label, see https://hub.docker.com/_/postgres",
+      "Type" : "String",
+      "Default" : "11-alpine"
+    },
+
+    "InstanceType" : {
+      "Description" : "Instance type to use",
+      "Type" : "String",
+      "Default" : "m1.small"
+    },
+
+    "ImageId": {
+      "Description" : "Identifier for the RancherOS image",
+      "Type": "String"
+    },
+
+    "KeyName": {
+      "Description" : "EC2 keypair for instance SSH access",
+      "Type": "String",
+      "Default": ""
+    },
+
+    "Zone": {
+      "Description" : "Availability zone to use",
+      "Type": "String",
+      "Default": "auto-select"
+    }
+
+  },
+
+  "Conditions" : {
+    "UsePostgresUserParameter" : {"Fn::Not": [{"Fn::Equals" : [{"Ref" : "PostgresUser"}, ""]}]},
+    "UsePostgresPasswordParameter" : {"Fn::Not": [{"Fn::Equals" : [{"Ref" : "PostgresPassword"}, ""]}]},
+    "UsePostgresDatabaseParameter" : {"Fn::Not": [{"Fn::Equals" : [{"Ref" : "PostgresDatabase"}, ""]}]},
+    "UseZoneParameter" : {"Fn::Not": [{"Fn::Equals" : [{"Ref" : "Zone"}, "auto-select"]}]},
+    "UseKeyNameParameter" : {"Fn::Not": [{"Fn::Equals" : [{"Ref" : "KeyName"}, ""]}]}
+  },
+
+  "Resources" : {
+
+    "SecurityGroup" : {
+      "Type" : "AWS::EC2::SecurityGroup",
+      "Properties" : {
+        "GroupDescription" : "Postgres security group",
+        "SecurityGroupIngress" : [
+          {"IpProtocol" : "tcp", "FromPort" : "22", "ToPort" : "22", "CidrIp" : "0.0.0.0/0"},
+          {"IpProtocol" : "tcp", "FromPort" : "5432", "ToPort" : "5432", "CidrIp" : "0.0.0.0/0"}
+        ]
+      }
+    },
+
+    "Instance" : {
+      "Type": "AWS::EC2::Instance",
+      "Properties": {
+        "AvailabilityZone": { "Fn::If" : [
+          "UseZoneParameter",
+          { "Ref" : "Zone" },
+          { "Fn::Select" : [ "0", { "Fn::GetAZs" : { "Ref" : "AWS::Region" } } ] }
+        ] },
+        "ImageId"        : { "Ref" : "ImageId" },
+        "InstanceType"   : { "Ref" : "InstanceType" },
+        "SecurityGroups" : [ {"Ref" : "SecurityGroup"} ],
+        "KeyName"        : { "Fn::If" : [
+          "UseKeyNameParameter",
+          { "Ref" : "KeyName" },
+          { "Ref" : "AWS::NoValue" }
+        ] },
+        "UserData"       : { "Fn::Base64" : { "Fn::Join" : ["", [
+          "#cloud-config\n",
+          "write_files:\n",
+          "  - path: /etc/rc.local\n",
+          "    permissions: \"0755\"\n",
+          "    owner: root\n",
+          "    content: |\n",
+          "      #!/bin/bash\n",
+          "      export POSTGRES_LABEL=\"",{ "Ref" : "PostgresLabel" },"\"\n",
+          "      export POSTGRES_PASSWORD=\"",{ "Ref" : "PostgresPassword" },"\"\n",
+          "      export POSTGRES_USER=\"",{ "Ref" : "PostgresUser" },"\"\n",
+          "      export POSTGRES_DB=\"",{ "Ref" : "PostgresDatabase" },"\"\n",
+          "      [ -n \"${POSTGRES_PASSWORD}\" ] || unset POSTGRES_PASSWORD\n",
+          "      [ -n \"${POSTGRES_USER}\" ]     || unset POSTGRES_USER\n",
+          "      [ -n \"${POSTGRES_DB}\" ]       || unset POSTGRES_DB\n",
+          "      wait-for-docker\n",
+          "      docker run \\\n",
+          "        --name postgres \\\n",
+          "        --restart=always \\\n",
+          "        --detach \\\n",
+          "        --publish=5432:5432 \\\n",
+          "        --env POSTGRES_PASSWORD \\\n",
+          "        --env POSTGRES_USER \\\n",
+          "        --env POSTGRES_DB \\\n",
+          "        registry.hub.docker.com/library/postgres:${POSTGRES_LABEL:-11-alpine}\n",
+          "\n"
+        ]]}}
+      }
+    }
+
+  },
+
+  "Outputs" : {
+
+    "InstanceId" : {
+      "Description" : "Postgres instance",
+      "Value" : { "Ref" : "Instance" }
+    },
+
+    "Ip" : {
+      "Description" : "Postgres instance ip",
+      "Value" : { "Fn::GetAtt" : [ "Instance", "PublicIp"] }
+    },
+
+    "Hostname" : {
+      "Description" : "Postgres instance host",
+      "Value" : { "Fn::GetAtt" : [ "Instance", "PublicDnsName"] }
+    },
+
+    "PostgresDSN" : {
+      "Description" : "Postgres DSN",
+      "Value" : { "Fn::Join" : ["", [
+        "dbname=",
+        { "Fn::If" : [ "UsePostgresDatabaseParameter",
+          { "Ref" : "PostgresDatabase" },
+          { "Fn::If" : [ "UsePostgresUserParameter",
+            { "Ref" : "PostgresUser" },
+            "postgres"
+          ] }
+        ] },
+        " user=",
+        { "Fn::If" : [ "UsePostgresUserParameter",
+          { "Ref" : "PostgresUser" },
+          "postgres"
+        ] },
+        " password=",
+        { "Fn::If" : [ "UsePostgresPasswordParameter",
+          { "Ref" : "PostgresPassword" },
+          "changeme"
+        ] },
+        " host=",
+        { "Fn::GetAtt" : [ "Instance", "PublicDnsName"] }
+      ] ] }
+    }
+
+  }
+}
+
