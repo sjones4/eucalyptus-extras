@@ -1,0 +1,125 @@
+{
+  "AWSTemplateFormatVersion" : "2010-09-09",
+
+  "Description" : "Scylla Alternator database instance template",
+
+  "Parameters" : {
+
+    "ScyllaLabel" : {
+      "Description" : "Scylla image label, see https://hub.docker.com/r/scylladb/scylla-nightly",
+      "Type" : "String",
+      "Default" : "alternator"
+    },
+
+    "InstanceType" : {
+      "Description" : "Instance type to use",
+      "Type" : "String",
+      "Default" : "m1.large"
+    },
+
+    "ImageId": {
+      "Description" : "Identifier for the RancherOS image",
+      "Type": "String"
+    },
+
+    "KeyName": {
+      "Description" : "EC2 keypair for instance SSH access",
+      "Type": "String",
+      "Default": ""
+    },
+
+    "Zone": {
+      "Description" : "Availability zone to use",
+      "Type": "String",
+      "Default": "auto-select"
+    }
+
+  },
+
+  "Conditions" : {
+    "UseZoneParameter" : {"Fn::Not": [{"Fn::Equals" : [{"Ref" : "Zone"}, "auto-select"]}]},
+    "UseKeyNameParameter" : {"Fn::Not": [{"Fn::Equals" : [{"Ref" : "KeyName"}, ""]}]}
+  },
+
+  "Resources" : {
+
+    "SecurityGroup" : {
+      "Type" : "AWS::EC2::SecurityGroup",
+      "Properties" : {
+        "GroupDescription" : "Scylla security group",
+        "SecurityGroupIngress" : [
+          {"IpProtocol" : "tcp", "FromPort" : "22", "ToPort" : "22", "CidrIp" : "0.0.0.0/0"},
+          {"IpProtocol" : "tcp", "FromPort" : "8000", "ToPort" : "8000", "CidrIp" : "0.0.0.0/0"}
+        ]
+      }
+    },
+
+    "Instance" : {
+      "Type": "AWS::EC2::Instance",
+      "Properties": {
+        "AvailabilityZone": { "Fn::If" : [
+          "UseZoneParameter",
+          { "Ref" : "Zone" },
+          { "Fn::Select" : [ "0", { "Fn::GetAZs" : { "Ref" : "AWS::Region" } } ] }
+        ] },
+        "ImageId"        : { "Ref" : "ImageId" },
+        "InstanceType"   : { "Ref" : "InstanceType" },
+        "SecurityGroups" : [ {"Ref" : "SecurityGroup"} ],
+        "KeyName"        : { "Fn::If" : [
+          "UseKeyNameParameter",
+          { "Ref" : "KeyName" },
+          { "Ref" : "AWS::NoValue" }
+        ] },
+        "UserData"       : { "Fn::Base64" : { "Fn::Join" : ["", [
+          "#cloud-config\n",
+          "write_files:\n",
+          "  - path: /etc/rc.local\n",
+          "    permissions: \"0755\"\n",
+          "    owner: root\n",
+          "    content: |\n",
+          "      #!/bin/bash\n",
+          "      export SCYLLA_LABEL=\"",{ "Ref" : "ScyllaLabel" },"\"\n",
+          "      wait-for-docker\n",
+          "      docker run \\\n",
+          "        --name scylla-alternator \\\n",
+          "        --restart=always \\\n",
+          "        --detach \\\n",
+          "        --publish=8000:8000 \\\n",
+          "        registry.hub.docker.com/scylladb/scylla-nightly:${SCYLLA_LABEL:-alternator} \\\n",
+          "          --alternator-port=8000\n",
+          "\n"
+        ]]}}
+      }
+    }
+
+  },
+
+  "Outputs" : {
+
+    "InstanceId" : {
+      "Description" : "Scylla instance",
+      "Value" : { "Ref" : "Instance" }
+    },
+
+    "Ip" : {
+      "Description" : "Scylla instance ip",
+      "Value" : { "Fn::GetAtt" : [ "Instance", "PublicIp"] }
+    },
+
+    "Hostname" : {
+      "Description" : "Scylla instance host",
+      "Value" : { "Fn::GetAtt" : [ "Instance", "PublicDnsName"] }
+    },
+
+    "Endpoint" : {
+      "Description" : "Scylla DynamoDB endpoint",
+      "Value" : { "Fn::Join" : ["", [
+        "http://",
+        { "Fn::GetAtt" : [ "Instance", "PublicDnsName"] },
+        ":8000"
+      ] ] }
+    }
+
+  }
+}
+
