@@ -1,0 +1,311 @@
+{
+  "AWSTemplateFormatVersion" : "2010-09-09",
+
+  "Description" : "Appscale 4.x bootstrap template (FoundationDB, PostgreSQL)",
+
+  "Parameters" : {
+
+    "AppScaleBootstrapUrl" : {
+      "Description" : "AppScale bootstrap script location",
+      "Type" : "String",
+      "Default" : "https://raw.githubusercontent.com/AppScale/appscale/master/bootstrap.sh"
+    },
+
+    "AppScaleRepo" : {
+      "Description" : "AppScale git repository",
+      "Type" : "String",
+      "Default" : "git://github.com/AppScale/appscale.git"
+    },
+
+    "AppScaleBranch" : {
+      "Description" : "AppScale git repository branch",
+      "Type" : "String",
+      "Default" : "master"
+    },
+
+    "AppScaleToolsRepo" : {
+      "Description" : "AppScale tools git repository",
+      "Type" : "String",
+      "Default" : "git://github.com/AppScale/appscale-tools.git"
+    },
+
+    "AppScaleToolsBranch" : {
+      "Description" : "AppScale tools git repository branch",
+      "Type" : "String",
+      "Default" : "master"
+    },
+
+    "AppScaleAgentsRepo" : {
+      "Description" : "AppScale agents git repository",
+      "Type" : "String",
+      "Default" : "git://github.com/AppScale/appscale-agents.git"
+    },
+
+    "AppScaleAgentsBranch" : {
+      "Description" : "AppScale agents git repository branch",
+      "Type" : "String",
+      "Default" : "master"
+    },
+
+    "AppScaleThirdpartiesRepo" : {
+      "Description" : "AppScale third parties git repository",
+      "Type" : "String",
+      "Default" : "git://github.com/AppScale/appscale-thirdparties.git"
+    },
+
+    "AppScaleThirdpartiesBranch" : {
+      "Description" : "AppScale third parties git repository branch",
+      "Type" : "String",
+      "Default" : "master"
+    },
+
+    "AdminUserEmail" : {
+      "Description" : "AppScale admin user",
+      "Type" : "String",
+      "Default" : "a@a.com"
+    },
+
+    "AdminUserPassword" : {
+      "Description" : "AppScale admin password",
+      "Type" : "String",
+      "Default" : "password"
+    },
+
+    "InstanceHttpProxy" : {
+      "Description" : "Instance http proxy (http://host:port/)",
+      "Type" : "String",
+      "Default" : ""
+    },
+
+    "InstanceType" : {
+      "Description" : "Instance type to use",
+      "Type" : "String",
+      "Default" : "m3.medium"
+    },
+
+    "ImageId": {
+      "Description" : "Identifier for the base ubuntu bionic image",
+      "Type": "String"
+    },
+
+    "KeyName": {
+      "Description" : "EC2 keypair for instance SSH access",
+      "Type": "String",
+      "Default": ""
+    },
+
+    "Zone": {
+      "Description" : "Availability zone to use",
+      "Type": "String",
+      "Default": "auto-select"
+    }
+
+  },
+
+  "Conditions" : {
+    "UseZoneParameter" : {"Fn::Not": [{"Fn::Equals" : [{"Ref" : "Zone"}, "auto-select"]}]},
+    "UseHttpProxy" : {"Fn::Not": [{"Fn::Equals" : [{"Ref" : "InstanceHttpProxy"}, ""]}]},
+    "UseKeyNameParameter" : {"Fn::Not": [{"Fn::Equals" : [{"Ref" : "KeyName"}, ""]}]}
+  },
+
+  "Resources" : {
+
+    "WaitConditionHandle" : {
+      "Type" : "AWS::CloudFormation::WaitConditionHandle"
+    },
+
+    "WaitCondition" : {
+      "Type" : "AWS::CloudFormation::WaitCondition",
+      "Properties" : {
+        "Handle" : { "Ref" : "WaitConditionHandle" },
+        "Timeout" : "3600"
+      }
+    },
+
+    "SecurityGroup" : {
+      "Type" : "AWS::EC2::SecurityGroup",
+      "Properties" : {
+        "GroupDescription" : "appscale security group",
+        "SecurityGroupIngress" : [
+          {"IpProtocol" : "tcp", "FromPort" : "1", "ToPort" : "65535", "CidrIp" : "0.0.0.0/0"}
+        ]
+      }
+    },
+
+    "Instance" : {
+      "Type": "AWS::EC2::Instance",
+      "Properties": {
+        "AvailabilityZone": { "Fn::If" : [
+          "UseZoneParameter",
+          { "Ref" : "Zone" },
+          { "Fn::Select" : [ "0", { "Fn::GetAZs" : { "Ref" : "AWS::Region" } } ] }
+        ] },
+        "ImageId"        : { "Ref" : "ImageId" },
+        "InstanceType"   : { "Ref" : "InstanceType" },
+        "SecurityGroups" : [ {"Ref" : "SecurityGroup"} ],
+        "KeyName"        : { "Fn::If" : [
+          "UseKeyNameParameter",
+          { "Ref" : "KeyName" },
+          { "Ref" : "AWS::NoValue" }
+        ] },
+        "UserData"       : { "Fn::Base64" : { "Fn::Join" : ["", [
+          "#cloud-config\n",
+          "disable_root: 0\n",
+          "write_files:\n",
+          { "Fn::If" : [
+            "UseHttpProxy",
+            { "Fn::Join" : ["", [
+		      "  - path: /etc/apt/apt.conf.d/02proxy\n",
+		      "    permissions: \"0644\"\n",
+		      "    owner: root\n",
+		      "    content: |\n",
+              "     Acquire::http::Proxy \"", { "Ref" : "InstanceHttpProxy" },"\";\n"
+            ]] },
+            ""
+          ] },
+          "  - path: /root/AppScalefile.in\n",
+          "    permissions: \"0600\"\n",
+          "    owner: root\n",
+          "    content: |\n",
+          "     ---\n",
+          "     login      : ${APPSCALE_PUBLIC_IP}\n",
+          "     ips_layout :\n",
+          "       -\n",
+          "         roles:\n",
+          "           - master\n",
+          "           - compute\n",
+          "           - database\n",
+          "           - zookeeper\n",
+          "         nodes: ${APPSCALE_PRIVATE_IP}\n",
+          "     postgres_dsn: dbname=appscale-db user=appscale password=appscale-pwd host=${APPSCALE_PRIVATE_IP}\n",
+          "     fdb_clusterfile_content: ${APPSCALE_FDB_CLUSTERFILE}\n",
+          "     admin_user : ", { "Ref" : "AdminUserEmail" } ,"\n",
+          "     admin_pass : ", { "Ref" : "AdminUserPassword" } ,"\n",
+          "     group      : ", { "Fn::GetAtt" : [ "SecurityGroup", "GroupId" ] }, "\n",
+          "  - path: /root/cloud-bootstrap.sh\n",
+          "    permissions: \"0700\"\n",
+          "    owner: root\n",
+          "    content: |\n",
+          "     #!/bin/bash\n",
+          "     set -euxo pipefail\n",
+          "\n",
+          "     HTTPPROXY=\"", { "Ref" : "InstanceHttpProxy" }, "\"\n",
+          "     WAITCONDURL=\"", { "Ref" : "WaitConditionHandle" }, "\"\n",
+          "     BOOTSTRAP_URL=\"", { "Ref" : "AppScaleBootstrapUrl" }, "\"\n",
+          "     BOOTSTRAP_REPO=\"", { "Ref" : "AppScaleRepo" }, "\"\n",
+          "     BOOTSTRAP_BRANCH=\"", { "Ref" : "AppScaleBranch" }, "\"\n",
+          "     BOOTSTRAP_TOOLS_REPO=\"", { "Ref" : "AppScaleToolsRepo" }, "\"\n",
+          "     BOOTSTRAP_TOOLS_BRANCH=\"", { "Ref" : "AppScaleToolsBranch" }, "\"\n",
+          "     BOOTSTRAP_AGENTS_REPO=\"", { "Ref" : "AppScaleAgentsRepo" }, "\"\n",
+          "     BOOTSTRAP_AGENTS_BRANCH=\"", { "Ref" : "AppScaleAgentsBranch" }, "\"\n",
+          "     BOOTSTRAP_THIRDPARTIES_REPO=\"", { "Ref" : "AppScaleThirdpartiesRepo" }, "\"\n",
+          "     BOOTSTRAP_THIRDPARTIES_BRANCH=\"", { "Ref" : "AppScaleThirdpartiesBranch" }, "\"\n",
+          "     COND_DATA='init'\n",
+          "     COND_REASON='AppScale not up'\n",
+          "\n",
+          "     function cleanup {\n",
+          "       # Signal cloudformation wait condition handle\n",
+          "       curl -s -X PUT -H 'Content-Type:' \\\n",
+          "         --data-binary '{\"Status\": \"SUCCESS\", \"UniqueId\": \"bootstrap\", \"Data\": \"'\"${COND_DATA}\"'\", \"Reason\": \"'\"${COND_REASON}\"'\" }' \\\n",
+          "         ${WAITCONDURL}\n",
+          "     }\n",
+          "     trap cleanup EXIT\n",
+          "\n",
+          "     # Get instance meta-data\n",
+          "     COND_DATA='configure ips'\n",
+          "     PRIVATE_IP=$(curl -s http://169.254.169.254/latest/meta-data/local-ipv4)\n",
+          "     PUBLIC_IP=$(curl -s http://169.254.169.254/latest/meta-data/public-ipv4)\n",
+          "\n",
+          "     # Configure ssh for root\n",
+          "     COND_DATA='configure ssh'\n",
+          "     export HOME=/root\n",
+          "     mkdir -pv \"${HOME}/.ssh\" || true\n",
+          "     chmod 700 \"${HOME}/.ssh\"\n",
+          "     test -e \"${HOME}/.ssh/id_rsa.pub\" || ssh-keygen -q -t rsa -f \"${HOME}/.ssh/id_rsa\" -N \"\"\n",
+          "     cat \"${HOME}/.ssh/id_rsa.pub\" >> \"${HOME}/.ssh/authorized_keys\"\n",
+          "     chmod 600 \"${HOME}/.ssh/authorized_keys\"\n",
+          "     if [ -e \"${HOME}/.ssh/known_hosts\" ]; then\n",
+          "       ssh-keygen -R ${PUBLIC_IP}\n",
+          "       ssh-keygen -R ${PRIVATE_IP}\n",
+          "     fi\n",
+          "     ssh-keyscan ${PUBLIC_IP} ${PRIVATE_IP} 2> /dev/null >> \"${HOME}/.ssh/known_hosts\"\n",
+          "\n",
+          "     # Bootstrap appscale\n",
+          "     COND_DATA='configure bootstrap'\n",
+          "     cd /root\n",
+          "     apt-get update\n",
+          "     wget -O bootstrap.sh ${BOOTSTRAP_URL}\n",
+          "     COND_DATA='run bootstrap'\n",
+          "     BOOTSTRAP_TAG_OPT=''\n",
+          "     [ \"${BOOTSTRAP_BRANCH}\" != \"master\" ] || BOOTSTRAP_TAG_OPT=\"--tag dev\"\n",
+          "     [ -z \"${HTTPPROXY}\" ] || export http_proxy=${HTTPPROXY}\n",
+          "     bash bootstrap.sh \\\n",
+          "       ${BOOTSTRAP_TAG_OPT} \\\n",
+          "       --repo          ${BOOTSTRAP_REPO} \\\n",
+          "       --branch        ${BOOTSTRAP_BRANCH} \\\n",
+          "       --tools-repo    ${BOOTSTRAP_TOOLS_REPO} \\\n",
+          "       --tools-branch  ${BOOTSTRAP_TOOLS_BRANCH} \\\n",
+          "       --agents-repo         ${BOOTSTRAP_AGENTS_REPO} \\\n",
+          "       --agents-branch       ${BOOTSTRAP_AGENTS_BRANCH} \\\n",
+          "       --thirdparties-repo   ${BOOTSTRAP_THIRDPARTIES_REPO} \\\n",
+          "       --thirdparties-branch ${BOOTSTRAP_THIRDPARTIES_BRANCH}\n",
+          "\n",
+          "     # Configure post thirdparty install\n",
+          "     bash appscale-thirdparties/postgres/configure-and-start-postgres.sh \\\n",
+          "       --host ${PRIVATE_IP} \\\n",
+          "       --dbname appscale-db \\\n",
+          "       --username appscale \\\n",
+          "       --password appscale-pwd\n",
+          "     bash appscale-thirdparties/foundationdb/configure-and-start-fdb.sh \\\n",
+          "       --public-address ${PRIVATE_IP} \\\n",
+          "       --fdbcli-command 'configure single ssd'\n",
+          "     export APPSCALE_PUBLIC_IP=${PUBLIC_IP}\n",
+          "     export APPSCALE_PRIVATE_IP=${PRIVATE_IP}\n",
+          "     export APPSCALE_FDB_CLUSTERFILE=$(</etc/foundationdb/fdb.cluster)\n",
+          "     envsubst < /root/AppScalefile.in > /root/AppScalefile\n",
+          "\n",
+          "     # Start appscale\n",
+          "     COND_DATA='run appscale up'\n",
+          "     appscale up\n",
+          "     COND_DATA='complete'\n",
+          "     COND_REASON='AppScale up'\n",
+          "\n",
+          "runcmd:\n",
+          " - /root/cloud-bootstrap.sh\n",
+          "\n"
+        ]]}}
+      }
+    }
+
+  },
+
+  "Outputs" : {
+
+    "BootstrapStatus" : {
+      "Description" : "AppScale bootstrap/up status",
+      "Value" : { "Fn::GetAtt" : [ "WaitCondition", "Data" ]}
+    },
+
+    "InstanceId" : {
+      "Description" : "Appscale instance",
+      "Value" : { "Ref" : "Instance" }
+    },
+
+    "Ip" : {
+      "Description" : "Appscale instance ip",
+      "Value" : { "Fn::GetAtt" : [ "Instance", "PublicIp"] }
+    },
+
+    "Hostname" : {
+      "Description" : "Appscale instance host",
+      "Value" : { "Fn::GetAtt" : [ "Instance", "PublicDnsName"] }
+    },
+
+    "Dashboard" : {
+      "Description" : "AppScale dashboard url",
+      "Value" : { "Fn::Join" : ["", ["https://", { "Fn::GetAtt" : [ "Instance", "PublicDnsName"] }, ":1443/"]] }
+    }
+
+  }
+}
+
