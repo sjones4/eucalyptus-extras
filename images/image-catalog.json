@@ -19,31 +19,31 @@
       "image-format": "qcow2"
     },
     {
-      "description": "Ubuntu 19.04/Disco",
+      "description": "Ubuntu 19.10/Eoan",
       "login": "ubuntu",
-      "url": "https://cloud-images.ubuntu.com/disco/current/disco-server-cloudimg-amd64.img",
+      "url": "https://cloud-images.ubuntu.com/eoan/current/eoan-server-cloudimg-amd64.img",
       "updates": "yes",
       "architecture": "x86_64",
-      "os": "ubuntu-disco",
+      "os": "ubuntu-eoan",
       "image-format": "qcow2"
     },
     {
       "description": "Fedora Atomic Host 29",
       "login": "fedora",
-      "url": "https://getfedora.org/atomic_raw_latest",
-      "url-name": "https://getfedora.org/atomic_raw_latest_filename",
+      "url": "https://getfedora.org/atomic_raw_x86_64_latest",
+      "url-name": "https://getfedora.org/atomic_raw_x86_64_latest_filename",
       "updates": "no",
       "architecture": "x86_64",
       "os": "fedora-atomic-29",
       "image-format": "raw"
     },
     {
-      "description": "Fedora 30",
+      "description": "Fedora 31",
       "login": "fedora",
-      "url": "https://download.fedoraproject.org/pub/fedora/linux/releases/30/Cloud/x86_64/images/Fedora-Cloud-Base-30-1.2.x86_64.raw.xz",
+      "url": "https://download.fedoraproject.org/pub/fedora/linux/releases/31/Cloud/x86_64/images/Fedora-Cloud-Base-31-1.9.x86_64.raw.xz",
       "updates": "no",
       "architecture": "x86_64",
-      "os": "fedora-30",
+      "os": "fedora-31",
       "image-format": "raw"
     },
     {
