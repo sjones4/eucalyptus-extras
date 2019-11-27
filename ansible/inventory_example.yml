@@ -1,0 +1,28 @@
+---
+# Example inventory showing groups
+all:
+  hosts:
+    cloud.example.com:
+    node[01:10].example.com:
+  vars:
+    cloud_region_region_name: eucalyptus
+    cloud_system_dns_dnsdomain: eucalyptus.cloud.example.com
+    edge_subnet: 192.168.0.0
+    edge_netmask: 255.255.0.0
+    edge_gateway: 192.168.0.1
+    net_private_ip_range: 192.168.100.1-192.168.100.100
+    net_public_ip_range: 192.168.200.1-192.168.200.100
+  children:
+    cloud:
+      hosts:
+        cloud.example.com:
+    console:
+      hosts:
+        cloud.example.com:
+    nodes:
+      hosts:
+        node[01:10].example.com:
+    zone:
+      hosts:
+        cloud.example.com:
+

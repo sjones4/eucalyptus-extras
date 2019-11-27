@@ -1,0 +1,17 @@
+---
+- name: install base packages
+  yum:
+    name:
+      - ebtables
+      - iprutils
+      - ipset
+      - libsemanage-python
+      - net-tools
+      - openssh
+      - selinux-policy-targeted
+      - sg3_utils
+      - sg3_utils-libs
+      - wget
+      - xfsprogs
+    state: present
+

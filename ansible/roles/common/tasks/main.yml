@@ -1,0 +1,7 @@
+---
+- import_tasks: yum_repos.yml
+
+- import_tasks: base_packages.yml
+
+- import_tasks: base_config.yml
+

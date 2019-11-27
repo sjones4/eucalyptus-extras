@@ -1,0 +1,40 @@
+---
+- name: install eucalyptus-node package
+  yum:
+    name: eucalyptus-node
+    state: present
+
+- name: install eucanetd package
+  yum:
+    name: eucanetd
+    state: present
+
+- name: start libvirtd service
+  systemd:
+    enabled: true
+    state: started
+    name: libvirtd
+
+- name: stop dnsmasq service
+  systemd:
+    enabled: false
+    state: stopped
+    name: dnsmasq
+
+- name: virt remove default network
+  virt_net:
+    state: absent
+    name: default
+
+- name: start eucalyptus-node service
+  systemd:
+    enabled: true
+    state: started
+    name: eucalyptus-node
+
+- name: start eucanetd service
+  systemd:
+    enabled: true
+    state: started
+    name: eucanetd
+

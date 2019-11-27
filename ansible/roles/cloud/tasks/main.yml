@@ -1,0 +1,118 @@
+---
+- name: install eucalyptus-cloud package
+  yum:
+    name: eucalyptus-cloud
+    state: present
+
+- name: install eucalyptus-service-image package
+  yum:
+    name: eucalyptus-service-image
+    state: present
+
+- name: install eucalyptus-walrus package
+  yum:
+    name: eucalyptus-walrus
+    state: present
+
+- name: eucalyptus network yaml
+  template:
+    src: network.yaml.j2
+    dest: /etc/eucalyptus/network.yaml
+    owner: root
+    group: root
+    mode: 0644
+
+- name: initialize eucalyptus cloud
+  command:
+    cmd: /usr/sbin/clcadmin-initialize-cloud
+    creates: /var/lib/eucalyptus/keys/cloud-cert.pem
+
+- name: start eucalyptus-cloud service
+  systemd:
+    enabled: true
+    state: started
+    name: eucalyptus-cloud
+
+- name: wait for cloud services
+  wait_for:
+    delay: 10
+    sleep: 10
+    port: 8773
+    timeout: 120
+
+- name: register services
+  shell: |
+    UFS_HOSTS="{{ groups['cloud'] | map('extract', hostvars, ['ansible_default_ipv4','address']) | list | join(' ') }}"
+    ZONE_HOSTS="{{ groups['zone'] | map('extract', hostvars, ['ansible_default_ipv4','address']) | list | join(' ') }}"
+    
+    eval $(clcadmin-assume-system-credentials)
+    
+    for UFS_HOST in ${UFS_HOSTS} ; do
+      euserv-register-service -t user-api -z API_${UFS_HOST} -h ${UFS_HOST} API_${UFS_HOST}
+      euserv-register-service -t walrusbackend -h ${UFS_HOST} WALRUS_${UFS_HOST}
+    done
+    
+    for ZONE_HOST in ${ZONE_HOSTS} ; do
+      euserv-register-service -t cluster -h ${ZONE_HOST} -z {{ cloud_zone_1_name }} CLUSTER_${ZONE_HOST}
+      euserv-register-service -t storage -h ${ZONE_HOST} -z {{ cloud_zone_1_name }} STORAGE_${ZONE_HOST}
+    done
+
+- name: copy zone keys
+  shell: |
+    ZONE_HOSTS="{{ groups['zone'] | map('extract', hostvars, ['ansible_default_ipv4','address']) | list | join(' ') }}"
+    for ZONE_HOST in ${ZONE_HOSTS} ; do
+      clcadmin-copy-keys -z {{ cloud_zone_1_name }} ${ZONE_HOST}
+    done
+
+- name: configure cloud properties
+  shell: |
+    eval $(clcadmin-assume-system-credentials)
+    euctl system.dns.dnsdomain={{ cloud_system_dns_dnsdomain }}
+    euctl region.region_name={{ cloud_region_region_name }}
+    euctl bootstrap.webservices.use_instance_dns=true
+    euctl bootstrap.webservices.use_dns_delegation=true
+    euctl cloud.network.network_configuration=@/etc/eucalyptus/network.yaml
+    euctl objectstorage.providerclient=walrus
+    euctl {{ cloud_zone_1_name }}.storage.blockstoragemanager=overlay
+
+- name: install service image
+  shell: |
+    eval $(clcadmin-assume-system-credentials)
+    esi-install-image --region localhost --install-default
+  register: shell_result
+  changed_when: '"is already registered." not in shell_result.stderr'
+  failed_when:
+    - shell_result.rc != 0
+    - '"is already registered." not in shell_result.stderr'
+
+- name: enable imaging service
+  shell: |
+    eval $(clcadmin-assume-system-credentials)
+    eval $(euca-generate-environment-config --region localhost)
+    esi-manage-stack --region localhost -a create imaging
+  register: shell_result
+  changed_when: '"is already created." not in shell_result.stdout'
+
+- name: tools configuration directory
+  file:
+    path: /root/.euca
+    state: directory
+    owner: root
+    group: root
+    mode: 0755
+
+- name: tools configure default region
+  template:
+    src: global.ini.j2
+    dest: /root/.euca/global.ini
+    owner: root
+    group: root
+    mode: 0644
+
+- name: generate admin credentials / configuration
+  shell: |
+    eval $(clcadmin-assume-system-credentials)
+    euare-useraddkey --write-config --domain {{ cloud_system_dns_dnsdomain }} --set-default-user admin > /root/.euca/admin.ini
+  args:
+    creates: /root/.euca/admin.ini
+

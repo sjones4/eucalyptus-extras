@@ -1,0 +1,35 @@
+---
+- name: install eucalyptus-cluster package
+  yum:
+    name: eucalyptus-cluster
+    state: present
+
+- name: install eucalyptus-storage package
+  yum:
+    name: eucalyptus-storage
+    state: present
+
+- name: set selinux storage boolean
+  seboolean:
+    name: eucalyptus_storage_controller
+    state: yes
+    persistent: yes
+
+- name: start tgtd service
+  systemd:
+    enabled: true
+    state: started
+    name: tgtd
+
+- name: start eucalyptus-cloud service
+  systemd:
+    enabled: true
+    state: started
+    name: eucalyptus-cloud
+
+- name: register node controllers
+  shell: |
+    NODE_HOSTS="{{ groups['node'] | map('extract', hostvars, ['ansible_default_ipv4','address']) | list | join(' ') }}"
+    clusteradmin-register-nodes ${NODE_HOSTS}
+    clusteradmin-copy-keys ${NODE_HOSTS}
+

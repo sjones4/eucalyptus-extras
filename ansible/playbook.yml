@@ -1,0 +1,11 @@
+# Eucalyptus playbook
+---
+- hosts: node
+  roles:
+  - node
+
+- hosts: cloud
+  roles:
+  - cloud
+  - zone
+

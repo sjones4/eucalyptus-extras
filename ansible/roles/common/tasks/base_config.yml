@@ -1,0 +1,18 @@
+---
+- name: configure permissive mode selinux
+  selinux:
+    policy: targeted
+    state: permissive
+
+- name: install eucalyptus package
+  yum:
+    name: eucalyptus
+    state: present
+
+- name: eucalyptus configuration
+  template:
+    src: eucalyptus.conf.j2
+    dest: /etc/eucalyptus/eucalyptus.conf
+    owner: root
+    group: root
+    mode: 0644

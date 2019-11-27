@@ -1,0 +1,24 @@
+# Eucalyptus network configuration
+#
+# Apply using:
+#
+#  euctl cloud.network.network_configuration=@/etc/eucalyptus/network.yaml
+#
+Mode: {{ net_mode }}
+
+InstanceDnsServers:
+{% for ip in (groups['cloud'] | map('extract', hostvars, ['ansible_default_ipv4','address'])) %}
+- "{{ ip }}"
+{% endfor %}
+
+PublicIps:
+- "{{ net_public_ip_range }}"
+
+PrivateIps:
+- "{{ net_private_ip_range }}"
+
+Subnets:
+- Gateway: "{{ edge_gateway }}"
+  Netmask: "{{ edge_netmask }}"
+  Subnet: "{{ edge_subnet }}"
+
