@@ -1,0 +1,3 @@
+---
+# Eucalyptus playbook for EDGE mode (the default network mode)
+- import_playbook: playbook.yml

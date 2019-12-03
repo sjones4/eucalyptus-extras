@@ -1,0 +1,21 @@
+# Midonet default configuration, apply with:
+#
+#  mn-conf set -t default < /etc/midonet/midonet-default.conf
+#
+
+zookeeper {
+  zookeeper_hosts = "{{ ansible_default_ipv4['address'] }}:2181"
+}
+
+cassandra {
+  servers = "{{ ansible_default_ipv4['address'] }}"
+}
+
+cluster {
+  rest_api {
+    http_host = "127.0.0.1"
+    http_port = 8080
+    https_port = 0
+  }
+}
+

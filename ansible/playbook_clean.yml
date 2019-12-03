@@ -1,0 +1,5 @@
+---
+# Eucalyptus clean (uninstall/remove)
+- hosts: all
+  roles:
+  - none

@@ -12,5 +12,7 @@ USE_VIRTIO_NET="1"
 VNET_MODE="{{ net_mode }}"
 VNET_PRIVINTERFACE="{{ net_private_interface }}"
 VNET_PUBINTERFACE="{{ net_public_interface }}"
+{% if net_bridge_interface %}
 VNET_BRIDGE="{{ net_bridge_interface }}"
+{% endif %}
 NC_ROUTER_IP="{{ net_node_router_ip }}"

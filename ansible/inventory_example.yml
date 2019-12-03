@@ -5,13 +5,19 @@ all:
     cloud.example.com:
     node[01:10].example.com:
   vars:
-    cloud_region_region_name: eucalyptus
     cloud_system_dns_dnsdomain: eucalyptus.cloud.example.com
+
     edge_subnet: 192.168.0.0
     edge_netmask: 255.255.0.0
     edge_gateway: 192.168.0.1
-    net_private_ip_range: 192.168.100.1-192.168.100.100
-    net_public_ip_range: 192.168.200.1-192.168.200.100
+    edge_net_private_ip_range: 192.168.100.1-192.168.100.100
+    edge_net_public_ip_range: 192.168.200.1-192.168.200.100
+
+    vpcmido_public_ip_range: 10.100.150.10-10.100.150.254
+    vpcmido_gw_ext_cidr: 10.100.0.0/17
+    vpcmido_gw_ext_device: en1
+    vpcmido_gw_ext_ip: 10.100.10.10
+    vpcmido_gw_ext_router_ip: 10.100.10.1
   children:
     cloud:
       hosts:

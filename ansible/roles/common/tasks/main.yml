@@ -1,6 +1,9 @@
 ---
 - import_tasks: yum_repos.yml
 
+- import_tasks: yum_repos_vpcmido.yml
+  when: net_mode == "VPCMIDO"
+
 - import_tasks: base_packages.yml
 
 - import_tasks: base_config.yml

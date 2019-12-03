@@ -1,10 +1,14 @@
 ---
+- import_tasks: vpcmido.yml
+  when: net_mode == "VPCMIDO"
+
 - name: install eucalyptus-node package
   yum:
     name: eucalyptus-node
     state: present
 
 - name: install eucanetd package
+  when: net_mode == "EDGE"
   yum:
     name: eucanetd
     state: present
@@ -33,6 +37,7 @@
     name: eucalyptus-node
 
 - name: start eucanetd service
+  when: net_mode == "EDGE"
   systemd:
     enabled: true
     state: started

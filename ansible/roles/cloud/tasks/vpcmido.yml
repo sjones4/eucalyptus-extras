@@ -1,0 +1,129 @@
+---
+- name: install midonet and dependency packages
+  yum:
+    name:
+      - dsc22
+      - java-1.8.0-openjdk-headless
+      - midolman
+      - midonet-cluster
+      - midonet-tools
+      - python-midonetclient
+      - zkdump
+      - zookeeper
+    state: present
+
+- name: midonet configuration
+  template:
+    src: midonet.conf.j2
+    dest: /etc/midonet/midonet.conf
+    owner: root
+    group: root
+    mode: 0644
+
+- name: create cassandra tmpfiles configuration
+  copy:
+    content: |
+      # path                       mode uid       gid       age
+      d /run/cassandra             0755 cassandra cassandra -
+    dest: /etc/tmpfiles.d/cassandra.conf
+    owner: root
+    group: root
+    mode: 0644
+
+- name: start cassandra service
+  systemd:
+    enabled: true
+    state: started
+    name: cassandra
+
+- name: zookeeper configure autopurge snap count
+  replace:
+    path: /etc/zookeeper/zoo.cfg
+    regexp: '^autopurge.snapRetainCount=.+$'
+    replace: 'autopurge.snapRetainCount=3'
+
+- name: zookeeper configure autopurge interval
+  replace:
+    path: /etc/zookeeper/zoo.cfg
+    regexp: '^autopurge.purgeInterval=.+$'
+    replace: 'autopurge.purgeInterval=1'
+
+- name: start zookeeper service
+  systemd:
+    enabled: true
+    state: started
+    name: zookeeper
+
+- name: wait for zookeeper service
+  wait_for:
+    delay: 10
+    sleep: 10
+    port: 2181
+    timeout: 120
+
+- name: midonet defaults configuration
+  template:
+    src: midonet-default.conf.j2
+    dest: /etc/midonet/midonet-default.conf
+    owner: root
+    group: root
+    mode: 0644
+
+- name: midonet apply defaults configuration
+  shell:
+    cmd: mn-conf set -t default < /etc/midonet/midonet-default.conf
+
+- name: midonet cluster heap memory
+  replace:
+    path: /etc/midonet-cluster/midonet-cluster-env.sh
+    regexp: '^HEAP_NEWSIZE=".+"$'
+    replace: 'HEAP_NEWSIZE="1g"'
+
+- name: midonet cluster heap new memory
+  replace:
+    path: /etc/midonet-cluster/midonet-cluster-env.sh
+    regexp: '^MAX_HEAP_SIZE=".+"$'
+    replace: 'MAX_HEAP_SIZE="1g"'
+
+- name: midolman memory
+  replace:
+    path: /etc/midolman/midolman-env.sh
+    regexp: '^MAX_HEAP_SIZE=".+"$'
+    replace: 'MAX_HEAP_SIZE="1g"'
+
+- name: eucalyptus tunnel zone midonet configuration
+  template:
+    src: eucalyptus-vpcmidotz-up.sh.j2
+    dest: /usr/local/bin/eucalyptus-vpcmidotz-up.sh
+    owner: root
+    group: root
+    mode: 0755
+
+- name: eucanetd service.d directory
+  file:
+    path: /etc/systemd/system/eucanetd.service.d
+    state: directory
+    owner: root
+    group: root
+    mode: 0755
+
+- name: eucanetd tunnel zone configuration drop-in
+  copy:
+    src: eucanetd-vpcmidotz.conf
+    dest: /etc/systemd/system/eucanetd.service.d/eucanetd-vpcmidotz.conf
+    owner: root
+    group: root
+    mode: 0644
+
+- name: start midonet-cluster service
+  systemd:
+    enabled: true
+    state: started
+    name: midonet-cluster
+
+- name: start midolman service
+  systemd:
+    enabled: true
+    state: started
+    name: midolman
+

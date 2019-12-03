@@ -1,0 +1,2 @@
+[zookeeper]
+zookeeper_hosts = {{ groups['cloud'] | map('extract', hostvars, ['ansible_default_ipv4','address']) | map('regex_replace', '^(.*)$', '\\1:2181')  | list | join(' ') }}

@@ -1,4 +1,7 @@
 ---
+- import_tasks: vpcmido.yml
+  when: net_mode == "VPCMIDO"
+
 - name: install eucalyptus-cloud package
   yum:
     name: eucalyptus-cloud
@@ -13,6 +16,25 @@
   yum:
     name: eucalyptus-walrus
     state: present
+
+- name: install eucanetd package
+  when: net_mode == "VPCMIDO"
+  yum:
+    name: eucanetd
+    state: present
+
+- name: install nginx package
+  when: net_mode == "VPCMIDO"
+  yum:
+    name: nginx
+    state: present
+
+- name: configure selinux bool httpd_can_network_connect
+  when: net_mode == "VPCMIDO"
+  seboolean:
+    name: httpd_can_network_connect
+    persistent: yes
+    state: yes
 
 - name: eucalyptus network yaml
   template:
@@ -32,6 +54,13 @@
     enabled: true
     state: started
     name: eucalyptus-cloud
+
+- name: start eucanetd service
+  when: net_mode == "VPCMIDO"
+  systemd:
+    enabled: true
+    state: started
+    name: eucanetd
 
 - name: wait for cloud services
   wait_for:

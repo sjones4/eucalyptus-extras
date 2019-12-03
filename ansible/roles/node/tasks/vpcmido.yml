@@ -1,0 +1,33 @@
+---
+- name: install bridge-utils package
+  yum:
+    name:
+      - bridge-utils
+    state: present
+
+- name: create bridge interface
+  template:
+    src: ifcfg-brX.j2
+    dest: "/etc/sysconfig/network-scripts/ifcfg-{{ net_bridge_interface }}"
+    force: no
+    owner: root
+    group: root
+    mode: 0644
+
+- name: bridge interface up
+  command:
+    cmd: "/usr/sbin/ifup {{ net_bridge_interface }}"
+
+- name: install midolman and dependency packages
+  yum:
+    name:
+      - java-1.8.0-openjdk-headless
+      - midolman
+    state: present
+
+- name: midolman memory
+  replace:
+    path: /etc/midolman/midolman-env.sh
+    regexp: '^MAX_HEAP_SIZE=".+"$'
+    replace: 'MAX_HEAP_SIZE="1g"'
+

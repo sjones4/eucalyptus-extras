@@ -1,0 +1,164 @@
+---
+# Remove eucalyptus packages and configuration (including dependencies)
+- name: disable eucalyptus-cloud service
+  systemd:
+    enabled: false
+    state: stopped
+    name: eucalyptus-cloud
+  register: systemd_result
+  failed_when: "systemd_result | failed and 'Could not find the requested service' not in systemd_result.msg"
+
+
+- name: disable eucalyptus-node service
+  systemd:
+    enabled: false
+    state: stopped
+    name: eucalyptus-node
+  register: systemd_result
+  failed_when: "systemd_result | failed and 'Could not find the requested service' not in systemd_result.msg"
+
+- name: disable eucanetd service
+  systemd:
+    enabled: false
+    state: stopped
+    name: eucanetd
+  register: systemd_result
+  failed_when: "systemd_result | failed and 'Could not find the requested service' not in systemd_result.msg"
+
+- name: disable midonet-cluster service
+  systemd:
+    enabled: false
+    state: stopped
+    name: midonet-cluster
+  register: systemd_result
+  failed_when: "systemd_result | failed and 'Could not find the requested service' not in systemd_result.msg"
+
+- name: disable midolman service
+  systemd:
+    enabled: false
+    state: stopped
+    name: midolman
+  register: systemd_result
+  failed_when: "systemd_result | failed and 'Could not find the requested service' not in systemd_result.msg"
+
+- name: disable cassandra service
+  systemd:
+    enabled: false
+    state: stopped
+    name: cassandra
+  register: systemd_result
+  failed_when: "systemd_result | failed and 'Could not find the requested service' not in systemd_result.msg"
+
+- name: disable zookeeper service
+  systemd:
+    enabled: false
+    state: stopped
+    name: zookeeper
+  register: systemd_result
+  failed_when: "systemd_result | failed and 'Could not find the requested service' not in systemd_result.msg"
+
+- name: remove eucalyptus packages
+  yum:
+    name:
+      - eucalyptus
+      - eucalyptus-admin-tools
+      - eucalyptus-axis2c-common
+      - eucalyptus-blockdev-utils
+      - eucalyptus-cc
+      - eucalyptus-cloud
+      - eucalyptus-common-java
+      - eucalyptus-common-java-libs
+      - eucalyptus-imaging-toolkit
+      - eucalyptus-java-deps
+      - eucalyptus-nc
+      - eucalyptus-sc
+      - eucalyptus-selinux
+      - eucalyptus-service-image
+      - eucalyptus-service-image-tools
+      - eucalyptus-walrus
+      - eucanetd
+      - euca2ools
+    state: absent
+
+- name: remove midonet and dependency packages
+  yum:
+    name:
+      - dsc22
+      - midolman
+      - midonet-cluster
+      - midonet-tools
+      - python-midonetclient
+      - zkdump
+      - zookeeper
+    state: absent
+
+- name: remove eucalyptus configuration directory
+  file:
+    path: /etc/eucalyptus
+    state: absent
+
+- name: remove eucalyptus libexec directory
+  file:
+    path: /usr/libexec/eucalyptus
+    state: absent
+
+- name: remove eucalyptus share directory
+  file:
+    path: /usr/share/eucalyptus
+    state: absent
+
+- name: remove eucalyptus state directory
+  file:
+    path: /var/lib/eucalyptus
+    state: absent
+
+- name: remove midolman configuration directory
+  file:
+    path: /etc/midolman
+    state: absent
+
+- name: remove midolman state directory
+  file:
+    path: /var/lib/midolman
+    state: absent
+
+- name: remove midonet configuration directory
+  file:
+    path: /etc/midonet
+    state: absent
+
+- name: remove midonet-cluster configuration directory
+  file:
+    path: /etc/midonet-cluster
+    state: absent
+
+- name: remove midonet-cluster state directory
+  file:
+    path: /var/lib/midonet-cluster
+    state: absent
+
+- name: remove cassandra configuration directory
+  file:
+    path: /etc/cassandra
+    state: absent
+
+- name: remove cassandra share directory
+  file:
+    path: /usr/share/cassandra
+    state: absent
+
+- name: remove cassandra state directory
+  file:
+    path: /var/lib/cassandra
+    state: absent
+
+- name: remove zookeeper state directory
+  file:
+    path: /var/lib/zookeeper
+    state: absent
+
+- name: remove tools configuration directory
+  file:
+    path: /root/.euca
+    state: absent
+

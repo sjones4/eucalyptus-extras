@@ -1,3 +1,4 @@
+---
 # Eucalyptus package repositories
 eucalyptus_yum_baseurl: http://downloads.eucalyptus.cloud/software/eucalyptus/snapshot/5/rhel/7/x86_64/
 euca2ools_yum_baseurl: http://downloads.eucalyptus.cloud/software/euca2ools/3.4/rhel/7/x86_64/
@@ -11,9 +12,14 @@ cloud_log_level: INFO
 
 # Network settings
 net_mode: EDGE
-
+net_mode_lower: "{{ net_mode | lower }}"
+net_mode_:
+  edge:
+    bridge_interface: "{{ edge_bridge_interface | default('br0') }}"
+  vpcmido:
+    bridge_interface: "{{ vpc_bridge_interface | default('br0') }}"
 net_private_interface: "{{ net_public_interface }}"
 net_public_interface: en1
-net_bridge_interface: br0
+net_bridge_interface: "{{ net_mode_[net_mode_lower]['bridge_interface'] }}"
 net_node_router_ip: AUTO
 

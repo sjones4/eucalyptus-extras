@@ -1,0 +1,27 @@
+#!/bin/bash
+# Update tunnel zone for eucalyptus hosts
+set -euo pipefail
+
+MIDONET_CLI="midonet-cli -A --midonet-url=http://127.0.0.1:8080/midonet-api -e "
+EUCA_CONF="/etc/eucalyptus/eucalyptus.conf"
+EUCA_TZ_NAME="eucatz"
+EUCA_TZ_HOSTS="{{ ansible_default_ipv4['address'] }}"
+
+if ! ${MIDONET_CLI} list tunnel-zone | grep -q "${EUCA_TZ_NAME}" ; then
+  ${MIDONET_CLI} add tunnel-zone name "${EUCA_TZ_NAME}" type gre
+fi
+
+EUCA_TZ_ID="$(${MIDONET_CLI} list tunnel-zone | grep ${EUCA_TZ_NAME} | awk '{print $2}')"
+
+if [ -f "${EUCA_CONF}" ] ; then
+  . "${EUCA_CONF}"
+  EUCA_TZ_HOSTS="${EUCA_TZ_HOSTS} ${NODES}"
+fi
+
+for EUCA_TZ_HOST in ${EUCA_TZ_HOSTS} ; do
+  if ! ${MIDONET_CLI} list tunnel-zone name "${EUCA_TZ_NAME}" member | grep -q "${EUCA_TZ_HOST}" ; then
+    EUCA_HOST_ID="$(${MIDONET_CLI} host list | grep "${EUCA_TZ_HOST}" | awk '{print $2}')"
+    ${MIDONET_CLI} tunnel-zone "${EUCA_TZ_ID}" add member host "${EUCA_HOST_ID}" address "${EUCA_TZ_HOST}"
+  fi
+done
+
