@@ -4,7 +4,7 @@
 set -euo pipefail
 
 EUCA_POOL_PLACEMENT_GROUPS="${EUCA_POOL_PLACEMENT_GROUPS:-100}"
-EUCA_CEPH_ARTIFACTS_DIR="euca-artifacts"
+EUCA_CEPH_ARTIFACTS_DIR="${EUCA_CEPH_ARTIFACTS_DIR:-euca-artifacts}"
 
 if ! ceph osd pool ls | grep -q euca ; then
     echo "Generating volume and snapshot pools"

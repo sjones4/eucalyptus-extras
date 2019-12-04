@@ -15,11 +15,30 @@
     state: yes
     persistent: yes
 
+- name: eucalyptus ceph configuration
+  copy:
+    content: "{{ eucalyptus_ceph_conf }}"
+    dest: /etc/ceph/ceph.conf
+    owner: root
+    group: root
+    mode: 0644
+  when: eucalyptus_ceph_conf is defined
+
+- name: eucalyptus ceph client keyring
+  copy:
+    content: "{{ eucalyptus_ceph_keyring }}"
+    dest: /etc/ceph/ceph.client.eucalyptus.keyring
+    owner: root
+    group: root
+    mode: 0644
+  when: eucalyptus_ceph_keyring is defined
+
 - name: start tgtd service
   systemd:
     enabled: true
     state: started
     name: tgtd
+  when: eucalyptus_ceph_conf is undefined
 
 - name: start eucalyptus-cloud service
   systemd:

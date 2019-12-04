@@ -4,17 +4,16 @@
     chdir: /home/ceph-deploy/cluster
     cmd: "ceph-deploy {{ ceph_deploy_opts }} new --public-network {{ ceph_public_network }} {{ ansible_hostname }}"
 
-- name: ceph configuration default size
-  lineinfile:
+- name: ceph custom configuration
+  blockinfile:
     path: /home/ceph-deploy/cluster/ceph.conf
-    regexp: '^osd pool default size = '
-    line: osd pool default size = 1
-
-- name: ceph configuration default min size
-  lineinfile:
-    path: /home/ceph-deploy/cluster/ceph.conf
-    regexp: '^osd pool default min size = '
-    line: osd pool default min size = 1
+    block: |
+      osd_pool_default_size = 1
+      osd_pool_default_min_size = 1
+      
+      [mon.{{ ansible_hostname }}]
+      host = {{ ansible_hostname }}
+      mon addr = {{ ansible_default_ipv4['address'] }}:6789
 
 - name: ceph-deploy install
   command:
