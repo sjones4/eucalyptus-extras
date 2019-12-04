@@ -1,0 +1,71 @@
+---
+- name: ceph-deploy new cluster
+  command:
+    chdir: /home/ceph-deploy/cluster
+    cmd: "ceph-deploy {{ ceph_deploy_opts }} new --public-network {{ ceph_public_network }} {{ ansible_hostname }}"
+
+- name: ceph configuration default size
+  lineinfile:
+    path: /home/ceph-deploy/cluster/ceph.conf
+    regexp: '^osd pool default size = '
+    line: osd pool default size = 1
+
+- name: ceph configuration default min size
+  lineinfile:
+    path: /home/ceph-deploy/cluster/ceph.conf
+    regexp: '^osd pool default min size = '
+    line: osd pool default min size = 1
+
+- name: ceph-deploy install
+  command:
+    chdir: /home/ceph-deploy/cluster
+    cmd: "ceph-deploy {{ ceph_deploy_opts }} install --no-adjust-repos --release {{ ceph_release }} {{ ansible_hostname }}"
+
+- name: ceph-deploy initial mon
+  command:
+    chdir: /home/ceph-deploy/cluster
+    cmd: ceph-deploy {{ ceph_deploy_opts }} mon create-initial
+
+- name: ceph-deploy admin keys
+  command:
+    chdir: /home/ceph-deploy/cluster
+    cmd: "ceph-deploy {{ ceph_deploy_opts }} admin {{ ansible_hostname }}"
+
+- name: copy bootstrap keys to each host
+  synchronize:
+    src: /home/ceph-deploy/cluster/ceph.bootstrap-osd.keyring
+    dest: /var/lib/ceph/bootstrap-osd/ceph.keyring
+    mode: push
+  become: no
+  when: not ansible_check_mode
+  delegate_to: "{{ ansible_default_ipv4['address'] }}"
+
+- name: directory for ceph osds
+  file:
+    path: "{{ ceph_osd_data_path }}"
+    state: directory
+    mode: 0755
+    owner: ceph
+  become: no
+
+- name: prepare osds
+  command:
+    chdir: /home/ceph-deploy/cluster
+    cmd: "ceph-deploy {{ ceph_deploy_opts }} osd prepare {{ ansible_hostname }}:{{ ceph_osd_data_path }}"
+
+- name: activate osds
+  command:
+    chdir: /home/ceph-deploy/cluster
+    cmd: "ceph-deploy {{ ceph_deploy_opts }} osd activate {{ ansible_hostname }}:{{ ceph_osd_data_path }}"
+
+- name: ceph-deploy rgw install hammer
+  command:
+    chdir: /home/ceph-deploy/cluster
+    cmd: "ceph-deploy {{ ceph_deploy_opts }} install --release {{ ceph_release }} --rgw {{ ansible_hostname }}"
+  when: ceph_release == "hammer"
+
+- name: ceph-deploy rgw create
+  command:
+    chdir: /home/ceph-deploy/cluster
+    cmd: "ceph-deploy {{ ceph_deploy_opts }} rgw create {{ ansible_hostname }}"
+

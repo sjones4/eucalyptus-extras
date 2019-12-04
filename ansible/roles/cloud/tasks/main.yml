@@ -64,10 +64,9 @@
 
 - name: wait for cloud services
   wait_for:
-    delay: 10
     sleep: 10
     port: 8773
-    timeout: 120
+    timeout: 180
 
 - name: register services
   shell: |
@@ -85,6 +84,9 @@
       euserv-register-service -t cluster -h ${ZONE_HOST} -z {{ cloud_zone_1_name }} CLUSTER_${ZONE_HOST}
       euserv-register-service -t storage -h ${ZONE_HOST} -z {{ cloud_zone_1_name }} STORAGE_${ZONE_HOST}
     done
+  register: shell_result
+  until: shell_result.rc == 0
+  retries: 5
 
 - name: copy zone keys
   shell: |

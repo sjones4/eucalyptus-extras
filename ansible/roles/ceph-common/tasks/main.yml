@@ -1,0 +1,5 @@
+---
+- import_tasks: yum_repos_ceph.yml
+
+- import_tasks: base_config.yml
+

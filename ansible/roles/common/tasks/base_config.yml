@@ -4,6 +4,12 @@
     policy: targeted
     state: permissive
 
+- name: disable firewalld
+  service:
+    name: firewalld.service
+    enabled: no
+    state: stopped
+
 - name: install eucalyptus package
   yum:
     name: eucalyptus

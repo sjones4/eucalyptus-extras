@@ -1,0 +1,42 @@
+---
+- name: install ceph-deploy package
+  yum:
+    name: ceph-deploy
+    state: present
+
+- name: ceph-deploy user
+  user:
+    name: ceph-deploy
+    comment: Ceph deployment user
+    password: '!'
+    createhome: yes
+    groups: wheel
+    generate_ssh_key: yes
+  register: user_result
+
+- name: ceph-deploy user ssh authorized key
+  authorized_key:
+    user: ceph-deploy
+    state: present
+    key: "{{ user_result.ssh_public_key }}"
+
+- name: wheel group
+  group:
+    name: wheel
+    state: present
+
+- name: wheel group passwordless sudo
+  lineinfile:
+    dest: /etc/sudoers
+    state: present
+    regexp: '^%wheel'
+    line: '%wheel ALL=(ALL) NOPASSWD: ALL'
+    validate: visudo -cf %s
+
+- name: ceph-deploy cluster directory
+  file:
+    path: /home/ceph-deploy/cluster
+    owner: ceph-deploy
+    state: directory
+    mode: 0755
+

@@ -57,6 +57,14 @@
   register: systemd_result
   failed_when: "systemd_result | failed and 'Could not find the requested service' not in systemd_result.msg"
 
+- name: stop ceph target
+  systemd:
+    enabled: false
+    state: stopped
+    name: ceph.target
+  register: systemd_result
+  failed_when: "systemd_result | failed and 'Could not find the requested service' not in systemd_result.msg"
+
 - name: remove eucalyptus packages
   yum:
     name:
@@ -90,6 +98,23 @@
       - python-midonetclient
       - zkdump
       - zookeeper
+    state: absent
+
+- name: remove ceph packages
+  yum:
+    name:
+      - ceph
+      - ceph-base
+      - ceph-common
+      - ceph-deploy
+      - ceph-mds
+      - ceph-mon
+      - ceph-osd
+      - ceph-radosgw
+      - ceph-release
+      - ceph-selinux
+      - libcephfs1
+      - python-cephfs
     state: absent
 
 - name: remove eucalyptus configuration directory
@@ -157,8 +182,38 @@
     path: /var/lib/zookeeper
     state: absent
 
+- name: remove ceph configuration directory
+  file:
+    path: /etc/ceph
+    state: absent
+
+- name: remove ceph state directory
+  file:
+    path: /var/lib/ceph
+    state: absent
+
+- name: remove ceph-osd state directory
+  file:
+    path: /var/lib/ceph-osd
+    state: absent
+
+- name: remove ceph-deploy user cluster directory
+  file:
+    path: /home/ceph-deploy/cluster
+    state: absent
+
+- name: remove ceph-deploy user conf file
+  file:
+    path: /home/ceph-deploy/.cephdeploy.conf
+    state: absent
+
 - name: remove tools configuration directory
   file:
     path: /root/.euca
+    state: absent
+
+- name: remove eucalyptus deployment configuration directory
+  file:
+    path: /root/eucalyptus
     state: absent
 

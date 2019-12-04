@@ -6,6 +6,7 @@
 
 - hosts: cloud
   roles:
+  - ceph
   - cloud
   - zone
 
