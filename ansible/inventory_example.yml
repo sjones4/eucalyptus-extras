@@ -1,5 +1,5 @@
 ---
-# Example inventory showing groups
+# Example inventory showing groups (ceph and console optional)
 all:
   hosts:
     cloud.example.com:
@@ -19,6 +19,9 @@ all:
     vpcmido_gw_ext_ip: 10.100.10.10
     vpcmido_gw_ext_router_ip: 10.100.10.1
   children:
+    ceph:
+      hosts:
+        cloud.example.com:
     cloud:
       hosts:
         cloud.example.com:

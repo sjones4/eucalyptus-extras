@@ -1,13 +1,20 @@
 ---
 # Eucalyptus playbook
+- hosts: ceph
+  roles:
+  - ceph
+
+- hosts: cloud
+  roles:
+  - cloud
+  - console
+
 - hosts: node
   roles:
   - node
 
 - hosts: cloud
   roles:
-  - ceph
-  - cloud
   - zone
-  - console
+  - cloud-post
 

@@ -1,5 +1,11 @@
 ---
 - import_tasks: yum_repos_ceph.yml
 
+- import_tasks: base_packages.yml
+
 - import_tasks: base_config.yml
 
+- import_tasks: ceph_facts.yml
+  delegate_to: "{{ groups['ceph'][0] }}"
+  run_once: yes
+  when: ceph_facts

@@ -8,7 +8,6 @@
   register: systemd_result
   failed_when: "systemd_result | failed and 'Could not find the requested service' not in systemd_result.msg"
 
-
 - name: disable eucalyptus-node service
   systemd:
     enabled: false
@@ -22,6 +21,14 @@
     enabled: false
     state: stopped
     name: eucanetd
+  register: systemd_result
+  failed_when: "systemd_result | failed and 'Could not find the requested service' not in systemd_result.msg"
+
+- name: disable libvirtd service
+  systemd:
+    enabled: false
+    state: stopped
+    name: libvirtd
   register: systemd_result
   failed_when: "systemd_result | failed and 'Could not find the requested service' not in systemd_result.msg"
 
@@ -65,7 +72,7 @@
   register: systemd_result
   failed_when: "systemd_result | failed and 'Could not find the requested service' not in systemd_result.msg"
 
-- name: remove eucalyptus packages
+- name: remove eucalyptus and dependency packages
   yum:
     name:
       - eucaconsole
@@ -88,12 +95,15 @@
       - eucalyptus-walrus
       - eucanetd
       - euca2ools
+      - libvirt-daemon
+      - qemu-kvm-common
+      - scsi-target-utils
     state: absent
 
 - name: remove midonet and dependency packages
   yum:
     name:
-      - dsc22
+      - cassandra22
       - midolman
       - midonet-cluster
       - midonet-tools

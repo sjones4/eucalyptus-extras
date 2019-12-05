@@ -25,6 +25,32 @@
     state: stopped
     name: dnsmasq
 
+- name: ceph configuration directory
+  file:
+    path: /etc/ceph
+    state: directory
+    owner: root
+    group: root
+    mode: 0755
+
+- name: eucalyptus ceph configuration
+  copy:
+    content: "{{ eucalyptus_ceph_conf }}"
+    dest: /etc/ceph/ceph.conf
+    owner: root
+    group: root
+    mode: 0644
+  when: eucalyptus_ceph_conf is defined
+
+- name: eucalyptus ceph client keyring
+  copy:
+    content: "{{ eucalyptus_ceph_keyring }}"
+    dest: /etc/ceph/ceph.client.eucalyptus.keyring
+    owner: root
+    group: root
+    mode: 0644
+  when: eucalyptus_ceph_keyring is defined
+
 - name: virt remove default network
   virt_net:
     state: absent

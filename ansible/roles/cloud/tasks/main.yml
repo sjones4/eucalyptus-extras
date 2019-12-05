@@ -107,6 +107,7 @@
 
 - name: configure cloud storage properties for walrus / overlay
   shell: |
+    eval $(clcadmin-assume-system-credentials)
     euctl objectstorage.providerclient=walrus
     euctl {{ cloud_zone_1_name }}.storage.blockstoragemanager=overlay
   when: eucalyptus_ceph_conf is undefined
@@ -114,7 +115,7 @@
 - name: configure cloud storage properties for ceph
   shell: |
     eval $(clcadmin-assume-system-credentials)
-    euctl objectstorage.s3provider.s3endpoint=127.0.0.1:7480
+    euctl objectstorage.s3provider.s3endpoint={{ eucalyptus_ceph_rgw_endpoint }}
     euctl objectstorage.s3provider.s3accesskey={{ eucalyptus_ceph_rgw_creds.access_key }}
     euctl objectstorage.s3provider.s3secretkey={{ eucalyptus_ceph_rgw_creds.secret_key }}
     euctl objectstorage.s3provider.s3endpointheadresponse=200

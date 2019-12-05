@@ -25,9 +25,23 @@
       - midolman
     state: present
 
+- name: midolman configuration
+  template:
+    src: midolman.conf.j2
+    dest: /etc/midolman/midolman.conf
+    owner: root
+    group: root
+    mode: 0644
+
 - name: midolman memory
   replace:
     path: /etc/midolman/midolman-env.sh
     regexp: '^MAX_HEAP_SIZE=".+"$'
     replace: 'MAX_HEAP_SIZE="1g"'
+
+- name: start midolman service
+  systemd:
+    enabled: true
+    state: started
+    name: midolman
 

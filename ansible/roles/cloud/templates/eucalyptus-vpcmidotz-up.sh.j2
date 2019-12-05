@@ -5,7 +5,7 @@ set -euo pipefail
 MIDONET_CLI="midonet-cli -A --midonet-url=http://127.0.0.1:8080/midonet-api -e "
 EUCA_CONF="/etc/eucalyptus/eucalyptus.conf"
 EUCA_TZ_NAME="eucatz"
-EUCA_TZ_HOSTS="{{ ansible_default_ipv4['address'] }}"
+EUCA_TZ_HOSTS="${EUCA_TZ_HOST_EXTRAS:-} {{ ansible_default_ipv4['address'] }}"
 
 if ! ${MIDONET_CLI} list tunnel-zone | grep -q "${EUCA_TZ_NAME}" ; then
   ${MIDONET_CLI} add tunnel-zone name "${EUCA_TZ_NAME}" type gre

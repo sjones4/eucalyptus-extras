@@ -20,6 +20,14 @@
     group: root
     mode: 0644
 
+- name: midolman configuration
+  template:
+    src: midolman.conf.j2
+    dest: /etc/midolman/midolman.conf
+    owner: root
+    group: root
+    mode: 0644
+
 - name: create cassandra tmpfiles configuration
   copy:
     content: |

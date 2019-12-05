@@ -1,0 +1,8 @@
+---
+- name: install base packages
+  yum:
+    name:
+      - net-tools
+      - rsync
+      - wget
+    state: present

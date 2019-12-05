@@ -20,6 +20,18 @@
     state: present
     key: "{{ user_result.ssh_public_key }}"
 
+- name: ceph-deploy user ssh known hosts
+  copy:
+    dest: /home/ceph-deploy/.ssh/config
+    owner: ceph-deploy
+    group: ceph-deploy
+    mode: 0644
+    content: |
+      Host {{ ansible_hostname }} {{ ansible_fqdn }}
+      GlobalKnownHostsFile=/dev/null
+      UserKnownHostsFile=/dev/null
+      StrictHostKeyChecking=no
+
 - name: wheel group
   group:
     name: wheel
