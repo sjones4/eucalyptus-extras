@@ -1,0 +1,44 @@
+---
+- name: install eucaconsole package
+  yum:
+    name:
+      - eucaconsole
+      - eucaconsole-selinux
+    state: present
+
+- name: remove conflicting webob package
+  shell:
+    cmd: rpm -e --nodeps python-webob
+    warn: false
+  register: shell_result
+  failed_when: "shell_result | failed and 'is not installed' not in shell_result.stderr"
+
+- name: eucaconsole ufshost configuration
+  replace:
+    path: /etc/eucaconsole/console.ini
+    regexp: '^ufshost = .+$'
+    replace: 'ufshost = {{ cloud_system_dns_dnsdomain }}'
+
+- name: eucaconsole aws login configuration
+  replace:
+    path: /etc/eucaconsole/console.ini
+    regexp: '^aws.enabled = .+$'
+    replace: 'aws.enabled = false'
+
+- name: eucaconsole nginx listener interface configuration
+  replace:
+    path: /etc/eucaconsole/nginx.conf
+    regexp: '^(\s+)listen (\d+) (ssl|default);$'
+    replace: '\1listen {{ ansible_default_ipv4.address }}:\2 \3;'
+
+- name: eucaconsole init script nginx daemon configuration
+  replace:
+    path: /etc/rc.d/init.d/eucaconsole
+    regexp: '^(\s+)daemon /usr/sbin/nginx(.+)$'
+    replace: '\1daemon --pidfile ${NGINXPIDFILE} /usr/sbin/nginx\2'
+
+- name: start eucaconsole service
+  systemd:
+    enabled: true
+    state: started
+    name: eucaconsole

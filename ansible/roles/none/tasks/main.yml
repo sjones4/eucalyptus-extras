@@ -68,6 +68,8 @@
 - name: remove eucalyptus packages
   yum:
     name:
+      - eucaconsole
+      - eucaconsole-selinux
       - eucalyptus
       - eucalyptus-admin-tools
       - eucalyptus-axis2c-common
@@ -115,6 +117,11 @@
       - ceph-selinux
       - libcephfs1
       - python-cephfs
+    state: absent
+
+- name: remove eucaconsole configuration directory
+  file:
+    path: /etc/eucaconsole
     state: absent
 
 - name: remove eucalyptus configuration directory
