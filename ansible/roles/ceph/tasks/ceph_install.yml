@@ -1,4 +1,20 @@
 ---
+- name: ceph-osd overrides directory
+  file:
+    path: /etc/systemd/system/ceph-osd@.service.d/
+    state: directory
+    mode: 0755
+  when: "'/home/' in ceph_osd_data_path"
+
+- name: ceph-osd overrides for data under /home
+  copy:
+    dest: /etc/systemd/system/ceph-osd@.service.d/override.conf
+    mode: 0644
+    content: |
+      [Service]
+      ProtectHome=false
+  when: "'/home/' in ceph_osd_data_path"
+
 - name: install ceph-deploy package
   yum:
     name: ceph-deploy
