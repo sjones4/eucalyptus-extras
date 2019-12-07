@@ -6,7 +6,7 @@
     state: stopped
     name: eucalyptus-cloud
   register: systemd_result
-  failed_when: "systemd_result | failed and 'Could not find the requested service' not in systemd_result.msg"
+  failed_when: "systemd_result is failed and 'Could not find the requested service' not in systemd_result.msg"
 
 - name: disable eucalyptus-node service
   systemd:
@@ -14,7 +14,7 @@
     state: stopped
     name: eucalyptus-node
   register: systemd_result
-  failed_when: "systemd_result | failed and 'Could not find the requested service' not in systemd_result.msg"
+  failed_when: "systemd_result is failed and 'Could not find the requested service' not in systemd_result.msg"
 
 - name: disable eucanetd service
   systemd:
@@ -22,7 +22,7 @@
     state: stopped
     name: eucanetd
   register: systemd_result
-  failed_when: "systemd_result | failed and 'Could not find the requested service' not in systemd_result.msg"
+  failed_when: "systemd_result is failed and 'Could not find the requested service' not in systemd_result.msg"
 
 - name: disable libvirtd service
   systemd:
@@ -30,7 +30,7 @@
     state: stopped
     name: libvirtd
   register: systemd_result
-  failed_when: "systemd_result | failed and 'Could not find the requested service' not in systemd_result.msg"
+  failed_when: "systemd_result is failed and 'Could not find the requested service' not in systemd_result.msg"
 
 - name: disable midonet-cluster service
   systemd:
@@ -38,7 +38,7 @@
     state: stopped
     name: midonet-cluster
   register: systemd_result
-  failed_when: "systemd_result | failed and 'Could not find the requested service' not in systemd_result.msg"
+  failed_when: "systemd_result is failed and 'Could not find the requested service' not in systemd_result.msg"
 
 - name: disable midolman service
   systemd:
@@ -46,7 +46,7 @@
     state: stopped
     name: midolman
   register: systemd_result
-  failed_when: "systemd_result | failed and 'Could not find the requested service' not in systemd_result.msg"
+  failed_when: "systemd_result is failed and 'Could not find the requested service' not in systemd_result.msg"
 
 - name: disable cassandra service
   systemd:
@@ -54,7 +54,7 @@
     state: stopped
     name: cassandra
   register: systemd_result
-  failed_when: "systemd_result | failed and 'Could not find the requested service' not in systemd_result.msg"
+  failed_when: "systemd_result is failed and 'Could not find the requested service' not in systemd_result.msg"
 
 - name: disable zookeeper service
   systemd:
@@ -62,7 +62,7 @@
     state: stopped
     name: zookeeper
   register: systemd_result
-  failed_when: "systemd_result | failed and 'Could not find the requested service' not in systemd_result.msg"
+  failed_when: "systemd_result is failed and 'Could not find the requested service' not in systemd_result.msg"
 
 - name: stop ceph target
   systemd:
@@ -70,7 +70,7 @@
     state: stopped
     name: ceph.target
   register: systemd_result
-  failed_when: "systemd_result | failed and 'Could not find the requested service' not in systemd_result.msg"
+  failed_when: "systemd_result is failed and 'Could not find the requested service' not in systemd_result.msg"
 
 - name: remove eucalyptus and dependency packages
   yum:

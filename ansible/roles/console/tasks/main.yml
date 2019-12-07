@@ -11,7 +11,7 @@
     cmd: rpm -e --nodeps python-webob
     warn: false
   register: shell_result
-  failed_when: "shell_result | failed and 'is not installed' not in shell_result.stderr"
+  failed_when: "shell_result is failed and 'is not installed' not in shell_result.stderr"
 
 - name: eucaconsole ufshost configuration
   replace:
