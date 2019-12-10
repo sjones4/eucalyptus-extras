@@ -209,9 +209,9 @@
     path: /var/lib/ceph
     state: absent
 
-- name: remove ceph-osd state directory
+- name: remove ceph-osd data directory
   file:
-    path: /var/lib/ceph-osd
+    path: "{{ ceph_osd_data_path }}"
     state: absent
 
 - name: remove ceph-deploy user cluster directory

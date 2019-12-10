@@ -17,6 +17,8 @@
 - name: bridge interface up
   command:
     cmd: "/usr/sbin/ifup {{ net_bridge_interface }}"
+  register: command_result
+  changed_when: "command_result is succeeded and command_result.stdout  != ''"
 
 - name: install midolman and dependency packages
   yum:
@@ -38,6 +40,24 @@
     path: /etc/midolman/midolman-env.sh
     regexp: '^MAX_HEAP_SIZE=".+"$'
     replace: 'MAX_HEAP_SIZE="1g"'
+
+- name: midolman systemd drop-in directory
+  file:
+    path: /etc/systemd/system/midolman.service.d
+    state: directory
+    mode: 0755
+
+- name: midolman systemd drop-in for disabling jmx listener
+  copy:
+    dest: /etc/systemd/system/midolman.service.d/jmxdisable.conf
+    mode: 0644
+    content: |
+      [Service]
+      Environment=JMXDISABLE=true
+
+- name: systemd daemon reload
+  systemd:
+    daemon_reload: true
 
 - name: start midolman service
   systemd:

@@ -56,6 +56,20 @@
     regexp: '^autopurge.purgeInterval=.+$'
     replace: 'autopurge.purgeInterval=1'
 
+- name: zookeeper systemd drop-in directory
+  file:
+    path: /etc/systemd/system/zookeeper.service.d
+    state: directory
+    mode: 0755
+
+- name: zookeeper systemd drop-in for disabling jmx listener
+  copy:
+    dest: /etc/systemd/system/zookeeper.service.d/jmxdisable.conf
+    mode: 0644
+    content: |
+      [Service]
+      Environment=JMXDISABLE=true
+
 - name: start zookeeper service
   systemd:
     enabled: true
@@ -64,7 +78,6 @@
 
 - name: wait for zookeeper service
   wait_for:
-    delay: 10
     sleep: 10
     port: 2181
     timeout: 120
@@ -93,11 +106,43 @@
     regexp: '^MAX_HEAP_SIZE=".+"$'
     replace: 'MAX_HEAP_SIZE="1g"'
 
+- name: midonet cluster systemd drop-in directory
+  file:
+    path: /etc/systemd/system/midonet-cluster.service.d
+    state: directory
+    mode: 0755
+
+- name: midonet cluster systemd drop-in for disabling jmx listener
+  copy:
+    dest: /etc/systemd/system/midonet-cluster.service.d/jmxdisable.conf
+    mode: 0644
+    content: |
+      [Service]
+      Environment=JMXDISABLE=true
+
 - name: midolman memory
   replace:
     path: /etc/midolman/midolman-env.sh
     regexp: '^MAX_HEAP_SIZE=".+"$'
     replace: 'MAX_HEAP_SIZE="1g"'
+
+- name: midolman systemd drop-in directory
+  file:
+    path: /etc/systemd/system/midolman.service.d
+    state: directory
+    mode: 0755
+
+- name: midolman systemd drop-in for disabling jmx listener
+  copy:
+    dest: /etc/systemd/system/midolman.service.d/jmxdisable.conf
+    mode: 0644
+    content: |
+      [Service]
+      Environment=JMXDISABLE=true
+
+- name: systemd daemon reload
+  systemd:
+    daemon_reload: true
 
 - name: eucalyptus tunnel zone midonet configuration
   template:
