@@ -9,7 +9,10 @@ EUCA_CEPH_ARTIFACTS_DIR="${EUCA_CEPH_ARTIFACTS_DIR:-euca-artifacts}"
 if ! ceph osd pool ls | grep -q euca ; then
     echo "Generating volume and snapshot pools"
     ceph osd pool create eucavolumes ${EUCA_POOL_PLACEMENT_GROUPS}
+    ceph osd pool application enable eucavolumes rbd 2>/dev/null || true
+
     ceph osd pool create eucasnapshots ${EUCA_POOL_PLACEMENT_GROUPS}
+    ceph osd pool application enable eucasnapshots rbd 2>/dev/null || true
 fi
 
 if [ ! -e "${EUCA_CEPH_ARTIFACTS_DIR}" ] ; then

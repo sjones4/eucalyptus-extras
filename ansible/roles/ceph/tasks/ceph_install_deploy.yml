@@ -39,6 +39,12 @@
   when: not ansible_check_mode
   delegate_to: "{{ ansible_default_ipv4['address'] }}"
 
+- name: create manager
+  command:
+    chdir: /home/ceph-deploy/cluster
+    cmd: "ceph-deploy {{ ceph_deploy_opts }} mgr create {{ ansible_hostname }}"
+  when: ceph_mgr_create
+
 - name: directory for ceph osds
   file:
     path: "{{ ceph_osd_data_path }}"
@@ -46,16 +52,25 @@
     mode: 0755
     owner: ceph
   become: no
+  when: ceph_osd_data_path is match("/.*") and ceph_osd_data_path is not match("/dev/.*")
+
+- name: create osds
+  command:
+    chdir: /home/ceph-deploy/cluster
+    cmd: "ceph-deploy {{ ceph_deploy_opts }} osd create --data {{ ceph_osd_data_path }} {{ ansible_hostname }}"
+  when: ceph_osd_create
 
 - name: prepare osds
   command:
     chdir: /home/ceph-deploy/cluster
     cmd: "ceph-deploy {{ ceph_deploy_opts }} osd prepare {{ ansible_hostname }}:{{ ceph_osd_data_path }}"
+  when: not ceph_osd_create
 
 - name: activate osds
   command:
     chdir: /home/ceph-deploy/cluster
     cmd: "ceph-deploy {{ ceph_deploy_opts }} osd activate {{ ansible_hostname }}:{{ ceph_osd_data_path }}"
+  when: not ceph_osd_create
 
 - name: ceph-deploy rgw install hammer
   command:
