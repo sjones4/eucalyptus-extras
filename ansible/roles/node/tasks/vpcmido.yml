@@ -39,7 +39,8 @@
   replace:
     path: /etc/midolman/midolman-env.sh
     regexp: '^MAX_HEAP_SIZE=".+"$'
-    replace: 'MAX_HEAP_SIZE="1g"'
+    replace: 'MAX_HEAP_SIZE="{{ midonet_midolman_heap }}"'
+  when: midonet_midolman_heap is not none
 
 - name: midolman systemd drop-in directory
   file:
@@ -55,12 +56,9 @@
       [Service]
       Environment=JMXDISABLE=true
 
-- name: systemd daemon reload
-  systemd:
-    daemon_reload: true
-
 - name: start midolman service
   systemd:
+    daemon_reload: true
     enabled: true
     state: started
     name: midolman

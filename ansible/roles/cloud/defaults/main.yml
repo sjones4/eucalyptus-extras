@@ -10,6 +10,13 @@ edge_gateway: 192.168.240.1
 edge_private_ip_range: 192.168.240.100-192.168.240.120
 edge_public_ip_range: 192.168.240.200-192.168.240.220
 
+# Midonet settings
+midonet_cassandra_heap: Null
+midonet_cassandra_heapnew: Null
+midonet_zookeeper_heap: Null
+midonet_cluster_heap: Null
+midonet_midolman_heap: Null
+
 # VPCMIDO network settings
 vpcmido_public_ip_range: 10.116.150.10-10.116.150.254
 vpcmido_gw_ext_cidr: 10.116.0.0/17

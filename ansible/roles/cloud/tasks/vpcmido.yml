@@ -38,8 +38,36 @@
     group: root
     mode: 0644
 
+- name: cassandra systemd drop-in directory
+  file:
+    path: /etc/systemd/system/cassandra.service.d
+    state: directory
+    mode: 0755
+
+- name: cassandra systemd drop-in for heap configuration
+  copy:
+    dest: /etc/systemd/system/cassandra.service.d/jvmheap.conf
+    mode: 0644
+    content: |
+      [Service]
+      Environment="MAX_HEAP_SIZE={{ midonet_cassandra_heap | default(midonet_cassandra_heapnew) }}" "HEAP_NEWSIZE={{ midonet_cassandra_heapnew | default(midonet_cassandra_heap) }}"
+  when: midonet_cassandra_heap is not none or midonet_cassandra_heapnew is not none
+
+- name: cassandra configure listen address
+  replace:
+    path: /etc/cassandra/conf/cassandra.yaml
+    regexp: '^listen_address: .+$'
+    replace: "listen_address: {{ ansible_default_ipv4['address'] }}"
+
+- name: cassandra configure rpc listen address
+  replace:
+    path: /etc/cassandra/conf/cassandra.yaml
+    regexp: '^rpc_address: .+$'
+    replace: "rpc_address: {{ ansible_default_ipv4['address'] }}"
+
 - name: start cassandra service
   systemd:
+    daemon_reload: true
     enabled: true
     state: started
     name: cassandra
@@ -56,6 +84,14 @@
     regexp: '^autopurge.purgeInterval=.+$'
     replace: 'autopurge.purgeInterval=1'
 
+- name: zookeeper configure listen address
+  lineinfile:
+    dest: /etc/zookeeper/zoo.cfg
+    state: present
+    regexp: '^clientPortAddress=.+$'
+    line: "clientPortAddress={{ ansible_default_ipv4['address'] }}"
+    insertafter: '^clientPort=.+$'
+
 - name: zookeeper systemd drop-in directory
   file:
     path: /etc/systemd/system/zookeeper.service.d
@@ -70,8 +106,18 @@
       [Service]
       Environment=JMXDISABLE=true
 
+- name: zookeeper systemd drop-in for heap configuration
+  copy:
+    dest: /etc/systemd/system/zookeeper.service.d/jvmheap.conf
+    mode: 0644
+    content: |
+      [Service]
+      Environment="JVMFLAGS=-Xmx{{ midonet_zookeeper_heap }} -Xms{{ midonet_zookeeper_heap }}"
+  when: midonet_zookeeper_heap is not none
+
 - name: start zookeeper service
   systemd:
+    daemon_reload: true
     enabled: true
     state: started
     name: zookeeper
@@ -79,6 +125,7 @@
 - name: wait for zookeeper service
   wait_for:
     sleep: 10
+    host: "{{ ansible_default_ipv4['address'] }}"
     port: 2181
     timeout: 120
 
@@ -98,13 +145,15 @@
   replace:
     path: /etc/midonet-cluster/midonet-cluster-env.sh
     regexp: '^HEAP_NEWSIZE=".+"$'
-    replace: 'HEAP_NEWSIZE="1g"'
+    replace: 'HEAP_NEWSIZE="{{ midonet_cluster_heap }}"'
+  when: midonet_cluster_heap is not none
 
 - name: midonet cluster heap new memory
   replace:
     path: /etc/midonet-cluster/midonet-cluster-env.sh
     regexp: '^MAX_HEAP_SIZE=".+"$'
-    replace: 'MAX_HEAP_SIZE="1g"'
+    replace: 'MAX_HEAP_SIZE="{{ midonet_cluster_heap }}"'
+  when: midonet_cluster_heap is not none
 
 - name: midonet cluster systemd drop-in directory
   file:
@@ -124,7 +173,8 @@
   replace:
     path: /etc/midolman/midolman-env.sh
     regexp: '^MAX_HEAP_SIZE=".+"$'
-    replace: 'MAX_HEAP_SIZE="1g"'
+    replace: 'MAX_HEAP_SIZE="{{ midonet_midolman_heap }}"'
+  when: midonet_midolman_heap is not none
 
 - name: midolman systemd drop-in directory
   file:

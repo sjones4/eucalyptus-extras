@@ -2,3 +2,6 @@
 # Network settings
 net_mode: EDGE
 
+# Midonet settings
+midonet_midolman_heap: Null
+

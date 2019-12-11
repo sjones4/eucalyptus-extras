@@ -126,7 +126,12 @@
       - ceph-release
       - ceph-selinux
       - libcephfs1
+      - libcephfs2
+      - librados2
+      - libradosstriper1
+      - python-ceph-argparse
       - python-cephfs
+      - python-rados
     state: absent
 
 - name: remove eucaconsole configuration directory
@@ -207,6 +212,11 @@
 - name: remove ceph state directory
   file:
     path: /var/lib/ceph
+    state: absent
+
+- name: remove ceph default osd directory
+  file:
+    path: /var/lib/ceph-osd
     state: absent
 
 - name: remove ceph-deploy user cluster directory
