@@ -11,6 +11,9 @@
       - zkdump
       - zookeeper
     state: present
+  tags:
+    - image
+    - packages
 
 - name: midonet configuration
   template:
@@ -37,6 +40,8 @@
     owner: root
     group: root
     mode: 0644
+  tags:
+    - image
 
 - name: cassandra systemd drop-in directory
   file:
@@ -109,6 +114,8 @@
     path: /etc/systemd/system/zookeeper.service.d
     state: directory
     mode: 0755
+  tags:
+    - image
 
 - name: zookeeper systemd drop-in for disabling jmx listener
   copy:
@@ -117,6 +124,8 @@
     content: |
       [Service]
       Environment=JMXDISABLE=true
+  tags:
+    - image
 
 - name: zookeeper systemd drop-in for heap configuration
   copy:
@@ -172,6 +181,8 @@
     path: /etc/systemd/system/midonet-cluster.service.d
     state: directory
     mode: 0755
+  tags:
+    - image
 
 - name: midonet cluster systemd drop-in for disabling jmx listener
   copy:
@@ -180,6 +191,8 @@
     content: |
       [Service]
       Environment=JMXDISABLE=true
+  tags:
+    - image
 
 - name: midolman memory
   replace:
@@ -193,6 +206,8 @@
     path: /etc/systemd/system/midolman.service.d
     state: directory
     mode: 0755
+  tags:
+    - image
 
 - name: midolman systemd drop-in for disabling jmx listener
   copy:
@@ -201,6 +216,8 @@
     content: |
       [Service]
       Environment=JMXDISABLE=true
+  tags:
+    - image
 
 - name: systemd daemon reload
   systemd:

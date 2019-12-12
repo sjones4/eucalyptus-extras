@@ -6,3 +6,6 @@
       - rsync
       - wget
     state: present
+  tags:
+    - image
+    - packages

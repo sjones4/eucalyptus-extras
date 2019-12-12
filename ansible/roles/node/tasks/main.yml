@@ -6,12 +6,18 @@
   yum:
     name: eucalyptus-node
     state: present
+  tags:
+    - image
+    - packages
 
 - name: install eucanetd package
   when: net_mode == "EDGE"
   yum:
     name: eucanetd
     state: present
+  tags:
+    - image
+    - packages
 
 - name: start libvirtd service
   systemd:
@@ -24,6 +30,8 @@
     enabled: false
     state: stopped
     name: dnsmasq
+  tags:
+    - image
 
 - name: ceph configuration directory
   file:

@@ -3,17 +3,24 @@
   selinux:
     policy: targeted
     state: permissive
+  tags:
+    - image
 
 - name: disable firewalld
   service:
     name: firewalld.service
     enabled: no
     state: stopped
+  tags:
+    - image
 
 - name: install eucalyptus package
   yum:
     name: eucalyptus
     state: present
+  tags:
+    - image
+    - packages
 
 - name: eucalyptus configuration
   template:

@@ -3,17 +3,26 @@
   yum:
     name: eucalyptus-cluster
     state: present
+  tags:
+    - image
+    - packages
 
 - name: install eucalyptus-storage package
   yum:
     name: eucalyptus-storage
     state: present
+  tags:
+    - image
+    - packages
 
 - name: set selinux storage boolean
   seboolean:
     name: eucalyptus_storage_controller
     state: yes
     persistent: yes
+  tags:
+    - image
+    - packages
 
 - name: eucalyptus ceph configuration
   copy:

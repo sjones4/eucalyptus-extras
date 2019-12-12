@@ -6,36 +6,53 @@
   yum:
     name: eucalyptus-cloud
     state: present
+  tags:
+    - image
+    - packages
 
 - name: install eucalyptus-service-image package
   yum:
     name: eucalyptus-service-image
     state: present
+  tags:
+    - image
+    - packages
 
 - name: install eucalyptus-walrus package
   yum:
     name: eucalyptus-walrus
     state: present
+  tags:
+    - image
+    - packages
   when: eucalyptus_ceph_conf is undefined
 
 - name: install eucanetd package
-  when: net_mode == "VPCMIDO"
   yum:
     name: eucanetd
     state: present
+  tags:
+    - image
+    - packages
+  when: net_mode == "VPCMIDO"
 
 - name: install nginx package
-  when: net_mode == "VPCMIDO"
   yum:
     name: nginx
     state: present
+  tags:
+    - image
+    - packages
+  when: net_mode == "VPCMIDO"
 
 - name: configure selinux bool httpd_can_network_connect
-  when: net_mode == "VPCMIDO"
   seboolean:
     name: httpd_can_network_connect
     persistent: yes
     state: yes
+  tags:
+    - image
+  when: net_mode == "VPCMIDO"
 
 - name: eucalyptus network yaml
   template:
@@ -57,11 +74,11 @@
     name: eucalyptus-cloud
 
 - name: start eucanetd service
-  when: net_mode == "VPCMIDO"
   systemd:
     enabled: true
     state: started
     name: eucanetd
+  when: net_mode == "VPCMIDO"
 
 - name: wait for cloud services
   wait_for:

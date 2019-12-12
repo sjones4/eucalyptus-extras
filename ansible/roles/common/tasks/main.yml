@@ -1,7 +1,13 @@
 ---
 - import_tasks: yum_repos.yml
+  tags:
+    - image
+    - packages
 
 - import_tasks: yum_repos_vpcmido.yml
+  tags:
+    - image
+    - packages
   when: net_mode == "VPCMIDO"
 
 - import_tasks: base_packages.yml

@@ -4,6 +4,9 @@
     name:
       - bridge-utils
     state: present
+  tags:
+    - image
+    - packages
 
 - name: create bridge interface
   template:
@@ -26,6 +29,9 @@
       - java-1.8.0-openjdk-headless
       - midolman
     state: present
+  tags:
+    - image
+    - packages
 
 - name: midolman configuration
   template:
@@ -47,6 +53,8 @@
     path: /etc/systemd/system/midolman.service.d
     state: directory
     mode: 0755
+  tags:
+    - image
 
 - name: midolman systemd drop-in for disabling jmx listener
   copy:
@@ -55,6 +63,8 @@
     content: |
       [Service]
       Environment=JMXDISABLE=true
+  tags:
+    - image
 
 - name: start midolman service
   systemd:

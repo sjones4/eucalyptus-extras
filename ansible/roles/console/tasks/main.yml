@@ -5,6 +5,9 @@
       - eucaconsole
       - eucaconsole-selinux
     state: present
+  tags:
+    - image
+    - packages
 
 - name: remove conflicting webob package
   shell:
@@ -13,6 +16,9 @@
   register: shell_result
   changed_when: "shell_result is succeeded"
   failed_when: "shell_result is failed and 'is not installed' not in shell_result.stderr"
+  tags:
+    - image
+    - packages
 
 - name: eucaconsole ufshost configuration
   replace:

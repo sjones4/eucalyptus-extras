@@ -12,4 +12,7 @@
       - sg3_utils-libs
       - xfsprogs
     state: present
+  tags:
+    - image
+    - packages
 

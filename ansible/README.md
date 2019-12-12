@@ -24,3 +24,19 @@ to remove a eucalyptus installation and main dependencies:
 ```
 ansible-playbook -i inventory.yml playbook_clean.yml
 ```
+
+Tags can be used to control which aspects of the playbook are used:
+
+* `image` : `packages` and generic configuration
+* `packages` : installs yum repositories and rpms
+
+Example tag use:
+
+```
+ansible-playbook --tags      image -i inventory.yml playbook.yml
+ansible-playbook --skip-tags image -i inventory.yml playbook.yml
+```
+
+which would run the playbook in two parts, the first installing packages
+and non-deployment specific configuration, and the second completing the
+deployment.
