@@ -4,4 +4,4 @@
     cmd: /usr/local/bin/eucalyptus-vpcmidotz-up.sh
   environment:
     PYTHONPATH: /usr/lib/python2.7/site-packages/WebOb-1.4.1-py2.7.egg/
-    EUCA_TZ_HOST_EXTRAS: "{{ groups['node'] | map('extract', hostvars, ['ansible_default_ipv4','address']) | list | join(' ') }}"
+    EUCA_TZ_HOST_EXTRAS: "{{ groups['node'] | map('extract', hostvars, ['eucalyptus_host_cluster_ipv4']) | list | join(' ') }}"

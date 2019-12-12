@@ -1,4 +1,6 @@
 ---
+- import_tasks: host_facts.yml
+
 - import_tasks: yum_repos_ceph.yml
 
 - import_tasks: base_packages.yml

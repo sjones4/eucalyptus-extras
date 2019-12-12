@@ -3,6 +3,8 @@ ceph_release: jewel
 
 ceph_public_network: 192.168.0.0/16
 
+ceph_cluster_network: "{{ ceph_public_network }}"
+
 ceph_osd_data_path: /var/lib/ceph-osd/osd0
 
 ceph_facts: "{{ True if ('ceph' in groups and groups['ceph'] and not inventory_hostname in groups['ceph']) else False }}"

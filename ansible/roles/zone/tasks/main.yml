@@ -48,7 +48,7 @@
 
 - name: register node controllers
   shell: |
-    NODE_HOSTS="{{ groups['node'] | map('extract', hostvars, ['ansible_default_ipv4','address']) | list | join(' ') }}"
+    NODE_HOSTS="{{ groups['node'] | map('extract', hostvars, ['eucalyptus_host_cluster_ipv4']) | list | join(' ') }}"
     clusteradmin-register-nodes ${NODE_HOSTS}
     clusteradmin-copy-keys ${NODE_HOSTS}
 

@@ -30,7 +30,7 @@
   replace:
     path: /etc/eucaconsole/nginx.conf
     regexp: '^(\s+)listen (\d+) (ssl|default);$'
-    replace: '\1listen {{ ansible_default_ipv4.address }}:\2 \3;'
+    replace: '\1listen {{ eucalyptus_host_public_ipv4 }}:\2 \3;'
 
 - name: eucaconsole init script nginx daemon configuration
   replace:

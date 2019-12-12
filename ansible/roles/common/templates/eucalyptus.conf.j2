@@ -1,7 +1,7 @@
 # Eucalyptus cloud configuration
 LOGLEVEL="{{ cloud_log_level }}"
 CLOUD_OPTS="{{ cloud_opts }}"
-NODES="{{ groups['node'] | map('extract', hostvars, ['ansible_default_ipv4','address']) | list | join(' ') }}"
+NODES="{{ groups['node'] | map('extract', hostvars, ['eucalyptus_host_cluster_ipv4']) | list | join(' ') }}"
 HYPERVISOR="kvm"
 INSTANCE_PATH="/var/lib/eucalyptus/instances"
 USE_CPU_PASSTHROUGH="1"

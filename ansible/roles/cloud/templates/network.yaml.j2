@@ -1,7 +1,7 @@
 Mode: {{ net_mode }}
 
 InstanceDnsServers:
-{% for ip in (groups['cloud'] | map('extract', hostvars, ['ansible_default_ipv4','address'])) %}
+{% for ip in (groups['cloud'] | map('extract', hostvars, ['eucalyptus_host_cluster_ipv4'])) %}
 - "{{ ip }}"
 {% endfor %}
 
@@ -23,6 +23,6 @@ Mido:
     ExternalDevice: "{{ vpcmido_gw_ext_device }}"
     ExternalIp: "{{ vpcmido_gw_ext_ip }}"
     ExternalRouterIp: "{{ vpcmido_gw_ext_router_ip }}"
-    Ip: "{{ ansible_default_ipv4['address'] }}"
+    Ip: "{{ eucalyptus_host_cluster_ipv4 }}"
 {% endif %}
 

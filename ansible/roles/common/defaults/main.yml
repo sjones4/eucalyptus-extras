@@ -4,9 +4,10 @@ eucalyptus_yum_baseurl: http://downloads.eucalyptus.cloud/software/eucalyptus/sn
 euca2ools_yum_baseurl: http://downloads.eucalyptus.cloud/software/euca2ools/3.4/rhel/7/x86_64/
 
 # Cloud settings
-cloud_opts: "{{cloud_opts_tech_preview}} {{cloud_opts_mem}} {{cloud_opts_custom}}"
+cloud_opts: "{{cloud_opts_tech_preview}} {{cloud_opts_mem}} {{cloud_opts_custom}} {{cloud_opts_bindaddr}}"
 cloud_opts_custom: ""
 cloud_opts_mem: "-Xmx2g"
+cloud_opts_bindaddr: "--bind-addr={{ eucalyptus_host_cluster_ipv4 }}"
 cloud_opts_tech_preview: "-Denable.sqs.tech.preview=true"
 cloud_log_level: INFO
 

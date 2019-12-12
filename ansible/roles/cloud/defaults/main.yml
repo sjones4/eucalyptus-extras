@@ -2,6 +2,7 @@
 # Cloud settings
 cloud_region_region_name: eucalyptus
 cloud_zone_1_name: one
+cloud_listener_cidr: 0.0.0.0/0
 
 # EDGE network settings
 edge_subnet: 192.168.240.0
@@ -11,6 +12,7 @@ edge_private_ip_range: 192.168.240.100-192.168.240.120
 edge_public_ip_range: 192.168.240.200-192.168.240.220
 
 # Midonet settings
+midonet_cassandra_name: Eucalyptus Midonet Cluster
 midonet_cassandra_heap: Null
 midonet_cassandra_heapnew: Null
 midonet_zookeeper_heap: Null

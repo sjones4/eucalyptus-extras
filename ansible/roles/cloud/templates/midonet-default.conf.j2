@@ -4,11 +4,11 @@
 #
 
 zookeeper {
-  zookeeper_hosts = "{{ ansible_default_ipv4['address'] }}:2181"
+  zookeeper_hosts = "{{ eucalyptus_host_cluster_ipv4 }}:2181"
 }
 
 cassandra {
-  servers = "{{ ansible_default_ipv4['address'] }}"
+  servers = "{{ eucalyptus_host_cluster_ipv4 }}"
 }
 
 cluster {

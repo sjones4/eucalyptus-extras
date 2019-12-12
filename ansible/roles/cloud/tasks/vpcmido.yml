@@ -53,17 +53,29 @@
       Environment="MAX_HEAP_SIZE={{ midonet_cassandra_heap | default(midonet_cassandra_heapnew) }}" "HEAP_NEWSIZE={{ midonet_cassandra_heapnew | default(midonet_cassandra_heap) }}"
   when: midonet_cassandra_heap is not none or midonet_cassandra_heapnew is not none
 
+- name: cassandra configure cluster name
+  replace:
+    path: /etc/cassandra/conf/cassandra.yaml
+    regexp: '^cluster_name: .+$'
+    replace: "cluster_name: {{ midonet_cassandra_name }}"
+
 - name: cassandra configure listen address
   replace:
     path: /etc/cassandra/conf/cassandra.yaml
     regexp: '^listen_address: .+$'
-    replace: "listen_address: {{ ansible_default_ipv4['address'] }}"
+    replace: "listen_address: {{ eucalyptus_host_cluster_ipv4 }}"
 
 - name: cassandra configure rpc listen address
   replace:
     path: /etc/cassandra/conf/cassandra.yaml
     regexp: '^rpc_address: .+$'
-    replace: "rpc_address: {{ ansible_default_ipv4['address'] }}"
+    replace: "rpc_address: {{ eucalyptus_host_cluster_ipv4 }}"
+
+- name: cassandra configure seeds
+  replace:
+    path: /etc/cassandra/conf/cassandra.yaml
+    regexp: '^(\s+)-\s+seeds:\s+.+$'
+    replace: '\1- seeds: "{{ eucalyptus_host_cluster_ipv4 }}"'
 
 - name: start cassandra service
   systemd:
@@ -75,13 +87,13 @@
 - name: zookeeper configure autopurge snap count
   replace:
     path: /etc/zookeeper/zoo.cfg
-    regexp: '^autopurge.snapRetainCount=.+$'
+    regexp: '^#?autopurge.snapRetainCount=.+$'
     replace: 'autopurge.snapRetainCount=3'
 
 - name: zookeeper configure autopurge interval
   replace:
     path: /etc/zookeeper/zoo.cfg
-    regexp: '^autopurge.purgeInterval=.+$'
+    regexp: '^#?autopurge.purgeInterval=.+$'
     replace: 'autopurge.purgeInterval=1'
 
 - name: zookeeper configure listen address
@@ -89,7 +101,7 @@
     dest: /etc/zookeeper/zoo.cfg
     state: present
     regexp: '^clientPortAddress=.+$'
-    line: "clientPortAddress={{ ansible_default_ipv4['address'] }}"
+    line: "clientPortAddress={{ eucalyptus_host_cluster_ipv4 }}"
     insertafter: '^clientPort=.+$'
 
 - name: zookeeper systemd drop-in directory
@@ -125,7 +137,7 @@
 - name: wait for zookeeper service
   wait_for:
     sleep: 10
-    host: "{{ ansible_default_ipv4['address'] }}"
+    host: "{{ eucalyptus_host_cluster_ipv4 }}"
     port: 2181
     timeout: 120
 

@@ -2,7 +2,7 @@
 - name: ceph-deploy new cluster
   command:
     chdir: /home/ceph-deploy/cluster
-    cmd: "ceph-deploy {{ ceph_deploy_opts }} new --public-network {{ ceph_public_network }} {{ ansible_hostname }}"
+    cmd: "ceph-deploy {{ ceph_deploy_opts }} new --cluster-network {{ ceph_cluster_network }} --public-network {{ ceph_public_network }} {{ ansible_hostname }}"
 
 - name: ceph custom configuration
   blockinfile:
@@ -11,9 +11,12 @@
       osd_pool_default_size = 1
       osd_pool_default_min_size = 1
       
+      [client.rgw.{{ ansible_hostname }}]
+      rgw_frontends = civetweb port={{ eucalyptus_host_cluster_ipv4 }}:7480
+      
       [mon.{{ ansible_hostname }}]
       host = {{ ansible_hostname }}
-      mon addr = {{ ansible_default_ipv4['address'] }}:6789
+      mon addr = {{ eucalyptus_host_cluster_ipv4 }}:6789
 
 - name: ceph-deploy install
   command:
@@ -30,14 +33,23 @@
     chdir: /home/ceph-deploy/cluster
     cmd: "ceph-deploy {{ ceph_deploy_opts }} admin {{ ansible_hostname }}"
 
-- name: copy bootstrap keys to each host
-  synchronize:
+- name: directory for ceph bootstrap keys
+  file:
+    path: /var/lib/ceph/bootstrap-osd
+    state: directory
+    mode: 0750
+    owner: ceph
+  become: no
+
+- name: copy bootstrap keys
+  copy:
+    remote_src: yes
     src: /home/ceph-deploy/cluster/ceph.bootstrap-osd.keyring
     dest: /var/lib/ceph/bootstrap-osd/ceph.keyring
-    mode: push
+    mode: 0600
+    owner: ceph
   become: no
   when: not ansible_check_mode
-  delegate_to: "{{ ansible_default_ipv4['address'] }}"
 
 - name: create manager
   command:

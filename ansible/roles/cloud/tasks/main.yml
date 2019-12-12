@@ -71,8 +71,8 @@
 
 - name: register services
   shell: |
-    UFS_HOSTS="{{ groups['cloud'] | map('extract', hostvars, ['ansible_default_ipv4','address']) | list | join(' ') }}"
-    ZONE_HOSTS="{{ groups['zone'] | map('extract', hostvars, ['ansible_default_ipv4','address']) | list | join(' ') }}"
+    UFS_HOSTS="{{ groups['cloud'] | map('extract', hostvars, ['eucalyptus_host_cluster_ipv4']) | list | join(' ') }}"
+    ZONE_HOSTS="{{ groups['zone'] | map('extract', hostvars, ['eucalyptus_host_cluster_ipv4']) | list | join(' ') }}"
     
     eval $(clcadmin-assume-system-credentials)
     
@@ -91,7 +91,7 @@
 
 - name: copy zone keys
   shell: |
-    ZONE_HOSTS="{{ groups['zone'] | map('extract', hostvars, ['ansible_default_ipv4','address']) | list | join(' ') }}"
+    ZONE_HOSTS="{{ groups['zone'] | map('extract', hostvars, ['eucalyptus_host_cluster_ipv4']) | list | join(' ') }}"
     for ZONE_HOST in ${ZONE_HOSTS} ; do
       clcadmin-copy-keys -z {{ cloud_zone_1_name }} ${ZONE_HOST}
     done
@@ -165,4 +165,9 @@
     euare-useraddkey --write-config --domain {{ cloud_system_dns_dnsdomain }} --set-default-user admin > /root/.euca/admin.ini
   args:
     creates: /root/.euca/admin.ini
+
+- name: configure cloud listener address match
+  shell: |
+    eval $(clcadmin-assume-system-credentials)
+    euctl --region admin@localhost bootstrap.webservices.listener_address_match={{ cloud_listener_cidr }}
 

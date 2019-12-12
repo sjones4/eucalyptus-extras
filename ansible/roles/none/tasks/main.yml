@@ -96,6 +96,7 @@
       - eucanetd
       - euca2ools
       - libvirt-daemon
+      - nginx
       - qemu-kvm-common
       - scsi-target-utils
     state: absent
