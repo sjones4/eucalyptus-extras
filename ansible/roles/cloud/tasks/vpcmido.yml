@@ -150,6 +150,22 @@
     port: 2181
     timeout: 120
 
+- name: eucalyptus midonet gateway veth unit
+  template:
+    src: eucalyptus-vpcmido-gwnet.service.j2
+    dest: /etc/systemd/system/eucalyptus-vpcmido-gwnet.service
+    owner: root
+    group: root
+    mode: 0644
+  when: vpcmido_gw_srv_veth_create
+
+- name: start eucalyptus midonet gateway veth service
+  systemd:
+    enabled: true
+    state: started
+    name: eucalyptus-vpcmido-gwnet
+  when: vpcmido_gw_srv_veth_create
+
 - name: midonet defaults configuration
   template:
     src: midonet-default.conf.j2

@@ -10,6 +10,22 @@ cloud_opts_mem: "-Xmx2g"
 cloud_opts_bindaddr: "--bind-addr={{ eucalyptus_host_cluster_ipv4 }}"
 cloud_opts_tech_preview: "-Denable.sqs.tech.preview=true"
 cloud_log_level: INFO
+cloud_instances:
+  state_dir: /var/lib/eucalyptus/instances
+  conf:
+    cpu_passthrough: "1"
+    cache_size: "-1"
+    work_size: "-1"
+    max_cores: "0"
+    max_mem: "0"
+    custom: ""
+cloud_instances_state_dir: "{{ cloud_instances.state_dir }}"
+cloud_instances_conf_cpu_passthrough: "{{ cloud_instances.conf.cpu_passthrough }}"
+cloud_instances_conf_cache_size: "{{ cloud_instances.conf.cache_size }}"
+cloud_instances_conf_work_size: "{{ cloud_instances.conf.work_size }}"
+cloud_instances_conf_max_cores: "{{ cloud_instances.conf.max_cores }}"
+cloud_instances_conf_max_mem: "{{ cloud_instances.conf.max_mem }}"
+cloud_instances_conf_custom: "{{ cloud_instances.conf.custom }}"
 
 # Network settings
 net_mode: EDGE

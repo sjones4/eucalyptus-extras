@@ -57,7 +57,12 @@
 
 - name: register node controllers
   shell: |
+    CURRENT_HOST="{{ eucalyptus_host_cluster_ipv4 }}"
     NODE_HOSTS="{{ groups['node'] | map('extract', hostvars, ['eucalyptus_host_cluster_ipv4']) | list | join(' ') }}"
     clusteradmin-register-nodes ${NODE_HOSTS}
-    clusteradmin-copy-keys ${NODE_HOSTS}
+    for NODE_HOST in ${NODE_HOSTS} ; do
+      if [ "${CURRENT_HOST}" != "${NODE_HOST}" ] ; then
+        clusteradmin-copy-keys ${NODE_HOST}
+      fi
+    done
 

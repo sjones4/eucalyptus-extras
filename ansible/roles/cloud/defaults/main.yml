@@ -5,11 +5,11 @@ cloud_zone_1_name: one
 cloud_listener_cidr: 0.0.0.0/0
 
 # EDGE network settings
-edge_subnet: 192.168.240.0
-edge_netmask: 255.255.255.0
-edge_gateway: 192.168.240.1
-edge_private_ip_range: 192.168.240.100-192.168.240.120
-edge_public_ip_range: 192.168.240.200-192.168.240.220
+edge_subnet: "{{ ansible_default_ipv4.network }}"
+edge_netmask: "{{ ansible_default_ipv4.netmask }}"
+edge_gateway: "{{ ansible_default_ipv4.gateway }}"
+edge_private_ip_range: 192.168.254.150-192.168.254.199
+edge_public_ip_range: 192.168.254.200-192.168.254.249
 
 # Midonet settings
 midonet_cassandra_name: Eucalyptus Midonet Cluster
@@ -20,11 +20,16 @@ midonet_cluster_heap: Null
 midonet_midolman_heap: Null
 
 # VPCMIDO network settings
-vpcmido_public_ip_range: 10.116.150.10-10.116.150.254
-vpcmido_gw_ext_cidr: 10.116.0.0/17
-vpcmido_gw_ext_device: en1
-vpcmido_gw_ext_ip: 10.116.10.10
-vpcmido_gw_ext_router_ip: 10.116.10.62
+vpcmido_public_ip_range: 192.168.254.150-192.168.254.250
+vpcmido_public_ip_cidr: 192.168.254.128/25
+vpcmido_gw_ext_cidr: 10.234.234.224/27
+vpcmido_gw_ext_device: euca-mgw-veth1
+vpcmido_gw_ext_ip: 10.234.234.235
+vpcmido_gw_ext_router_ip: 10.234.234.234
+vpcmido_gw_srv_veth_create: "{{ vpcmido_gw_ext_device == 'euca-mgw-veth1' }}"
+vpcmido_gw_srv_veth0: euca-mgw-veth0
+vpcmido_gw_srv_veth1: euca-mgw-veth1
+vpcmido_gw_srv_veth_prefix: 27
 
 # Network settings
 net_mode: EDGE

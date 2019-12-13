@@ -19,6 +19,22 @@
     - image
     - packages
 
+- name: kvm kernel module cpu passthrough option
+  copy:
+    content: "options kvm_intel nested=1"
+    dest: /etc/modprobe.d/eucalyptus-kvm-nested.conf
+    owner: root
+    group: root
+    mode: 0644
+  when: cloud_instances_conf_cpu_passthrough == "1"
+
+- name: kvm kernel module cpu passthrough runtime
+  shell: |
+    if modprobe -r kvm_intel; then
+      modprobe kvm_intel || true
+    fi
+  when: cloud_instances_conf_cpu_passthrough == "1"
+
 - name: start libvirtd service
   systemd:
     enabled: true
@@ -63,6 +79,14 @@
   virt_net:
     state: absent
     name: default
+
+- name: eucalyptus-node instance state directory
+  file:
+    path: "{{ cloud_instances_state_dir }}"
+    state: directory
+    owner: eucalyptus
+    group: eucalyptus
+    mode: 0771
 
 - name: start eucalyptus-node service
   systemd:
