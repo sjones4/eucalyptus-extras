@@ -17,6 +17,8 @@ all:
   vars:
     cloud_address: "{{ ansible_default_ipv4.address }}"
     cloud_system_dns_dnsdomain: "ciab-{{ cloud_address|replace('.', '-') }}.euca.me"
+    cloud_firewalld_cluster_cidr: "{{ cloud_address }}/32"
+    cloud_firewalld_configure: yes
     
     # Memory should be increased where available
     # 8GiB will allow a cloud with a few micro instances

@@ -8,3 +8,19 @@ ceph_cluster_network: "{{ ceph_public_network }}"
 ceph_osd_data_path: /var/lib/ceph-osd/osd0
 
 ceph_facts: "{{ True if ('ceph' in groups and groups['ceph'] and not inventory_hostname in groups['ceph']) else False }}"
+
+cloud_firewalld_configure: no
+
+cloud_firewalld_cluster_cidr: Null
+
+cloud_firewalld_public_interface: "{{ ansible_default_ipv4.interface }}"
+
+cloud_firewalld_public_zone: public
+
+cloud_firewalld_cluster_interface: Null
+
+cloud_firewalld_cluster_zone: internal
+
+cloud_firewalld_default_zone: trusted
+
+cloud_firewalld_start: yes

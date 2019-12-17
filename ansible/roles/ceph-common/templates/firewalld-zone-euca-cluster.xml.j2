@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<zone>
+  <short>Eucalyptus Cloud Cluster Zone</short>
+  <description>Secure internal network for Eucalyptus cluster traffic</description>
+  <source address="{{ cloud_firewalld_cluster_cidr }}"/>
+  <rule family="ipv4">
+    <port protocol="tcp" port="0-65535"/>
+    <accept/>
+  </rule>
+  <rule family="ipv4">
+    <port protocol="udp" port="0-65535"/>
+    <accept/>
+  </rule>
+</zone>

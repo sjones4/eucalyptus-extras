@@ -9,3 +9,13 @@
   tags:
     - image
     - packages
+
+- name: install firewalld package
+  yum:
+    name: firewalld
+    state: present
+  tags:
+    - image
+    - packages
+    - firewalld
+  register: firewalld_package_result

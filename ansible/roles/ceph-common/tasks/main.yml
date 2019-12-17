@@ -7,6 +7,9 @@
 
 - import_tasks: base_config.yml
 
+- import_tasks: base_firewall.yml
+  when: cloud_firewalld_configure
+
 - import_tasks: ceph_facts.yml
   delegate_to: "{{ groups['ceph'][0] }}"
   run_once: yes

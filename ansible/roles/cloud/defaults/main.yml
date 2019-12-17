@@ -11,6 +11,12 @@ edge_gateway: "{{ ansible_default_ipv4.gateway }}"
 edge_private_ip_range: 192.168.254.150-192.168.254.199
 edge_public_ip_range: 192.168.254.200-192.168.254.249
 
+# Firewalld settings
+cloud_firewalld_configure: no
+cloud_firewalld_public_zone: public
+cloud_firewalld_vpcmidogw_zone: "{{ cloud_firewalld_public_zone }}"
+cloud_firewalld_vpcmidogw_interface: Null
+
 # Midonet settings
 midonet_cassandra_name: Eucalyptus Midonet Cluster
 midonet_cassandra_heap: Null

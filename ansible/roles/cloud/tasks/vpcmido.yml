@@ -239,6 +239,66 @@
   systemd:
     daemon_reload: true
 
+- name: eucalyptus firewalld midonet gateway service
+  template:
+    src: firewalld-service-euca-vpcmidogw.xml.j2
+    dest: /etc/firewalld/services/euca-vpcmidogw.xml
+    owner: root
+    group: root
+    mode: 0644
+  tags:
+    - firewalld
+
+- name: eucalyptus firewalld midonet gateway zone
+  template:
+    src: firewalld-zone-euca-vpcmidogw.xml.j2
+    dest: /etc/firewalld/zones/euca-vpcmidogw.xml
+    owner: root
+    group: root
+    mode: 0644
+  tags:
+    - firewalld
+
+- name: eucalyptus firewalld midonet gateway zone load
+  command:
+    cmd: firewall-cmd --permanent --new-zone euca-vpcmidogw
+  tags:
+    - firewalld
+  register: firewalld_result
+  failed_when: "firewalld_result is failed and 'NAME_CONFLICT' not in firewalld_result.stderr"
+  changed_when: '"NAME_CONFLICT" not in firewalld_result.stderr'
+  when: cloud_firewalld_configure
+
+- name: firewalld reload
+  systemd:
+    name: firewalld
+    state: reloaded
+  tags:
+    - firewalld
+  when: cloud_firewalld_configure and firewalld_result.changed
+
+- name: eucalyptus firewalld midonet gateway service for zone
+  firewalld:
+    zone: "{{ cloud_firewalld_vpcmidogw_zone }}"
+    service: euca-vpcmidogw
+    state: enabled
+    permanent: yes
+    immediate: "{{ cloud_firewalld_start }}"
+  tags:
+    - firewalld
+  when: cloud_firewalld_configure and cloud_firewalld_vpcmidogw_zone is not none
+
+- name: eucalyptus firewalld midonet gateway dedicated interface zone
+  firewalld:
+    zone: euca-vpcmidogw
+    interface: "{{ cloud_firewalld_vpcmidogw_interface }}"
+    state: enabled
+    permanent: yes
+    immediate: "{{ cloud_firewalld_start }}"
+  tags:
+    - firewalld
+  when: cloud_firewalld_configure and cloud_firewalld_vpcmidogw_interface is not none
+
 - name: eucalyptus tunnel zone midonet configuration
   template:
     src: eucalyptus-vpcmidotz-up.sh.j2

@@ -5,14 +5,13 @@
     state: permissive
   tags:
     - image
+    - selinux
 
-- name: disable firewalld
+- name: disable firewalld service if installed
   systemd:
-    enabled: no
-    state: stopped
+    enabled: false
     name: firewalld
   tags:
+    - firewalld
     - image
-  register: systemd_result
-  failed_when: "systemd_result is failed and 'Could not find the requested service' not in systemd_result.msg"
-
+  when: firewalld_package_result.changed

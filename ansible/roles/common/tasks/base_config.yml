@@ -6,16 +6,6 @@
   tags:
     - image
 
-- name: disable firewalld
-  systemd:
-    enabled: no
-    state: stopped
-    name: firewalld
-  tags:
-    - image
-  register: systemd_result
-  failed_when: "systemd_result is failed and 'Could not find the requested service' not in systemd_result.msg"
-
 - name: install eucalyptus package
   yum:
     name: eucalyptus
