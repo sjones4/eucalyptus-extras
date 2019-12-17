@@ -1,0 +1,15 @@
+[Unit]
+Description=Eucalyptus Midonet Gateway Network
+After=network.target
+
+[Service]
+Type=oneshot
+ExecStartPre=-/usr/sbin/ip link add {{ vpcmido_gw_srv_veth0 }} type veth peer name {{ vpcmido_gw_srv_veth1 }}
+ExecStartPre=-/usr/sbin/ip link set dev {{ vpcmido_gw_srv_veth0 }} up
+ExecStartPre=-/usr/sbin/ip link set dev {{ vpcmido_gw_srv_veth1 }} up
+ExecStartPre=-/usr/sbin/ip addr add {{ vpcmido_gw_ext_router_ip }}/{{ vpcmido_gw_srv_veth_prefix }} dev {{ vpcmido_gw_srv_veth0 }}
+ExecStartPre=-/usr/sbin/ip route add {{ vpcmido_public_ip_cidr }} via {{ vpcmido_gw_ext_ip }} dev {{ vpcmido_gw_srv_veth0 }}
+ExecStart=/usr/bin/true
+
+[Install]
+WantedBy=multi-user.target

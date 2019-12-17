@@ -1,0 +1,21 @@
+# Midonet default configuration, apply with:
+#
+#  mn-conf set -t default < /etc/midonet/midonet-default.conf
+#
+
+zookeeper {
+  zookeeper_hosts = "{{ eucalyptus_host_cluster_ipv4 }}:2181"
+}
+
+cassandra {
+  servers = "{{ eucalyptus_host_cluster_ipv4 }}"
+}
+
+cluster {
+  rest_api {
+    http_host = "127.0.0.1"
+    http_port = 8080
+    https_port = 0
+  }
+}
+

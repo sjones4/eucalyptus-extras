@@ -1,0 +1,103 @@
+---
+- import_tasks: vpcmido.yml
+  when: net_mode == "VPCMIDO"
+
+- name: install eucalyptus-node package
+  yum:
+    name: eucalyptus-node
+    state: present
+  tags:
+    - image
+    - packages
+
+- name: install eucanetd package
+  when: net_mode == "EDGE"
+  yum:
+    name: eucanetd
+    state: present
+  tags:
+    - image
+    - packages
+
+- name: kvm kernel module cpu passthrough option
+  copy:
+    content: "options kvm_intel nested=1"
+    dest: /etc/modprobe.d/eucalyptus-kvm-nested.conf
+    owner: root
+    group: root
+    mode: 0644
+  when: cloud_instances_conf_cpu_passthrough == "1"
+
+- name: kvm kernel module cpu passthrough runtime
+  shell: |
+    if modprobe -r kvm_intel; then
+      modprobe kvm_intel || true
+    fi
+  when: cloud_instances_conf_cpu_passthrough == "1"
+
+- name: start libvirtd service
+  systemd:
+    enabled: true
+    state: started
+    name: libvirtd
+
+- name: stop dnsmasq service
+  systemd:
+    enabled: false
+    state: stopped
+    name: dnsmasq
+  tags:
+    - image
+
+- name: ceph configuration directory
+  file:
+    path: /etc/ceph
+    state: directory
+    owner: root
+    group: root
+    mode: 0755
+
+- name: eucalyptus ceph configuration
+  copy:
+    content: "{{ eucalyptus_ceph_conf }}"
+    dest: /etc/ceph/ceph.conf
+    owner: root
+    group: root
+    mode: 0644
+  when: eucalyptus_ceph_conf is defined
+
+- name: eucalyptus ceph client keyring
+  copy:
+    content: "{{ eucalyptus_ceph_keyring }}"
+    dest: /etc/ceph/ceph.client.eucalyptus.keyring
+    owner: root
+    group: root
+    mode: 0644
+  when: eucalyptus_ceph_keyring is defined
+
+- name: virt remove default network
+  virt_net:
+    state: absent
+    name: default
+
+- name: eucalyptus-node instance state directory
+  file:
+    path: "{{ cloud_instances_state_dir }}"
+    state: directory
+    owner: eucalyptus
+    group: eucalyptus
+    mode: 0771
+
+- name: start eucalyptus-node service
+  systemd:
+    enabled: true
+    state: started
+    name: eucalyptus-node
+
+- name: start eucanetd service
+  when: net_mode == "EDGE"
+  systemd:
+    enabled: true
+    state: started
+    name: eucanetd
+

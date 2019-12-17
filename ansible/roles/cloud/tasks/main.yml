@@ -1,0 +1,226 @@
+---
+- import_tasks: vpcmido.yml
+  when: net_mode == "VPCMIDO"
+
+- name: install eucalyptus-cloud package
+  yum:
+    name: eucalyptus-cloud
+    state: present
+  tags:
+    - image
+    - packages
+
+- name: install eucalyptus-service-image package
+  yum:
+    name: eucalyptus-service-image
+    state: present
+  tags:
+    - image
+    - packages
+
+- name: install eucalyptus-walrus package
+  yum:
+    name: eucalyptus-walrus
+    state: present
+  tags:
+    - image
+    - packages
+  when: eucalyptus_ceph_conf is undefined
+
+- name: install eucanetd package
+  yum:
+    name: eucanetd
+    state: present
+  tags:
+    - image
+    - packages
+  when: net_mode == "VPCMIDO"
+
+- name: install nginx package
+  yum:
+    name: nginx
+    state: present
+  tags:
+    - image
+    - packages
+  when: net_mode == "VPCMIDO"
+
+- name: eucalyptus firewalld service
+  copy:
+    src: firewalld-service-eucalyptus.xml
+    dest: /etc/firewalld/services/eucalyptus.xml
+    owner: root
+    group: root
+    mode: 0644
+  tags:
+    - firewalld
+    - image
+  register: copy_result
+
+- name: firewalld reload
+  systemd:
+    name: firewalld
+    state: reloaded
+  tags:
+    - firewalld
+  when: cloud_firewalld_configure and copy_result.changed
+
+- name: eucalyptus service firewalld zone
+  firewalld:
+    zone: "{{ cloud_firewalld_public_zone }}"
+    service: eucalyptus
+    state: enabled
+    permanent: yes
+    immediate: "{{ cloud_firewalld_start }}"
+  tags:
+    - firewalld
+  when: cloud_firewalld_configure and cloud_firewalld_public_zone is not none
+
+- name: configure selinux bool httpd_can_network_connect
+  seboolean:
+    name: httpd_can_network_connect
+    persistent: yes
+    state: yes
+  tags:
+    - image
+  when: net_mode == "VPCMIDO"
+
+- name: eucalyptus network yaml
+  template:
+    src: network.yaml.j2
+    dest: /etc/eucalyptus/network.yaml
+    owner: root
+    group: root
+    mode: 0644
+
+- name: initialize eucalyptus cloud
+  command:
+    cmd: /usr/sbin/clcadmin-initialize-cloud
+    creates: /var/lib/eucalyptus/keys/cloud-cert.pem
+
+- name: start eucalyptus-cloud service
+  systemd:
+    enabled: true
+    state: started
+    name: eucalyptus-cloud
+
+- name: start eucanetd service
+  systemd:
+    enabled: true
+    state: started
+    name: eucanetd
+  when: net_mode == "VPCMIDO"
+
+- name: wait for cloud services
+  wait_for:
+    sleep: 10
+    port: 8773
+    timeout: 180
+
+- name: register services
+  shell: |
+    UFS_HOSTS="{{ groups['cloud'] | map('extract', hostvars, ['eucalyptus_host_cluster_ipv4']) | list | join(' ') }}"
+    ZONE_HOSTS="{{ groups['zone'] | map('extract', hostvars, ['eucalyptus_host_cluster_ipv4']) | list | join(' ') }}"
+    
+    eval $(clcadmin-assume-system-credentials)
+    
+    for UFS_HOST in ${UFS_HOSTS} ; do
+      euserv-register-service -t user-api -z API_${UFS_HOST} -h ${UFS_HOST} API_${UFS_HOST}
+      euserv-register-service -t walrusbackend -h ${UFS_HOST} WALRUS_${UFS_HOST}
+    done
+    
+    for ZONE_HOST in ${ZONE_HOSTS} ; do
+      euserv-register-service -t cluster -h ${ZONE_HOST} -z {{ cloud_zone_1_name }} CLUSTER_${ZONE_HOST}
+      euserv-register-service -t storage -h ${ZONE_HOST} -z {{ cloud_zone_1_name }} STORAGE_${ZONE_HOST}
+    done
+  register: shell_result
+  until: shell_result.rc == 0
+  retries: 5
+
+- name: copy zone keys
+  shell: |
+    CURRENT_HOST="{{ eucalyptus_host_cluster_ipv4 }}"
+    ZONE_HOSTS="{{ groups['zone'] | map('extract', hostvars, ['eucalyptus_host_cluster_ipv4']) | list | join(' ') }}"
+    for ZONE_HOST in ${ZONE_HOSTS} ; do
+      if [ "${CURRENT_HOST}" = "${ZONE_HOST}" ] ; then
+        cp -f /var/lib/eucalyptus/keys/{{ cloud_zone_1_name }}/{cluster,node}-{cert,pk}.pem /var/lib/eucalyptus/keys/
+      else
+        clcadmin-copy-keys -z {{ cloud_zone_1_name }} ${ZONE_HOST}
+      fi
+    done
+
+- name: configure cloud properties
+  shell: |
+    eval $(clcadmin-assume-system-credentials)
+    euctl system.dns.dnsdomain={{ cloud_system_dns_dnsdomain }}
+    euctl region.region_name={{ cloud_region_region_name }}
+    euctl bootstrap.webservices.use_instance_dns=true
+    euctl bootstrap.webservices.use_dns_delegation=true
+    euctl cloud.network.network_configuration=@/etc/eucalyptus/network.yaml
+
+- name: configure cloud storage properties for walrus / overlay
+  shell: |
+    eval $(clcadmin-assume-system-credentials)
+    euctl objectstorage.providerclient=walrus
+    euctl {{ cloud_zone_1_name }}.storage.blockstoragemanager=overlay
+  when: eucalyptus_ceph_conf is undefined
+
+- name: configure cloud storage properties for ceph
+  shell: |
+    eval $(clcadmin-assume-system-credentials)
+    euctl objectstorage.s3provider.s3endpoint={{ eucalyptus_ceph_rgw_endpoint }}
+    euctl objectstorage.s3provider.s3accesskey={{ eucalyptus_ceph_rgw_creds.access_key }}
+    euctl objectstorage.s3provider.s3secretkey={{ eucalyptus_ceph_rgw_creds.secret_key }}
+    euctl objectstorage.s3provider.s3endpointheadresponse=200
+    euctl objectstorage.providerclient=ceph-rgw
+    euctl {{ cloud_zone_1_name }}.storage.cephsnapshotpools=eucasnapshots
+    euctl {{ cloud_zone_1_name }}.storage.cephvolumepools=eucavolumes
+    euctl {{ cloud_zone_1_name }}.storage.blockstoragemanager=ceph-rbd
+  when: eucalyptus_ceph_conf is defined
+
+- name: install service image
+  shell: |
+    eval $(clcadmin-assume-system-credentials)
+    esi-install-image --region localhost --install-default
+  register: shell_result
+  changed_when: '"is already registered." not in shell_result.stderr'
+  failed_when:
+    - shell_result.rc != 0
+    - '"is already registered." not in shell_result.stderr'
+
+- name: enable imaging service
+  shell: |
+    eval $(clcadmin-assume-system-credentials)
+    eval $(euca-generate-environment-config --region localhost)
+    esi-manage-stack --region localhost -a create imaging
+  register: shell_result
+  changed_when: '"is already created." not in shell_result.stdout'
+
+- name: tools configuration directory
+  file:
+    path: /root/.euca
+    state: directory
+    owner: root
+    group: root
+    mode: 0755
+
+- name: tools configure default region
+  template:
+    src: global.ini.j2
+    dest: /root/.euca/global.ini
+    owner: root
+    group: root
+    mode: 0644
+
+- name: generate admin credentials / configuration
+  shell: |
+    eval $(clcadmin-assume-system-credentials)
+    euare-useraddkey --write-config --domain {{ cloud_system_dns_dnsdomain }} --set-default-user admin > /root/.euca/admin.ini
+  args:
+    creates: /root/.euca/admin.ini
+
+- name: configure cloud listener address match
+  shell: |
+    eval $(clcadmin-assume-system-credentials)
+    euctl --region admin@localhost bootstrap.webservices.listener_address_match={{ cloud_listener_cidr }}
+

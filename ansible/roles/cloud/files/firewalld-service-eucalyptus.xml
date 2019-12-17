@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<service>
+  <short>Eucalyptus Cloud</short>
+  <description>Public endpoints for Eucalyptus Cloud web services (see also dns, http and https)</description>
+  <port protocol="tcp" port="8773"/>
+</service>

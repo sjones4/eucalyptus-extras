@@ -1,0 +1,7 @@
+[midokura]
+name=Midokura Enterprise MidoNet
+baseurl=http://builds.midonet.org/midonet-5.2/stable/el7/
+enabled=1
+fastestmirror_enabled=0
+gpgcheck=1
+gpgkey=file:///etc/pki/rpm-gpg/RPM-GPG-KEY-midokura

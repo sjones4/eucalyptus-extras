@@ -1,0 +1,97 @@
+---
+- name: ceph-deploy new cluster
+  command:
+    chdir: /home/ceph-deploy/cluster
+    cmd: "ceph-deploy {{ ceph_deploy_opts }} new --cluster-network {{ ceph_cluster_network }} --public-network {{ ceph_public_network }} {{ ansible_hostname }}"
+
+- name: ceph custom configuration
+  blockinfile:
+    path: /home/ceph-deploy/cluster/ceph.conf
+    block: |
+      osd_pool_default_size = 1
+      osd_pool_default_min_size = 1
+      
+      [client.rgw.{{ ansible_hostname }}]
+      rgw_frontends = civetweb port={{ eucalyptus_host_cluster_ipv4 }}:7480
+      
+      [mon.{{ ansible_hostname }}]
+      host = {{ ansible_hostname }}
+      mon addr = {{ eucalyptus_host_cluster_ipv4 }}:6789
+
+- name: ceph-deploy install
+  command:
+    chdir: /home/ceph-deploy/cluster
+    cmd: "ceph-deploy {{ ceph_deploy_opts }} install --no-adjust-repos --release {{ ceph_release }} {{ ansible_hostname }}"
+
+- name: ceph-deploy initial mon
+  command:
+    chdir: /home/ceph-deploy/cluster
+    cmd: ceph-deploy {{ ceph_deploy_opts }} mon create-initial
+
+- name: ceph-deploy admin keys
+  command:
+    chdir: /home/ceph-deploy/cluster
+    cmd: "ceph-deploy {{ ceph_deploy_opts }} admin {{ ansible_hostname }}"
+
+- name: directory for ceph bootstrap keys
+  file:
+    path: /var/lib/ceph/bootstrap-osd
+    state: directory
+    mode: 0750
+    owner: ceph
+  become: no
+
+- name: copy bootstrap keys
+  copy:
+    remote_src: yes
+    src: /home/ceph-deploy/cluster/ceph.bootstrap-osd.keyring
+    dest: /var/lib/ceph/bootstrap-osd/ceph.keyring
+    mode: 0600
+    owner: ceph
+  become: no
+  when: not ansible_check_mode
+
+- name: create manager
+  command:
+    chdir: /home/ceph-deploy/cluster
+    cmd: "ceph-deploy {{ ceph_deploy_opts }} mgr create {{ ansible_hostname }}"
+  when: ceph_mgr_create
+
+- name: directory for ceph osds
+  file:
+    path: "{{ ceph_osd_data_path }}"
+    state: directory
+    mode: 0755
+    owner: ceph
+  become: no
+  when: ceph_osd_data_path is match("/.*") and ceph_osd_data_path is not match("/dev/.*")
+
+- name: create osds
+  command:
+    chdir: /home/ceph-deploy/cluster
+    cmd: "ceph-deploy {{ ceph_deploy_opts }} osd create --data {{ ceph_osd_data_path }} {{ ansible_hostname }}"
+  when: ceph_osd_create
+
+- name: prepare osds
+  command:
+    chdir: /home/ceph-deploy/cluster
+    cmd: "ceph-deploy {{ ceph_deploy_opts }} osd prepare {{ ansible_hostname }}:{{ ceph_osd_data_path }}"
+  when: not ceph_osd_create
+
+- name: activate osds
+  command:
+    chdir: /home/ceph-deploy/cluster
+    cmd: "ceph-deploy {{ ceph_deploy_opts }} osd activate {{ ansible_hostname }}:{{ ceph_osd_data_path }}"
+  when: not ceph_osd_create
+
+- name: ceph-deploy rgw install hammer
+  command:
+    chdir: /home/ceph-deploy/cluster
+    cmd: "ceph-deploy {{ ceph_deploy_opts }} install --release {{ ceph_release }} --rgw {{ ansible_hostname }}"
+  when: ceph_release == "hammer"
+
+- name: ceph-deploy rgw create
+  command:
+    chdir: /home/ceph-deploy/cluster
+    cmd: "ceph-deploy {{ ceph_deploy_opts }} rgw create {{ ansible_hostname }}"
+

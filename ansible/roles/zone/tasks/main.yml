@@ -1,0 +1,68 @@
+---
+- name: install eucalyptus-cluster package
+  yum:
+    name: eucalyptus-cluster
+    state: present
+  tags:
+    - image
+    - packages
+
+- name: install eucalyptus-storage package
+  yum:
+    name: eucalyptus-storage
+    state: present
+  tags:
+    - image
+    - packages
+
+- name: set selinux storage boolean
+  seboolean:
+    name: eucalyptus_storage_controller
+    state: yes
+    persistent: yes
+  tags:
+    - image
+    - packages
+
+- name: eucalyptus ceph configuration
+  copy:
+    content: "{{ eucalyptus_ceph_conf }}"
+    dest: /etc/ceph/ceph.conf
+    owner: root
+    group: root
+    mode: 0644
+  when: eucalyptus_ceph_conf is defined
+
+- name: eucalyptus ceph client keyring
+  copy:
+    content: "{{ eucalyptus_ceph_keyring }}"
+    dest: /etc/ceph/ceph.client.eucalyptus.keyring
+    owner: root
+    group: root
+    mode: 0644
+  when: eucalyptus_ceph_keyring is defined
+
+- name: start tgtd service
+  systemd:
+    enabled: true
+    state: started
+    name: tgtd
+  when: eucalyptus_ceph_conf is undefined
+
+- name: start eucalyptus-cloud service
+  systemd:
+    enabled: true
+    state: started
+    name: eucalyptus-cloud
+
+- name: register node controllers
+  shell: |
+    CURRENT_HOST="{{ eucalyptus_host_cluster_ipv4 }}"
+    NODE_HOSTS="{{ groups['node'] | map('extract', hostvars, ['eucalyptus_host_cluster_ipv4']) | list | join(' ') }}"
+    clusteradmin-register-nodes ${NODE_HOSTS}
+    for NODE_HOST in ${NODE_HOSTS} ; do
+      if [ "${CURRENT_HOST}" != "${NODE_HOST}" ] ; then
+        clusteradmin-copy-keys ${NODE_HOST}
+      fi
+    done
+
