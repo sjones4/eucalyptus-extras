@@ -75,6 +75,20 @@
     mode: 0644
   when: eucalyptus_ceph_keyring is defined
 
+- name: eucalyptus zone/node keys for node
+  copy:
+    content: "{{ hostvars[inventory_hostname]['eucalyptus_keys_' + (cloud_zone_1_name | replace('-','_')) + '_' + (item | replace('-','_'))] }}"
+    dest: "/var/lib/eucalyptus/keys/{{ item }}.pem"
+    owner: eucalyptus
+    group: eucalyptus
+    mode: 0700
+    force: no
+  loop:
+  - cloud-cert
+  - cluster-cert
+  - node-cert
+  - node-pk
+
 - name: virt remove default network
   virt_net:
     state: absent

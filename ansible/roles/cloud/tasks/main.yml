@@ -137,18 +137,6 @@
   until: shell_result.rc == 0
   retries: 5
 
-- name: copy zone keys
-  shell: |
-    CURRENT_HOST="{{ eucalyptus_host_cluster_ipv4 }}"
-    ZONE_HOSTS="{{ groups['zone'] | map('extract', hostvars, ['eucalyptus_host_cluster_ipv4']) | list | join(' ') }}"
-    for ZONE_HOST in ${ZONE_HOSTS} ; do
-      if [ "${CURRENT_HOST}" = "${ZONE_HOST}" ] ; then
-        cp -f /var/lib/eucalyptus/keys/{{ cloud_zone_1_name }}/{cluster,node}-{cert,pk}.pem /var/lib/eucalyptus/keys/
-      else
-        clcadmin-copy-keys -z {{ cloud_zone_1_name }} ${ZONE_HOST}
-      fi
-    done
-
 - name: configure cloud properties
   shell: |
     eval $(clcadmin-assume-system-credentials)

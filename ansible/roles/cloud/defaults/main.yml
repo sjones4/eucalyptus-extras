@@ -1,7 +1,6 @@
 ---
 # Cloud settings
 cloud_region_region_name: eucalyptus
-cloud_zone_1_name: one
 cloud_listener_cidr: 0.0.0.0/0
 
 # EDGE network settings

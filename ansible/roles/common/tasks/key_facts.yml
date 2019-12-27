@@ -1,0 +1,41 @@
+---
+- name: eucalyptus zone/node keys get cloud-cert
+  slurp:
+    path: /var/lib/eucalyptus/keys/{{ cloud_zone_1_name }}/cloud-cert.pem
+  register: slurp_result
+
+- name: set eucalyptus zone/node keys cloud-cert fact
+  set_fact: "eucalyptus_keys_{{ cloud_zone_1_name | replace('-','_') }}_cloud_cert='{{ slurp_result.content | b64decode }}'"
+
+- name: eucalyptus zone/node keys get cluster-cert
+  slurp:
+    path: /var/lib/eucalyptus/keys/{{ cloud_zone_1_name }}/cluster-cert.pem
+  register: slurp_result
+
+- name: set eucalyptus zone/node keys cluster-cert fact
+  set_fact: "eucalyptus_keys_{{ cloud_zone_1_name | replace('-','_') }}_cluster_cert='{{ slurp_result.content | b64decode }}'"
+
+- name: eucalyptus zone/node keys get cluster-pk
+  slurp:
+    path: /var/lib/eucalyptus/keys/{{ cloud_zone_1_name }}/cluster-pk.pem
+  register: slurp_result
+
+- name: set eucalyptus zone/node keys cluster-pk fact
+  set_fact: "eucalyptus_keys_{{ cloud_zone_1_name | replace('-','_') }}_cluster_pk='{{ slurp_result.content | b64decode }}'"
+
+- name: eucalyptus zone/node keys get node-cert
+  slurp:
+    path: /var/lib/eucalyptus/keys/{{ cloud_zone_1_name }}/node-cert.pem
+  register: slurp_result
+
+- name: set eucalyptus zone/node keys node-cert fact
+  set_fact: "eucalyptus_keys_{{ cloud_zone_1_name | replace('-','_') }}_node_cert='{{ slurp_result.content | b64decode }}'"
+
+- name: eucalyptus zone/node keys get node-pk
+  slurp:
+    path: /var/lib/eucalyptus/keys/{{ cloud_zone_1_name }}/node-pk.pem
+  register: slurp_result
+
+- name: set eucalyptus zone/node keys node-pk fact
+  set_fact: "eucalyptus_keys_{{ cloud_zone_1_name | replace('-','_') }}_node_pk='{{ slurp_result.content | b64decode }}'"
+
