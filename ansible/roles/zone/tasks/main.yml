@@ -50,7 +50,7 @@
     group: eucalyptus
     mode: 0700
     force: no
-  loop:
+  with_items:
   - cloud-cert
   - cluster-cert
   - cluster-pk
