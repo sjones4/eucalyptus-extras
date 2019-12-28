@@ -14,3 +14,7 @@
 
 - import_tasks: base_config.yml
 
+- import_tasks: key_facts.yml
+  delegate_to: "{{ groups['cloud'][0] }}"
+  run_once: yes
+  when: key_facts

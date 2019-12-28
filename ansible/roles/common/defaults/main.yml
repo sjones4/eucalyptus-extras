@@ -4,6 +4,7 @@ eucalyptus_yum_baseurl: http://downloads.eucalyptus.cloud/software/eucalyptus/sn
 euca2ools_yum_baseurl: http://downloads.eucalyptus.cloud/software/euca2ools/3.4/rhel/7/x86_64/
 
 # Cloud settings
+cloud_zone_1_name: one
 cloud_opts: "{{cloud_opts_tech_preview}} {{cloud_opts_mem}} {{cloud_opts_custom}} {{cloud_opts_bindaddr}}"
 cloud_opts_custom: ""
 cloud_opts_mem: "-Xmx2g"
@@ -40,3 +41,5 @@ net_public_interface: en1
 net_bridge_interface: "{{ net_mode_[net_mode_lower]['bridge_interface'] }}"
 net_node_router_ip: AUTO
 
+# Role settings
+key_facts: no

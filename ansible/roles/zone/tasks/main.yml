@@ -42,6 +42,21 @@
     mode: 0644
   when: eucalyptus_ceph_keyring is defined
 
+- name: eucalyptus zone/node keys for zone
+  copy:
+    content: "{{ hostvars[inventory_hostname]['eucalyptus_keys_' + (cloud_zone_1_name | replace('-','_')) + '_' + (item | replace('-','_'))] }}"
+    dest: "/var/lib/eucalyptus/keys/{{ item }}.pem"
+    owner: eucalyptus
+    group: eucalyptus
+    mode: 0700
+    force: no
+  loop:
+  - cloud-cert
+  - cluster-cert
+  - cluster-pk
+  - node-cert
+  - node-pk
+
 - name: start tgtd service
   systemd:
     enabled: true
@@ -57,12 +72,6 @@
 
 - name: register node controllers
   shell: |
-    CURRENT_HOST="{{ eucalyptus_host_cluster_ipv4 }}"
     NODE_HOSTS="{{ groups['node'] | map('extract', hostvars, ['eucalyptus_host_cluster_ipv4']) | list | join(' ') }}"
     clusteradmin-register-nodes ${NODE_HOSTS}
-    for NODE_HOST in ${NODE_HOSTS} ; do
-      if [ "${CURRENT_HOST}" != "${NODE_HOST}" ] ; then
-        clusteradmin-copy-keys ${NODE_HOST}
-      fi
-    done
 
