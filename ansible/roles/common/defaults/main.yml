@@ -1,7 +1,10 @@
 ---
 # Eucalyptus package repositories
-eucalyptus_yum_baseurl: http://downloads.eucalyptus.cloud/software/eucalyptus/snapshot/5/rhel/7/x86_64/
+eucalyptus_yum_baseurl_master: http://downloads.eucalyptus.cloud/software/eucalyptus/master/rhel/7/x86_64/
+eucalyptus_yum_baseurl_snapshot: http://downloads.eucalyptus.cloud/software/eucalyptus/snapshot/5/rhel/7/x86_64/
+eucalyptus_yum_baseurl: "{{ eucalyptus_yum_baseurl_snapshot }}"
 euca2ools_yum_baseurl: http://downloads.eucalyptus.cloud/software/euca2ools/3.4/rhel/7/x86_64/
+eucalyptus_yum_gpgcheck: "1"
 
 # Cloud settings
 cloud_zone_1_name: one
