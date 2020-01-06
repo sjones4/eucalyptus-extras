@@ -2,6 +2,7 @@
 # Cloud settings
 cloud_region_region_name: eucalyptus
 cloud_listener_cidr: 0.0.0.0/0
+cloud_properties: {}
 
 # EDGE network settings
 edge_subnet: "{{ ansible_default_ipv4.network }}"
