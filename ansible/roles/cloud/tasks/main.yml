@@ -209,9 +209,9 @@
 - name: generate admin credentials / configuration
   shell: |
     eval $(clcadmin-assume-system-credentials)
-    euare-useraddkey --write-config --domain {{ cloud_system_dns_dnsdomain }} --set-default-user admin > /root/.euca/admin.ini
+    euare-useraddkey --write-config --domain {{ cloud_system_dns_dnsdomain }} --set-default-user admin > /root/.euca/euca-admin.ini
   args:
-    creates: /root/.euca/admin.ini
+    creates: /root/.euca/euca-admin.ini
 
 - name: configure cloud listener address match
   shell: |
