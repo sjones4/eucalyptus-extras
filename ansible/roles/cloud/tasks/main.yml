@@ -166,6 +166,12 @@
     euctl {{ cloud_zone_1_name }}.storage.blockstoragemanager=ceph-rbd
   when: eucalyptus_ceph_conf is defined
 
+- name: configure custom cloud properties
+  shell: |
+    eval $(clcadmin-assume-system-credentials)
+    euctl {{ item.key }}={{ item.value | quote }}
+  with_dict: "{{ cloud_properties }}"
+
 - name: install service image
   shell: |
     eval $(clcadmin-assume-system-credentials)
