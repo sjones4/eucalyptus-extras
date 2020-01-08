@@ -1,0 +1,3 @@
+---
+eucaconsole_product: "{{ eucalyptus_product }}"
+eucaconsole_ats_product_url: https://www.appscale.com/product/

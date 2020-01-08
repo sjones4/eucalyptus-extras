@@ -44,6 +44,9 @@
     regexp: '^(\s+)daemon /usr/sbin/nginx(.+)$'
     replace: '\1daemon --pidfile ${NGINXPIDFILE} /usr/sbin/nginx\2'
 
+- import_tasks: ats.yml
+  when: eucaconsole_product == "ats"
+
 - name: start eucaconsole service
   systemd:
     enabled: true
