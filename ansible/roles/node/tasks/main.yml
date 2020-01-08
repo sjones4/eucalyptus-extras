@@ -21,7 +21,9 @@
 
 - name: kvm kernel module cpu passthrough option
   copy:
-    content: "options kvm_intel nested=1"
+    content: |
+      options kvm_amd nested=1
+      options kvm_intel nested=1
     dest: /etc/modprobe.d/eucalyptus-kvm-nested.conf
     owner: root
     group: root
@@ -30,7 +32,10 @@
 
 - name: kvm kernel module cpu passthrough runtime
   shell: |
-    if modprobe -r kvm_intel; then
+    if grep -q AMD /proc/cpuinfo && modprobe -r kvm_amd; then
+      modprobe kvm_amd || true
+    fi
+    if grep -q Intel /proc/cpuinfo && modprobe -r kvm_intel; then
       modprobe kvm_intel || true
     fi
   when: cloud_instances_conf_cpu_passthrough == "1"
