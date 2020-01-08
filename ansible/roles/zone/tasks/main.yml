@@ -70,8 +70,3 @@
     state: started
     name: eucalyptus-cloud
 
-- name: register node controllers
-  shell: |
-    NODE_HOSTS="{{ groups['node'] | map('extract', hostvars, ['eucalyptus_host_cluster_ipv4']) | list | join(' ') }}"
-    clusteradmin-register-nodes ${NODE_HOSTS}
-
