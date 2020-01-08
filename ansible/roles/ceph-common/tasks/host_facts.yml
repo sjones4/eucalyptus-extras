@@ -3,4 +3,3 @@
   set_fact:
     eucalyptus_host_cluster_ipv4: "{{ host_cluster_ipv4 | default(ansible_default_ipv4.address) }}"
     eucalyptus_host_public_ipv4: "{{ host_public_ipv4 | default(ansible_default_ipv4.address) }}"
-  run_once: yes
