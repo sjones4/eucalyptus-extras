@@ -66,6 +66,19 @@
   become: no
   when: ceph_osd_data_path is match("/.*") and ceph_osd_data_path is not match("/dev/.*")
 
+- name: logical volume for ceph osds
+  shell: |
+    VGLV_PATH={{ ceph_osd_data_path | quote }}
+    VG_NAME="${VGLV_PATH%%/*}"
+    LV_NAME="${VGLV_PATH##*/}"
+    if vgs "${VG_NAME}" && ! lvs "${VGLV_PATH}" ; then
+      lvcreate --extents 100%VG --addtag eucalyptus.provisioned=yes --name "${LV_NAME}" "${VG_NAME}"
+    fi
+  become: no
+  when: ceph_osd_data_path is match("[a-zA-Z0-9+_.-]+/[a-zA-Z0-9+_.-]+")
+  register: shell_result
+  changed_when: '"created" in shell_result.stdout'
+
 - name: create osds
   command:
     chdir: /home/ceph-deploy/cluster

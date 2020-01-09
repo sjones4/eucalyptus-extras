@@ -210,6 +210,23 @@
     path: /etc/ceph
     state: absent
 
+- name: unmount ceph temporary filesystems
+  shell: |
+    for CEPH_MOUNT in $(findmnt --type tmpfs --mtab --raw --noheadings | grep -oE '/var/lib/ceph/[a-zA-Z0-9_/-]+'); do
+      echo "Unmounting ${CEPH_MOUNT}"
+      umount "${CEPH_MOUNT}"
+    done
+  register: shell_result
+  changed_when: '"Unmounting" in shell_result.stdout'
+
+- name: remove provisioned ceph logical volumes
+  shell: |
+    for CEPH_LV_PATH in $(lvs --noheadings -o path @eucalyptus.provisioned=yes); do
+      lvremove --force "${CEPH_LV_PATH}"
+    done
+  register: shell_result
+  changed_when: '"successfully removed" in shell_result.stdout'
+
 - name: remove ceph state directory
   file:
     path: /var/lib/ceph
