@@ -130,8 +130,8 @@
     done
     
     for ZONE_HOST in ${ZONE_HOSTS} ; do
-      euserv-register-service -t cluster -h ${ZONE_HOST} -z {{ cloud_zone_1_name }} CLUSTER_${ZONE_HOST}
-      euserv-register-service -t storage -h ${ZONE_HOST} -z {{ cloud_zone_1_name }} STORAGE_${ZONE_HOST}
+      euserv-register-service -t cluster -h ${ZONE_HOST} -z {{ cloud_zone_1_name | quote }} CLUSTER_${ZONE_HOST}
+      euserv-register-service -t storage -h ${ZONE_HOST} -z {{ cloud_zone_1_name | quote }} STORAGE_${ZONE_HOST}
     done
   register: shell_result
   until: shell_result.rc == 0
@@ -140,8 +140,8 @@
 - name: configure cloud properties
   shell: |
     eval $(clcadmin-assume-system-credentials)
-    euctl system.dns.dnsdomain={{ cloud_system_dns_dnsdomain }}
-    euctl region.region_name={{ cloud_region_region_name }}
+    euctl system.dns.dnsdomain={{ cloud_system_dns_dnsdomain | quote }}
+    euctl region.region_name={{ cloud_region_region_name | quote }}
     euctl bootstrap.webservices.use_instance_dns=true
     euctl bootstrap.webservices.use_dns_delegation=true
     euctl cloud.network.network_configuration=@/etc/eucalyptus/network.yaml
@@ -150,20 +150,20 @@
   shell: |
     eval $(clcadmin-assume-system-credentials)
     euctl objectstorage.providerclient=walrus
-    euctl {{ cloud_zone_1_name }}.storage.blockstoragemanager=overlay
+    euctl {{ cloud_zone_1_name | quote }}.storage.blockstoragemanager=overlay
   when: eucalyptus_ceph_conf is undefined
 
 - name: configure cloud storage properties for ceph
   shell: |
     eval $(clcadmin-assume-system-credentials)
-    euctl objectstorage.s3provider.s3endpoint={{ eucalyptus_ceph_rgw_endpoint }}
-    euctl objectstorage.s3provider.s3accesskey={{ eucalyptus_ceph_rgw_creds.access_key }}
-    euctl objectstorage.s3provider.s3secretkey={{ eucalyptus_ceph_rgw_creds.secret_key }}
+    euctl objectstorage.s3provider.s3endpoint={{ eucalyptus_ceph_rgw_endpoint | quote }}
+    euctl objectstorage.s3provider.s3accesskey={{ eucalyptus_ceph_rgw_creds.access_key | quote }}
+    euctl objectstorage.s3provider.s3secretkey={{ eucalyptus_ceph_rgw_creds.secret_key | quote }}
     euctl objectstorage.s3provider.s3endpointheadresponse=200
     euctl objectstorage.providerclient=ceph-rgw
-    euctl {{ cloud_zone_1_name }}.storage.cephsnapshotpools=eucasnapshots
-    euctl {{ cloud_zone_1_name }}.storage.cephvolumepools=eucavolumes
-    euctl {{ cloud_zone_1_name }}.storage.blockstoragemanager=ceph-rbd
+    euctl {{ cloud_zone_1_name | quote }}.storage.cephsnapshotpools=eucasnapshots
+    euctl {{ cloud_zone_1_name | quote }}.storage.cephvolumepools=eucavolumes
+    euctl {{ cloud_zone_1_name | quote }}.storage.blockstoragemanager=ceph-rbd
   when: eucalyptus_ceph_conf is defined
 
 - name: configure custom cloud properties
@@ -209,12 +209,12 @@
 - name: generate admin credentials / configuration
   shell: |
     eval $(clcadmin-assume-system-credentials)
-    euare-useraddkey --write-config --domain {{ cloud_system_dns_dnsdomain }} --set-default-user admin > /root/.euca/euca-admin.ini
+    euare-useraddkey --write-config --domain {{ cloud_system_dns_dnsdomain | quote }} --set-default-user admin > /root/.euca/euca-admin.ini
   args:
     creates: /root/.euca/euca-admin.ini
 
 - name: configure cloud listener address match
   shell: |
     eval $(clcadmin-assume-system-credentials)
-    euctl --region admin@localhost bootstrap.webservices.listener_address_match={{ cloud_listener_cidr }}
+    euctl --region admin@localhost bootstrap.webservices.listener_address_match={{ cloud_listener_cidr | quote }}
 
