@@ -117,7 +117,7 @@
     port: 8773
     timeout: 180
 
-- name: register services
+- name: register user facing and zone services
   shell: |
     UFS_HOSTS="{{ groups['cloud'] | map('extract', hostvars, ['eucalyptus_host_cluster_ipv4']) | list | join(' ') }}"
     ZONE_HOSTS="{{ groups['zone'] | map('extract', hostvars, ['eucalyptus_host_cluster_ipv4']) | list | join(' ') }}"
@@ -126,7 +126,6 @@
     
     for UFS_HOST in ${UFS_HOSTS} ; do
       euserv-register-service -t user-api -z API_${UFS_HOST} -h ${UFS_HOST} API_${UFS_HOST}
-      euserv-register-service -t walrusbackend -h ${UFS_HOST} WALRUS_${UFS_HOST}
     done
     
     for ZONE_HOST in ${ZONE_HOSTS} ; do
@@ -136,6 +135,16 @@
   register: shell_result
   until: shell_result.rc == 0
   retries: 5
+
+- name: register walrus backend service
+  shell: |
+    eval $(clcadmin-assume-system-credentials)
+    CLC_HOST={{ eucalyptus_host_cluster_ipv4 | quote  }}
+    euserv-register-service -t walrusbackend -h ${CLC_HOST} WALRUS_${CLC_HOST}
+  register: shell_result
+  until: shell_result.rc == 0
+  retries: 5
+  when: eucalyptus_ceph_conf is undefined
 
 - name: configure cloud properties
   shell: |
