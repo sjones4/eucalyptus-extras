@@ -15,9 +15,12 @@
       ProtectHome=false
   when: "'/home/' in ceph_osd_data_path"
 
-- name: install ceph-deploy package
+# nautilus (14.2.6) ceph-deploy fails unless python-setuptools is present
+- name: install ceph-deploy package and dependencies
   yum:
-    name: ceph-deploy
+    name:
+      - ceph-deploy
+      - python-setuptools
     state: present
 
 - name: ceph-deploy user
