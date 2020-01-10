@@ -11,6 +11,6 @@
   when: cloud_firewalld_configure
 
 - import_tasks: ceph_facts.yml
-  delegate_to: "{{ groups['ceph'][0] }}"
+  delegate_to: "{{ groups['ceph_deploy'][0] }}"
   run_once: yes
   when: ceph_facts

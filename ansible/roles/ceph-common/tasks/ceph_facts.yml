@@ -27,5 +27,5 @@
 
 - name: set eucalyptus ceph radosgw s3 endpoint fact
   set_fact:
-    eucalyptus_ceph_rgw_endpoint: "{{ hostvars[groups['ceph'][0]]['eucalyptus_host_cluster_ipv4'] }}:7480"
+    eucalyptus_ceph_rgw_endpoint: "{{ hostvars[groups['ceph_object_gateway'][0]]['eucalyptus_host_cluster_ipv4'] }}:7480"
 

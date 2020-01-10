@@ -2,26 +2,40 @@
 - name: ceph-deploy new cluster
   command:
     chdir: /home/ceph-deploy/cluster
-    cmd: "ceph-deploy {{ ceph_deploy_opts }} new --cluster-network {{ ceph_cluster_network }} --public-network {{ ceph_public_network }} {{ ansible_hostname }}"
+    cmd: "ceph-deploy {{ ceph_deploy_opts }} new --cluster-network {{ ceph_cluster_network }} --public-network {{ ceph_public_network }} {{ groups['ceph'] | map('extract', hostvars, ['ansible_hostname']) | list | join(' ') }}"
 
-- name: ceph custom configuration
+- name: ceph custom configuration for osd pool size
   blockinfile:
     path: /home/ceph-deploy/cluster/ceph.conf
+    marker: '# {mark} eucalyptus ceph osd pool size configuration'
     block: |
       osd_pool_default_size = 1
       osd_pool_default_min_size = 1
-      
-      [client.rgw.{{ ansible_hostname }}]
-      rgw_frontends = civetweb port={{ eucalyptus_host_cluster_ipv4 }}:7480
-      
-      [mon.{{ ansible_hostname }}]
-      host = {{ ansible_hostname }}
-      mon addr = {{ eucalyptus_host_cluster_ipv4 }}:6789
+  when: groups.ceph|length < 3
+
+- name: ceph custom configuration for rgw frontends
+  blockinfile:
+    path: /home/ceph-deploy/cluster/ceph.conf
+    marker: '# {mark} eucalyptus ceph rgw {{ hostvars[item].ansible_hostname }} configuration'
+    block: |
+      [client.rgw.{{ hostvars[item].ansible_hostname }}]
+      rgw_frontends = civetweb port={{ hostvars[item].eucalyptus_host_cluster_ipv4 }}:7480
+  with_items: "{{ groups.ceph_object_gateway }}"
+
+- name: ceph custom configuration for mons
+  blockinfile:
+    path: /home/ceph-deploy/cluster/ceph.conf
+    marker: '# {mark} eucalyptus ceph mon {{ hostvars[item].ansible_hostname }} configuration'
+    block: |
+      [mon.{{ hostvars[item].ansible_hostname }}]
+      host = {{ hostvars[item].ansible_hostname }}
+      mon addr = {{ hostvars[item].eucalyptus_host_cluster_ipv4 }}:6789
+  with_items: "{{ groups.ceph }}"
 
 - name: ceph-deploy install
   command:
     chdir: /home/ceph-deploy/cluster
-    cmd: "ceph-deploy {{ ceph_deploy_opts }} install --no-adjust-repos --release {{ ceph_release }} {{ ansible_hostname }}"
+    cmd: "ceph-deploy {{ ceph_deploy_opts }} install --no-adjust-repos --release {{ ceph_release }} {{ groups['ceph'] | map('extract', hostvars, ['ansible_hostname']) | list | join(' ') }}"
 
 - name: ceph-deploy initial mon
   command:
@@ -31,80 +45,52 @@
 - name: ceph-deploy admin keys
   command:
     chdir: /home/ceph-deploy/cluster
-    cmd: "ceph-deploy {{ ceph_deploy_opts }} admin {{ ansible_hostname }}"
-
-- name: directory for ceph bootstrap keys
-  file:
-    path: /var/lib/ceph/bootstrap-osd
-    state: directory
-    mode: 0750
-    owner: ceph
-  become: no
-
-- name: copy bootstrap keys
-  copy:
-    remote_src: yes
-    src: /home/ceph-deploy/cluster/ceph.bootstrap-osd.keyring
-    dest: /var/lib/ceph/bootstrap-osd/ceph.keyring
-    mode: 0600
-    owner: ceph
-  become: no
-  when: not ansible_check_mode
+    cmd: "ceph-deploy {{ ceph_deploy_opts }} admin {{ groups['ceph'] | union(groups['ceph_object_gateway']) | map('extract', hostvars, ['ansible_hostname']) | list | join(' ') }}"
 
 - name: create manager
   command:
     chdir: /home/ceph-deploy/cluster
-    cmd: "ceph-deploy {{ ceph_deploy_opts }} mgr create {{ ansible_hostname }}"
+    cmd: "ceph-deploy {{ ceph_deploy_opts }} mgr create {{ groups['ceph'] | map('extract', hostvars, ['ansible_hostname']) | list | join(' ') }}"
   when: ceph_mgr_create
-
-- name: directory for ceph osds
-  file:
-    path: "{{ ceph_osd_data_path }}"
-    state: directory
-    mode: 0755
-    owner: ceph
-  become: no
-  when: ceph_osd_data_path is match("/.*") and ceph_osd_data_path is not match("/dev/.*")
-
-- name: logical volume for ceph osds
-  shell: |
-    VGLV_PATH={{ ceph_osd_data_path | quote }}
-    VG_NAME="${VGLV_PATH%%/*}"
-    LV_NAME="${VGLV_PATH##*/}"
-    if vgs "${VG_NAME}" && ! lvs "${VGLV_PATH}" ; then
-      lvcreate --extents 100%VG --addtag eucalyptus.provisioned=yes --name "${LV_NAME}" "${VG_NAME}"
-    fi
-  become: no
-  when: ceph_osd_data_path is match("[a-zA-Z0-9+_.-]+/[a-zA-Z0-9+_.-]+")
-  register: shell_result
-  changed_when: '"created" in shell_result.stdout'
 
 - name: create osds
   command:
     chdir: /home/ceph-deploy/cluster
-    cmd: "ceph-deploy {{ ceph_deploy_opts }} osd create --data {{ ceph_osd_data_path }} {{ ansible_hostname }}"
+    cmd: "ceph-deploy {{ ceph_deploy_opts }} osd create --data {{ ceph_osd_data_path }} {{ hostvars[item].ansible_hostname }}"
   when: ceph_osd_create
+  with_items: "{{ groups.ceph }}"
 
 - name: prepare osds
   command:
     chdir: /home/ceph-deploy/cluster
-    cmd: "ceph-deploy {{ ceph_deploy_opts }} osd prepare {{ ansible_hostname }}:{{ ceph_osd_data_path }}"
+    cmd: "ceph-deploy {{ ceph_deploy_opts }} osd prepare {{ hostvars[item].ansible_hostname }}:{{ ceph_osd_data_path }}"
   when: not ceph_osd_create
+  with_items: "{{ groups.ceph }}"
 
 - name: activate osds
   command:
     chdir: /home/ceph-deploy/cluster
-    cmd: "ceph-deploy {{ ceph_deploy_opts }} osd activate {{ ansible_hostname }}:{{ ceph_osd_data_path }}"
+    cmd: "ceph-deploy {{ ceph_deploy_opts }} osd activate {{ hostvars[item].ansible_hostname }}:{{ ceph_osd_data_path }}"
   when: not ceph_osd_create
+  with_items: "{{ groups.ceph }}"
 
 - name: ceph-deploy rgw install hammer
   command:
     chdir: /home/ceph-deploy/cluster
-    cmd: "ceph-deploy {{ ceph_deploy_opts }} install --release {{ ceph_release }} --rgw {{ ansible_hostname }}"
+    cmd: "ceph-deploy {{ ceph_deploy_opts }} install --release {{ ceph_release }} --rgw {{ hostvars[item].ansible_hostname }}"
   when: ceph_release == "hammer"
+  with_items: "{{ groups.ceph_object_gateway }}"
+
+- name: install ceph-radosgw package
+  yum:
+    name: ceph-radosgw
+    state: present
+  become: no
+  delegate_to: "{{ item }}"
+  with_items: "{{ groups.ceph_object_gateway }}"
 
 - name: ceph-deploy rgw create
   command:
     chdir: /home/ceph-deploy/cluster
-    cmd: "ceph-deploy {{ ceph_deploy_opts }} rgw create {{ ansible_hostname }}"
-
+    cmd: "ceph-deploy {{ ceph_deploy_opts }} rgw create {{ hostvars[item].ansible_hostname }}"
+  with_items: "{{ groups.ceph_object_gateway }}"

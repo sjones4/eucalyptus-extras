@@ -1,0 +1,48 @@
+---
+# populate groups that are needed for roles but not in inventory
+
+# node and zone
+- name: node group default
+  add_host:
+    groups: node
+    hostname: "{{ item }}"
+    inventory_dir: "{{ hostvars[item].inventory_dir }}"
+  when: "'node' not in groups"
+  with_items: "{{ groups.cloud }}"
+- name: zone group default
+  add_host:
+    groups: zone
+    hostname: "{{ item }}"
+    inventory_dir: "{{ hostvars[item].inventory_dir }}"
+  when: "'zone' not in groups"
+  with_items: "{{ groups.cloud }}"
+
+# ceph
+- name: node to ceph group for converged deployments
+  add_host:
+    groups: ceph
+    hostname: "{{ item }}"
+    inventory_dir: "{{ hostvars[item].inventory_dir }}"
+  when: ceph_converged|default(False)
+  with_items: "{{ groups.node }}"
+- name: cloud to ceph_object_gateway group for converged deployments
+  add_host:
+    groups: ceph_object_gateway
+    hostname: "{{ item }}"
+    inventory_dir: "{{ hostvars[item].inventory_dir }}"
+  when: "ceph_converged|default(False) and ('ceph_object_gateway' not in groups)"
+  with_items: "{{ groups.cloud }}"
+- name: ceph_deploy group default
+  add_host:
+    groups: ceph_deploy
+    hostname: "{{ item }}"
+    inventory_dir: "{{ hostvars[item].inventory_dir }}"
+  when: "'ceph' in groups and groups.ceph and 'ceph_deploy' not in groups"
+  with_items: "{{ groups.ceph[0] }}"
+- name: ceph_object_gateway group default
+  add_host:
+    groups: ceph_object_gateway
+    hostname: "{{ item }}"
+    inventory_dir: "{{ hostvars[item].inventory_dir }}"
+  when: "'ceph' in groups and groups.ceph and 'ceph_object_gateway' not in groups"
+  with_items: "{{ groups.ceph[0] }}"
