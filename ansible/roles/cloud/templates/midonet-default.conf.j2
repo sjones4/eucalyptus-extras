@@ -4,11 +4,12 @@
 #
 
 zookeeper {
-  zookeeper_hosts = "{{ eucalyptus_host_cluster_ipv4 }}:2181"
+  zookeeper_hosts = "{{ groups.midonet_nsdb | map('extract', hostvars, ['eucalyptus_host_cluster_ipv4']) | map('regex_replace', '^(.*)$', '\\1:2181')  | list | join(',') }}"
 }
 
 cassandra {
-  servers = "{{ eucalyptus_host_cluster_ipv4 }}"
+  replication_factor = {{ midonet_cassandra_replication_factor }}
+  servers = "{{ groups.midonet_nsdb | map('extract', hostvars, ['eucalyptus_host_cluster_ipv4']) | list | join(',') }}"
 }
 
 cluster {

@@ -13,6 +13,10 @@
   roles:
   - ceph
 
+- hosts: midonet_nsdb
+  roles:
+  - midonet-nsdb
+
 - hosts: cloud
   roles:
   - cloud

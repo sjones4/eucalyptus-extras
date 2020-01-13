@@ -46,3 +46,19 @@
     inventory_dir: "{{ hostvars[item].inventory_dir }}"
   when: "'ceph' in groups and groups.ceph and 'ceph_object_gateway' not in groups"
   with_items: "{{ groups.ceph[0] }}"
+
+# midonet
+- name: node to midonet_nsdb group for converged vpcmido deployments
+  add_host:
+    groups: midonet_nsdb
+    hostname: "{{ item }}"
+    inventory_dir: "{{ hostvars[item].inventory_dir }}"
+  when: ceph_converged|default(False) and net_mode == 'VPCMIDO'
+  with_items: "{{ groups.node }}"
+- name: cloud to midonet_nsdb group for default vpcmido deployments
+  add_host:
+    groups: midonet_nsdb
+    hostname: "{{ item }}"
+    inventory_dir: "{{ hostvars[item].inventory_dir }}"
+  when: "'midonet_nsdb' not in groups and net_mode == 'VPCMIDO'"
+  with_items: "{{ groups.cloud }}"

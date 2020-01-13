@@ -18,10 +18,7 @@ cloud_firewalld_vpcmidogw_zone: "{{ cloud_firewalld_public_zone }}"
 cloud_firewalld_vpcmidogw_interface: Null
 
 # Midonet settings
-midonet_cassandra_name: Eucalyptus Midonet Cluster
-midonet_cassandra_heap: Null
-midonet_cassandra_heapnew: Null
-midonet_zookeeper_heap: Null
+midonet_cassandra_replication_factor: "{{ 3 if ('midonet_nsdb' in groups and (groups.midonet_nsdb|length) >= 3) else 1}}"
 midonet_cluster_heap: Null
 midonet_midolman_heap: Null
 
