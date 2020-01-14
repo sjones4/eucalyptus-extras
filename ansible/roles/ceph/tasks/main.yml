@@ -4,9 +4,6 @@
     path: /home/ceph-deploy/cluster/ceph-deploy.done
   register: stat_result
 
-- import_tasks: ceph_install.yml
-  when: stat_result.stat.exists == False
-
 - import_tasks: ceph_install_deploy.yml
   become: yes
   become_user: ceph-deploy

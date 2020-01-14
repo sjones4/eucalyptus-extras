@@ -1,8 +1,21 @@
 ---
 # Eucalyptus playbook
-- hosts: ceph
+- hosts: all
+  gather_facts: no
+  tasks:
+  - import_tasks: host_groups.yml
+
+- hosts: ceph:ceph_object_gateway:ceph_deploy
+  roles:
+  - ceph-host
+
+- hosts: ceph_deploy
   roles:
   - ceph
+
+- hosts: midonet_nsdb
+  roles:
+  - midonet-nsdb
 
 - hosts: cloud
   roles:
