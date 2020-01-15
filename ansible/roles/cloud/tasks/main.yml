@@ -261,6 +261,17 @@
     block: |
       alias aws='/usr/local/bin/eucalyptus-awscli.sh'
 
+- name: create eucalyptus account default vpc
+  shell: |
+    eval $(clcadmin-assume-system-credentials)
+    if ! euca-describe-account-attributes default-vpc | grep -q 'vpc-'; then
+      echo "Creating default vpc for eucalyptus account"
+      euca-create-vpc $(euare-getcallerid | grep -oP "\\s*account\\s*=\\s*\\K.*\\s*")
+    fi
+  when: net_mode == "VPCMIDO"
+  register: shell_result
+  changed_when: '"Creating default vpc for eucalyptus account" in shell_result.stdout'
+
 - name: configure cloud listener address match
   shell: |
     eval $(clcadmin-assume-system-credentials)
