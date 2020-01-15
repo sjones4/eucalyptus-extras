@@ -47,6 +47,20 @@
 - import_tasks: ats.yml
   when: eucaconsole_product == "ats"
 
+- name: eucaconsole firewalld http services for public zone
+  firewalld:
+    zone: "{{ cloud_firewalld_public_zone }}"
+    service: "{{ item }}"
+    state: enabled
+    permanent: yes
+    immediate: "{{ cloud_firewalld_start }}"
+  tags:
+    - firewalld
+  when: cloud_firewalld_configure and eucaconsole_firewalld_configure and cloud_firewalld_public_zone is not none
+  with_items:
+  - http
+  - https
+
 - name: start eucaconsole service
   systemd:
     enabled: true
