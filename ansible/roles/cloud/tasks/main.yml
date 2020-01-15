@@ -2,6 +2,18 @@
 - import_tasks: vpcmido.yml
   when: net_mode == "VPCMIDO"
 
+- name: install eucalyptus related utility packages
+  yum:
+    name:
+    - awscli
+    - bash-completion
+    - bzip2
+    - xz
+    state: present
+  tags:
+    - image
+    - packages
+
 - name: install eucalyptus-cloud package
   yum:
     name: eucalyptus-cloud
@@ -218,12 +230,38 @@
 - name: generate admin credentials / configuration
   shell: |
     eval $(clcadmin-assume-system-credentials)
+    export AWS_DEFAULT_REGION=eucalyptus
     euare-useraddkey --write-config --domain {{ cloud_system_dns_dnsdomain | quote }} --set-default-user admin > /root/.euca/euca-admin.ini
   args:
     creates: /root/.euca/euca-admin.ini
+
+- name: eucalyptus awscli credentials/endpoints wrapper
+  copy:
+    src: eucalyptus-awscli.sh
+    dest: /usr/local/bin/eucalyptus-awscli.sh
+    owner: root
+    group: root
+    mode: 0755
+
+- name: bash environment for client tools
+  blockinfile:
+    path: /root/.bash_profile
+    marker: '# {mark} eucalyptus client tools configuration'
+    insertafter: '^export PATH'
+    block: |
+      AWS_DEFAULT_OUTPUT=text
+      AWS_DEFAULT_REGION=eucalyptus
+      export AWS_DEFAULT_OUTPUT AWS_DEFAULT_REGION
+
+- name: bash aliases for client tools
+  blockinfile:
+    path: /root/.bashrc
+    marker: '# {mark} eucalyptus client tools configuration'
+    insertbefore: '^# Source global definitions'
+    block: |
+      alias aws='/usr/local/bin/eucalyptus-awscli.sh'
 
 - name: configure cloud listener address match
   shell: |
     eval $(clcadmin-assume-system-credentials)
     euctl --region admin@localhost bootstrap.webservices.listener_address_match={{ cloud_listener_cidr | quote }}
-
