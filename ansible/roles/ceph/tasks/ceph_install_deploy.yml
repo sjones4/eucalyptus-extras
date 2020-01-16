@@ -2,7 +2,7 @@
 - name: ceph-deploy new cluster
   command:
     chdir: /home/ceph-deploy/cluster
-    cmd: "ceph-deploy {{ ceph_deploy_opts }} new --cluster-network {{ ceph_cluster_network }} --public-network {{ ceph_public_network }} {{ groups['ceph'] | map('extract', hostvars, ['ansible_hostname']) | list | join(' ') }}"
+    cmd: "ceph-deploy {{ ceph_deploy_opts }} new --cluster-network {{ ceph_cluster_network }} --public-network {{ ceph_public_network }} {{ groups['ceph'] | map('extract', hostvars, ['ansible_hostname']) | list | sort | join(' ') }}"
 
 - name: ceph custom configuration for osd pool size
   blockinfile:
@@ -35,7 +35,7 @@
 - name: ceph-deploy install
   command:
     chdir: /home/ceph-deploy/cluster
-    cmd: "ceph-deploy {{ ceph_deploy_opts }} install --no-adjust-repos --release {{ ceph_release }} {{ groups['ceph'] | map('extract', hostvars, ['ansible_hostname']) | list | join(' ') }}"
+    cmd: "ceph-deploy {{ ceph_deploy_opts }} install --no-adjust-repos --release {{ ceph_release }} {{ groups['ceph'] | map('extract', hostvars, ['ansible_hostname']) | list  | sort | join(' ') }}"
 
 - name: ceph-deploy initial mon
   command:
@@ -45,12 +45,12 @@
 - name: ceph-deploy admin keys
   command:
     chdir: /home/ceph-deploy/cluster
-    cmd: "ceph-deploy {{ ceph_deploy_opts }} admin {{ groups['ceph'] | union(groups['ceph_object_gateway']) | map('extract', hostvars, ['ansible_hostname']) | list | join(' ') }}"
+    cmd: "ceph-deploy {{ ceph_deploy_opts }} admin {{ groups['ceph'] | union(groups['ceph_object_gateway']) | map('extract', hostvars, ['ansible_hostname']) | list | sort | join(' ') }}"
 
 - name: create manager
   command:
     chdir: /home/ceph-deploy/cluster
-    cmd: "ceph-deploy {{ ceph_deploy_opts }} mgr create {{ groups['ceph'] | map('extract', hostvars, ['ansible_hostname']) | list | join(' ') }}"
+    cmd: "ceph-deploy {{ ceph_deploy_opts }} mgr create {{ groups['ceph'] | map('extract', hostvars, ['ansible_hostname']) | list | sort | join(' ') }}"
   when: ceph_mgr_create
 
 - name: create osds

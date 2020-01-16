@@ -1,7 +1,7 @@
 # Eucalyptus cloud configuration
 LOGLEVEL="{{ cloud_log_level }}"
 CLOUD_OPTS="{{ cloud_opts }}"
-NODES="{{ groups['node'] | map('extract', hostvars, ['eucalyptus_host_cluster_ipv4']) | list | join(' ') }}"
+NODES="{% for node in groups.node if (inventory_hostname in groups.zone and eucalyptus_zone_name == hostvars[node]['eucalyptus_zone_name']) %}{{ hostvars[node].eucalyptus_host_cluster_ipv4 }} {% endfor %}"
 HYPERVISOR="kvm"
 INSTANCE_PATH="{{ cloud_instances_state_dir }}"
 LIBVIRT_USE_POLICY_KIT="-1"

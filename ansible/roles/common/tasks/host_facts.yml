@@ -1,0 +1,6 @@
+---
+- name: set eucalyptus host facts
+  set_fact:
+    eucalyptus_zone_key: "{{ host_zone_key | default(1) }}"
+    eucalyptus_zone_name: "{{ host_zone_name | default(cloud_zone_[host_zone_key | default(1) | int].name) }}"
+  when: inventory_hostname in groups.node or inventory_hostname in groups.zone

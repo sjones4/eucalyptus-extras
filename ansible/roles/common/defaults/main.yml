@@ -10,7 +10,17 @@ eucalyptus_yum_gpgcheck: "1"
 eucalyptus_product: eucalyptus
 
 # Cloud settings
-cloud_zone_1_name: one
+cloud_region_name: cloud-1
+cloud_zone_1_name: "{{ cloud_region_name }}a"
+cloud_zone_2_name: "{{ cloud_region_name }}b"
+cloud_zone_3_name: "{{ cloud_region_name }}c"
+cloud_zone_:
+  1:
+    name: "{{ cloud_zone_1_name }}"
+  2:
+    name: "{{ cloud_zone_2_name }}"
+  3:
+    name: "{{ cloud_zone_3_name }}"
 cloud_opts: "{{cloud_opts_tech_preview}} {{cloud_opts_mem}} {{cloud_opts_custom}} {{cloud_opts_bindaddr}}"
 cloud_opts_custom: ""
 cloud_opts_mem: "-Xmx2g"

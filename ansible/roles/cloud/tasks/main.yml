@@ -129,20 +129,13 @@
     port: 8773
     timeout: 180
 
-- name: register user facing and zone services
+- name: register user facing services
   shell: |
-    UFS_HOSTS="{{ groups['cloud'] | map('extract', hostvars, ['eucalyptus_host_cluster_ipv4']) | list | join(' ') }}"
-    ZONE_HOSTS="{{ groups['zone'] | map('extract', hostvars, ['eucalyptus_host_cluster_ipv4']) | list | join(' ') }}"
-    
+    set -eu
     eval $(clcadmin-assume-system-credentials)
-    
+    UFS_HOSTS="{{ groups['cloud'] | map('extract', hostvars, ['eucalyptus_host_cluster_ipv4']) | list | sort | join(' ') }}"
     for UFS_HOST in ${UFS_HOSTS} ; do
-      euserv-register-service -t user-api -z API_${UFS_HOST} -h ${UFS_HOST} API_${UFS_HOST}
-    done
-    
-    for ZONE_HOST in ${ZONE_HOSTS} ; do
-      euserv-register-service -t cluster -h ${ZONE_HOST} -z {{ cloud_zone_1_name | quote }} CLUSTER_${ZONE_HOST}
-      euserv-register-service -t storage -h ${ZONE_HOST} -z {{ cloud_zone_1_name | quote }} STORAGE_${ZONE_HOST}
+      euserv-register-service -t user-api -h ${UFS_HOST} api.${UFS_HOST}
     done
   register: shell_result
   until: shell_result.rc == 0
@@ -150,9 +143,10 @@
 
 - name: register walrus backend service
   shell: |
+    set -eu
     eval $(clcadmin-assume-system-credentials)
     CLC_HOST={{ eucalyptus_host_cluster_ipv4 | quote  }}
-    euserv-register-service -t walrusbackend -h ${CLC_HOST} WALRUS_${CLC_HOST}
+    euserv-register-service -t walrusbackend -h ${CLC_HOST} walrus.${CLC_HOST}
   register: shell_result
   until: shell_result.rc == 0
   retries: 5
@@ -160,41 +154,54 @@
 
 - name: configure cloud properties
   shell: |
+    set -eu
     eval $(clcadmin-assume-system-credentials)
     euctl system.dns.dnsdomain={{ cloud_system_dns_dnsdomain | quote }}
     euctl region.region_name={{ cloud_region_region_name | quote }}
     euctl bootstrap.webservices.use_instance_dns=true
     euctl bootstrap.webservices.use_dns_delegation=true
     euctl cloud.network.network_configuration=@/etc/eucalyptus/network.yaml
+  register: shell_result
+  until: shell_result.rc == 0
+  retries: 5
 
-- name: configure cloud storage properties for walrus / overlay
+- name: configure cloud storage properties for walrus
   shell: |
+    set -eu
     eval $(clcadmin-assume-system-credentials)
     euctl objectstorage.providerclient=walrus
-    euctl {{ cloud_zone_1_name | quote }}.storage.blockstoragemanager=overlay
   when: eucalyptus_ceph_conf is undefined
+  register: shell_result
+  until: shell_result.rc == 0
+  retries: 5
 
-- name: configure cloud storage properties for ceph
+- name: configure cloud storage properties for ceph object gateway
   shell: |
+    set -eu
     eval $(clcadmin-assume-system-credentials)
     euctl objectstorage.s3provider.s3endpoint={{ eucalyptus_ceph_rgw_endpoint | quote }}
     euctl objectstorage.s3provider.s3accesskey={{ eucalyptus_ceph_rgw_creds.access_key | quote }}
     euctl objectstorage.s3provider.s3secretkey={{ eucalyptus_ceph_rgw_creds.secret_key | quote }}
     euctl objectstorage.s3provider.s3endpointheadresponse=200
     euctl objectstorage.providerclient=ceph-rgw
-    euctl {{ cloud_zone_1_name | quote }}.storage.cephsnapshotpools=eucasnapshots
-    euctl {{ cloud_zone_1_name | quote }}.storage.cephvolumepools=eucavolumes
-    euctl {{ cloud_zone_1_name | quote }}.storage.blockstoragemanager=ceph-rbd
   when: eucalyptus_ceph_conf is defined
+  register: shell_result
+  until: shell_result.rc == 0
+  retries: 5
 
 - name: configure custom cloud properties
   shell: |
+    set -eu
     eval $(clcadmin-assume-system-credentials)
     euctl {{ item.key }}={{ item.value | quote }}
   with_dict: "{{ cloud_properties }}"
+  register: shell_result
+  until: shell_result.rc == 0
+  retries: 5
 
 - name: install service image
   shell: |
+    set -eu
     eval $(clcadmin-assume-system-credentials)
     esi-install-image --region localhost --install-default
   register: shell_result
@@ -202,26 +209,6 @@
   failed_when:
     - shell_result.rc != 0
     - '"is already registered." not in shell_result.stderr'
-
-- name: enable imaging service
-  shell: |
-    eval $(clcadmin-assume-system-credentials)
-    eval $(euca-generate-environment-config --region localhost)
-    esi-manage-stack --region localhost -a create imaging
-  register: shell_result
-  changed_when: '"is already created." not in shell_result.stdout'
-
-- name: create eucalyptus account default vpc
-  shell: |
-    eval $(clcadmin-assume-system-credentials)
-    eval $(euca-generate-environment-config --region localhost)
-    if ! euca-describe-account-attributes default-vpc | grep -q 'vpc-'; then
-      echo "Creating default vpc for eucalyptus account"
-      euca-create-vpc $(euare-getcallerid | grep -oP "\\s*account\\s*=\\s*\\K.*\\s*")
-    fi
-  when: net_mode == "VPCMIDO"
-  register: shell_result
-  changed_when: '"Creating default vpc for eucalyptus account" in shell_result.stdout'
 
 - name: tools configuration directory
   file:
@@ -241,6 +228,7 @@
 
 - name: generate admin credentials / configuration
   shell: |
+    set -eu
     eval $(clcadmin-assume-system-credentials)
     export AWS_DEFAULT_REGION=eucalyptus
     euare-useraddkey --write-config --domain {{ cloud_system_dns_dnsdomain | quote }} --set-default-user admin > /root/.euca/euca-admin.ini
@@ -275,5 +263,6 @@
 
 - name: configure cloud listener address match
   shell: |
+    set -eu
     eval $(clcadmin-assume-system-credentials)
     euctl --region admin@localhost bootstrap.webservices.listener_address_match={{ cloud_listener_cidr | quote }}

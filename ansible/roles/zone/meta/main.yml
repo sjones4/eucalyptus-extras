@@ -1,5 +1,3 @@
 ---
 dependencies:
 - role: common
-  vars:
-    key_facts: yes
