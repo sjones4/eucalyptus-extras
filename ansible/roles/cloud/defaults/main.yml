@@ -1,6 +1,6 @@
 ---
 # Cloud settings
-cloud_region_region_name: eucalyptus
+cloud_region_region_name: "{{ cloud_region_name }}"
 cloud_listener_cidr: 0.0.0.0/0
 cloud_properties: {}
 

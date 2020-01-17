@@ -1,3 +1,12 @@
 ---
 - import_tasks: vpcmido.yml
   when: net_mode == "VPCMIDO"
+
+- name: enable imaging service
+  shell: |
+    set -eu
+    eval $(clcadmin-assume-system-credentials)
+    eval $(euca-generate-environment-config --region localhost)
+    esi-manage-stack --region localhost -a create imaging
+  register: shell_result
+  changed_when: '"is already created." not in shell_result.stdout'

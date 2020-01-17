@@ -42,9 +42,74 @@
     mode: 0644
   when: eucalyptus_ceph_keyring is defined
 
+- name: start tgtd service
+  systemd:
+    enabled: true
+    state: started
+    name: tgtd
+  when: eucalyptus_ceph_conf is undefined
+
+- name: register zone services
+  shell: |
+    set -eu
+    eval $(clcadmin-assume-system-credentials)
+    ZONE_NAME={{ eucalyptus_zone_name | quote }}
+    ZONE_HOST={{ eucalyptus_host_cluster_ipv4 | quote }}
+    euserv-register-service -t cluster -h ${ZONE_HOST} -z ${ZONE_NAME} cluster.${ZONE_HOST}
+    euserv-register-service -t storage -h ${ZONE_HOST} -z ${ZONE_NAME} storage.${ZONE_HOST}
+  delegate_to: "{{ groups.cloud[0] }}"
+  register: shell_result
+  until: shell_result.rc == 0
+  retries: 5
+
+- name: configure cloud storage properties for overlay storage
+  shell: |
+    set -eu
+    eval $(clcadmin-assume-system-credentials)
+    ZONE_NAME={{ eucalyptus_zone_name | quote }}
+    euctl ${ZONE_NAME}.storage.blockstoragemanager=overlay
+  delegate_to: "{{ groups.cloud[0] }}"
+  when: eucalyptus_ceph_conf is undefined
+
+- name: configure cloud storage properties for ceph storage
+  shell: |
+    set -eu
+    eval $(clcadmin-assume-system-credentials)
+    ZONE_NAME={{ eucalyptus_zone_name | quote }}
+    euctl ${ZONE_NAME}.storage.cephsnapshotpools=eucasnapshots
+    euctl ${ZONE_NAME}.storage.cephvolumepools=eucavolumes
+    euctl ${ZONE_NAME}.storage.blockstoragemanager=ceph-rbd
+  delegate_to: "{{ groups.cloud[0] }}"
+  when: eucalyptus_ceph_conf is defined
+
+- name: eucalyptus zone/node key facts
+  include_role:
+    name: common
+    tasks_from: key_facts
+  vars:
+    zone_name: "{{ eucalyptus_zone_name }}"
+
+- name: eucalyptus keystore
+  copy:
+    content: "{{ hostvars[inventory_hostname]['eucalyptus_keys_' + (eucalyptus_zone_name | replace('-','_')) + '_euca_keystore'] }}"
+    dest: "/var/lib/eucalyptus/keys/euca.p12.b64"
+    owner: eucalyptus
+    group: eucalyptus
+    mode: 0700
+    force: no
+
+- name: eucalyptus keystore decode
+  shell: |
+    set -eu
+    base64 --decode /var/lib/eucalyptus/keys/euca.p12.b64 > /var/lib/eucalyptus/keys/euca.p12
+    chmod 700 /var/lib/eucalyptus/keys/euca.p12
+    chown eucalyptus:eucalyptus /var/lib/eucalyptus/keys/euca.p12
+  args:
+    creates: /var/lib/eucalyptus/keys/euca.p12
+
 - name: eucalyptus zone/node keys for zone
   copy:
-    content: "{{ hostvars[inventory_hostname]['eucalyptus_keys_' + (cloud_zone_1_name | replace('-','_')) + '_' + (item | replace('-','_'))] }}"
+    content: "{{ hostvars[inventory_hostname]['eucalyptus_keys_' + (eucalyptus_zone_name | replace('-','_')) + '_' + (item | replace('-','_'))] }}"
     dest: "/var/lib/eucalyptus/keys/{{ item }}.pem"
     owner: eucalyptus
     group: eucalyptus
@@ -56,13 +121,6 @@
   - cluster-pk
   - node-cert
   - node-pk
-
-- name: start tgtd service
-  systemd:
-    enabled: true
-    state: started
-    name: tgtd
-  when: eucalyptus_ceph_conf is undefined
 
 - name: start eucalyptus-cloud service
   systemd:

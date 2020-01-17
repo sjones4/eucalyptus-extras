@@ -26,6 +26,7 @@
 
 - name: logical volume for ceph osds
   shell: |
+    set -eu
     VGLV_PATH={{ ceph_osd_data_path | quote }}
     VG_NAME="${VGLV_PATH%%/*}"
     LV_NAME="${VGLV_PATH##*/}"

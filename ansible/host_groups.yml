@@ -16,6 +16,14 @@
     inventory_dir: "{{ hostvars[item].inventory_dir }}"
   when: "'zone' not in groups"
   with_items: "{{ groups.cloud }}"
+- name: zone assignments default
+  set_fact: "host_zone_key={{ item.0 + 1 }}"
+  when: "'host_zone_key' not in hostvars[inventory_hostname] and inventory_hostname == item.1"
+  with_indexed_items: "{{ groups.zone|sort }}"
+- name: node zone assignments default
+  set_fact: "host_zone_key={{ (item.0 % (groups.zone|length)) + 1 }}"
+  when: "'host_zone_key' not in hostvars[inventory_hostname] and inventory_hostname == item.1"
+  with_indexed_items: "{{ groups.node|sort }}"
 
 # ceph
 - name: node to ceph group for converged deployments

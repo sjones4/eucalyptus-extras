@@ -17,10 +17,21 @@
   roles:
   - midonet-nsdb
 
+- hosts: node
+  tasks:
+  - name: eucalyptus node host facts
+    include_role:
+      name: common
+      tasks_from: host_facts
+
 - hosts: cloud
   roles:
   - cloud
   - console
+
+- hosts: zone
+  roles:
+  - zone
 
 - hosts: node
   roles:
@@ -28,6 +39,5 @@
 
 - hosts: cloud
   roles:
-  - zone
   - cloud-post
 

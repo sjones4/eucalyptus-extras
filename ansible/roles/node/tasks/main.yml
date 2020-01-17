@@ -32,6 +32,7 @@
 
 - name: kvm kernel module cpu passthrough runtime
   shell: |
+    set -eu
     if grep -q AMD /proc/cpuinfo && modprobe -r kvm_amd; then
       modprobe kvm_amd || true
     fi
@@ -82,7 +83,7 @@
 
 - name: eucalyptus zone/node keys for node
   copy:
-    content: "{{ hostvars[inventory_hostname]['eucalyptus_keys_' + (cloud_zone_1_name | replace('-','_')) + '_' + (item | replace('-','_'))] }}"
+    content: "{{ hostvars[inventory_hostname]['eucalyptus_keys_' + (eucalyptus_zone_name | replace('-','_')) + '_' + (item | replace('-','_'))] }}"
     dest: "/var/lib/eucalyptus/keys/{{ item }}.pem"
     owner: eucalyptus
     group: eucalyptus

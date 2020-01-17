@@ -60,7 +60,7 @@
   replace:
     path: /etc/cassandra/conf/cassandra.yaml
     regexp: '^(\s+)-\s+seeds:\s+.+$'
-    replace: '\1- seeds: "{{ groups.midonet_nsdb | map("extract", hostvars, ["eucalyptus_host_cluster_ipv4"]) | list | join(",") }}"'
+    replace: '\1- seeds: "{{ groups.midonet_nsdb | map("extract", hostvars, ["eucalyptus_host_cluster_ipv4"]) | list | sort | join(",") }}"'
 
 - name: start cassandra service
   systemd:
