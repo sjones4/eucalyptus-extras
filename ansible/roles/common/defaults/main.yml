@@ -21,12 +21,14 @@ cloud_zone_:
     name: "{{ cloud_zone_2_name }}"
   3:
     name: "{{ cloud_zone_3_name }}"
-cloud_opts: "{{cloud_opts_tech_preview}} {{cloud_opts_mem}} {{cloud_opts_custom}} {{cloud_opts_bindaddr}}"
+cloud_opts: "{{ cloud_opts_tech_preview }} {{ cloud_opts_mem }} {{ cloud_opts_custom }} {{ cloud_opts_bindaddr }} {{ cloud_opts_bootstrap_hosts }}"
 cloud_opts_custom: ""
 cloud_opts_mem: "-Xmx2g"
 cloud_opts_bindaddr: "--bind-addr={{ eucalyptus_host_cluster_ipv4 }}"
+cloud_opts_bootstrap_hosts: ""
 cloud_opts_tech_preview: "-Denable.sqs.tech.preview=true"
 cloud_log_level: INFO
+cloud_boostrap_hosts: no
 cloud_instances:
   state_dir: /var/lib/eucalyptus/instances
   conf:
@@ -43,7 +45,6 @@ cloud_instances_conf_work_size: "{{ cloud_instances.conf.work_size }}"
 cloud_instances_conf_max_cores: "{{ cloud_instances.conf.max_cores }}"
 cloud_instances_conf_max_mem: "{{ cloud_instances.conf.max_mem }}"
 cloud_instances_conf_custom: "{{ cloud_instances.conf.custom }}"
-
 
 # EDGE network settings
 edge_router_enabled: Y

@@ -4,3 +4,8 @@
     eucalyptus_zone_key: "{{ host_zone_key | default(1) }}"
     eucalyptus_zone_name: "{{ host_zone_name | default(cloud_zone_[host_zone_key | default(1) | int].name) }}"
   when: inventory_hostname in groups.node or inventory_hostname in groups.zone
+
+- name: set eucalyptus bootstrap hosts fact
+  set_fact:
+    cloud_opts_bootstrap_hosts: "{{ groups.cloud | union(groups.zone) |  map('extract', hostvars, ['eucalyptus_host_cluster_ipv4']) | map('regex_replace', '^(.*)$', '--bootstrap-host=\\1') | list | sort | join(' ') }}"
+  when: cloud_boostrap_hosts and (inventory_hostname in groups.cloud or inventory_hostname in groups.zone)
