@@ -62,7 +62,7 @@
     group: ceph-deploy
     mode: 0644
     content: |
-      Host {{ groups['all'] | map('extract', hostvars, ['ansible_hostname']) | list | sort | join(' ') }} {{ groups['all'] | map('extract', hostvars, ['ansible_fqdn']) | list | sort | join(' ') }} {{ groups['all'] | map('extract', hostvars, ['eucalyptus_host_cluster_ipv4']) | list | sort | join(' ') }}
+      Host {{ groups['all'] | map('extract', hostvars, ['ansible_hostname']) | list | select('defined') | sort | join(' ') }} {{ groups['all'] | map('extract', hostvars, ['ansible_fqdn']) | list | select('defined') | sort | join(' ') }} {{ groups['all'] | map('extract', hostvars, ['eucalyptus_host_cluster_ipv4']) | list | select('defined') | sort | join(' ') }}
       GlobalKnownHostsFile=/dev/null
       UserKnownHostsFile=/dev/null
       StrictHostKeyChecking=no
