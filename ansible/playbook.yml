@@ -13,16 +13,16 @@
   roles:
   - ceph
 
-- hosts: midonet_nsdb
-  roles:
-  - midonet-nsdb
-
 - hosts: node
   tasks:
   - name: eucalyptus node host facts
     include_role:
       name: common
       tasks_from: host_facts
+
+- hosts: midonet_nsdb
+  roles:
+  - midonet-nsdb
 
 - hosts: cloud
   roles:
