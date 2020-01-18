@@ -88,6 +88,17 @@
     - firewalld
   when: cloud_firewalld_configure and cloud_firewalld_public_zone is not none
 
+- name: cloud firewalld dns service for public zone
+  firewalld:
+    zone: "{{ cloud_firewalld_public_zone }}"
+    service: dns
+    state: enabled
+    permanent: yes
+    immediate: "{{ cloud_firewalld_start }}"
+  tags:
+    - firewalld
+  when: cloud_firewalld_configure and cloud_firewalld_dns_configure and cloud_firewalld_public_zone is not none
+
 - name: configure selinux bool httpd_can_network_connect
   seboolean:
     name: httpd_can_network_connect

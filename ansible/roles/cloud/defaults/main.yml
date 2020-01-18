@@ -13,6 +13,7 @@ edge_public_ip_range: 192.168.254.200-192.168.254.249
 
 # Firewalld settings
 cloud_firewalld_configure: no
+cloud_firewalld_dns_configure: yes
 cloud_firewalld_public_zone: public
 cloud_firewalld_vpcmidogw_zone: "{{ cloud_firewalld_public_zone }}"
 cloud_firewalld_vpcmidogw_interface: Null
