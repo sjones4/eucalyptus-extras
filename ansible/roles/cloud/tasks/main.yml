@@ -5,9 +5,12 @@
 - name: install eucalyptus related utility packages
   yum:
     name:
+    - attr
     - awscli
     - bash-completion
     - bzip2
+    - qemu-img
+    - wget
     - xz
     state: present
   tags:
@@ -271,6 +274,14 @@
     insertbefore: '^# Source global definitions'
     block: |
       alias aws='/usr/local/bin/eucalyptus-awscli.sh'
+
+- name: eucalyptus-images image install wrapper
+  copy:
+    src: eucalyptus-images
+    dest: /usr/local/bin/eucalyptus-images
+    owner: root
+    group: root
+    mode: 0755
 
 - name: configure cloud listener address match
   shell: |
