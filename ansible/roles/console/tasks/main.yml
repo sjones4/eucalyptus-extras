@@ -66,3 +66,17 @@
     enabled: true
     state: started
     name: eucaconsole
+
+- name: configure eucalyptus/admin password
+  shell: |
+    set -eu
+    eval $(clcadmin-assume-system-credentials)
+    CONSOLE_PASSWORD={{ eucaconsole_admin_password | quote }}
+    euare-useraddloginprofile -u admin -p "${CONSOLE_PASSWORD}"
+  delegate_to: "{{ groups.cloud[0] }}"
+  register: shell_result
+  when: eucaconsole_admin_password|length >= 8
+  changed_when: '"EntityAlreadyExists" not in shell_result.stderr'
+  failed_when:
+    - shell_result.rc != 0
+    - '"EntityAlreadyExists" not in shell_result.stderr'
