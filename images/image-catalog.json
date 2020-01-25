@@ -28,16 +28,6 @@
       "image-format": "qcow2"
     },
     {
-      "description": "Fedora Atomic Host 29",
-      "login": "fedora",
-      "url": "https://getfedora.org/atomic_raw_x86_64_latest",
-      "url-name": "https://getfedora.org/atomic_raw_x86_64_latest_filename",
-      "updates": "no",
-      "architecture": "x86_64",
-      "os": "fedora-atomic-29",
-      "image-format": "raw"
-    },
-    {
       "description": "Fedora 31",
       "login": "fedora",
       "url": "https://download.fedoraproject.org/pub/fedora/linux/releases/31/Cloud/x86_64/images/Fedora-Cloud-Base-31-1.9.x86_64.raw.xz",
@@ -58,10 +48,19 @@
     {
       "description": "CentOS Atomic Host 7",
       "login": "centos",
-      "url": "https://cloud.centos.org/centos/7/atomic/images/CentOS-Atomic-Host-GenericCloud.qcow2.xz",
+      "url": "https://cloud.centos.org/centos/7/atomic/images/CentOS-Atomic-Host-7-GenericCloud.qcow2.xz",
       "updates": "no",
       "architecture": "x86_64",
       "os": "centos-atomic-7",
+      "image-format": "qcow2"
+    },
+    {
+      "description": "CentOS 8",
+      "login": "centos",
+      "url": "https://cloud.centos.org/centos/8/x86_64/images/CentOS-8-GenericCloud-8.1.1911-20200113.3.x86_64.qcow2",
+      "updates": "no",
+      "architecture": "x86_64",
+      "os": "centos-8",
       "image-format": "qcow2"
     },
     {
@@ -74,15 +73,15 @@
       "image-format": "qcow2"
     },
     {
-      "description": "CoreOS Container Linux Stable (mini)",
+      "description": "Flatcar Container Linux Stable",
       "login": "core",
-      "url": "https://stable.release.core-os.net/amd64-usr/current/coreos_production_openstack_mini_image.img.bz2",
+      "url": "https://stable.release.flatcar-linux.net/amd64-usr/current/flatcar_production_openstack_image.img.bz2",
       "updates": "yes",
       "architecture": "x86_64",
-      "os": "coreos-stable-mini",
+      "os": "flatcar-stable",
       "image-format": "qcow2"
     }
   ],
-  "version": "sjones4-05-01-19"
+  "version": "sjones4-01-20-20"
 }
 
