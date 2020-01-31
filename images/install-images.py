@@ -47,6 +47,8 @@ from subprocess import Popen, PIPE, call
 
 
 class ImageManager:
+    CONVERT_FORMATS = ("qcow2", "vmdk")
+
     def __init__(self, user, region,
                  catalog="https://raw.githubusercontent.com/sjones4/eucalypt"
                          "us-extras/master/images/image-catalog.json",
@@ -150,11 +152,12 @@ class ImageManager:
         sys.exit("Bye")
 
     def install_image(self, image):
-        if image["image-format"] == "qcow2":
+        if image["image-format"] in self.CONVERT_FORMATS:
             print_info(
-                "This image is available in 'qcow2' "
+                "This image is available in '{}' "
                 "format and requires qemu-img "
-                "package for 'raw' conversion.\n")
+                "package for 'raw' conversion.\n"
+                .format(image["image-format"]))
             # Check that qemu-img is installed
             sys.stdout.write("\t\t%s\r" % "checking qemu-img...")
             if call(["which", "qemu-img"], stdout=PIPE, stderr=PIPE):
@@ -196,13 +199,22 @@ class ImageManager:
         (tmpdir, stderr) = self.check_output('mktemp -d ' + directory_format)
 
         # Download image
-        download_name = image["url"].rsplit("/", 1)[-1]
+        if "url-meta" in image and "url-meta-regex" in image:
+            try:
+                download_meta = urllib.urlopen(image["url-meta"]).read(32*1024)
+                download_url = re.search(image["url-meta-regex"], download_meta).group()
+            except:
+                print_error("Image download failed getting image url from metadata")
+                sys.exit("Bye")
+        else:
+            download_url = image["url"]
+        download_name = download_url.rsplit("/", 1)[-1]
         if "url-name" in image:
             download_name = urllib.urlopen(image["url-name"]).read(256)
         download_path = tmpdir.strip() + "/" + download_name
         print_info(
-            "Downloading " + image['url'] + " image to: " + download_path)
-        if call(["wget", image["url"], "-O", download_path]):
+            "Downloading " + download_url + " image to: " + download_path)
+        if call(["wget", download_url, "-O", download_path]):
             print_error(
                 "Image download failed attempting to download:\n" + image[
                     "url"])
@@ -249,7 +261,7 @@ class ImageManager:
             image_path = download_path
 
         # Convert image to raw format, if necessary
-        if image["image-format"] == "qcow2":
+        if image["image-format"] in self.CONVERT_FORMATS:
             print_info("Converting image...")
             image_basename = image_path[0:image_path.rindex(".")]
             if call(["qemu-img", "convert", "-O", "raw", image_path,
