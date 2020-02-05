@@ -130,6 +130,33 @@ Transform a service metadata document to a service outline
   </xsl:template>
 
   <!--
+    Map shapes @HttpEmbededded if required when type used in ArrayList
+  -->
+  <xsl:template name="type-httpembedded">
+    <xsl:param name="type"/>
+    <xsl:choose>
+      <xsl:when test="$type='Binary'"></xsl:when>
+      <xsl:when test="$type='BooleanOptional'"></xsl:when>
+      <xsl:when test="$type='DoubleOptional'"></xsl:when>
+      <xsl:when test="$type='IntegerOptional'"></xsl:when>
+      <xsl:when test="$type='LongOptional'"></xsl:when>
+      <xsl:when test="$type='TStamp'"></xsl:when>
+      <xsl:when test="/service-metadata/shapes/*[local-name()=$type and @type='boolean']"></xsl:when>
+      <xsl:when test="/service-metadata/shapes/*[local-name()=$type and @type='double']"></xsl:when>
+      <xsl:when test="/service-metadata/shapes/*[local-name()=$type and @type='integer']"></xsl:when>
+      <xsl:when test="/service-metadata/shapes/*[local-name()=$type and @type='long']"></xsl:when>
+      <xsl:when test="/service-metadata/shapes/*[local-name()=$type and @type='string']"></xsl:when>
+      <xsl:when test="/service-metadata/shapes/*[local-name()=$type and @type='timestamp']"></xsl:when>
+      <xsl:when test="/service-metadata/shapes/*[local-name()=$type and @type='blob']"></xsl:when>
+      <xsl:when test="/service-metadata/metadata[@protocol='rest-json' or @protocol='json'] and /service-metadata/shapes/*[local-name()=$type and @type='list']"></xsl:when>
+      <xsl:otherwise>
+        <xsl:text>@HttpEmbedded(multiple = true)
+</xsl:text>
+      </xsl:otherwise>
+    </xsl:choose>
+  </xsl:template>
+
+  <!--
     Generate fields for a shape
   -->
   <xsl:template match="*" mode="shape-fields">
@@ -183,14 +210,14 @@ Transform a service metadata document to a service outline
   <xsl:template match="*[@type='timestamp']" mode="shape"/>
   <xsl:template match="*" mode="shape">
     <xsl:variable name="service-lower"><xsl:value-of select="translate(/service-metadata/metadata/@serviceId, $upper, $lower)"/></xsl:variable>
-    <xsl:variable name="service-sente"><xsl:value-of select="translate(substring(/service-metadata/metadata/@serviceId,1,1), $lower, $upper)"/><xsl:value-of select="translate(substring(/service-metadata/metadata/@serviceId,2), $upper, $lower)"/></xsl:variable>
+    <xsl:variable name="service-sente"><xsl:choose><xsl:when test="/service-metadata/metadata/@serviceIdCamel"><xsl:value-of select="/service-metadata/metadata/@serviceIdCamel"/></xsl:when><xsl:otherwise><xsl:value-of select="translate(substring(/service-metadata/metadata/@serviceId,1,1), $lower, $upper)"/><xsl:value-of select="translate(substring(/service-metadata/metadata/@serviceId,2), $upper, $lower)"/></xsl:otherwise></xsl:choose></xsl:variable>
     <!-- generated if used by another structure or list shape -->
     <xsl:if test="/service-metadata/shapes/*[@type='structure']/members/*[@shape=local-name(current())] or /service-metadata/shapes/*[@type='list']/member[@shape=local-name(current())] or /service-metadata/shapes/*[@type='map']/*[@shape=local-name(current())]">
       <xsl:choose>
         <xsl:when test="@type='list'">
 <xsl:if test="not(/service-metadata/metadata[@protocol='rest-json' or @protocol='json'])">
 <exsl:document href="{$output-path}/{$service-lower}-common/src/main/java/com/eucalyptus/{$service-lower}/common/msgs/{local-name(.)}.java" method="text">/*
- * Copyright 2018 AppScale Systems, Inc
+ * Copyright 2020 AppScale Systems, Inc
  *
  * Use of this source code is governed by a BSD-2-Clause
  * license that can be found in the LICENSE file or at
@@ -198,12 +225,15 @@ Transform a service metadata document to a service outline
  */
 package com.eucalyptus.<xsl:value-of select="$service-lower"/>.common.msgs;
 
+import com.eucalyptus.binding.HttpEmbedded;
+import com.eucalyptus.binding.HttpParameterMapping;
 import edu.ucsb.eucalyptus.msgs.EucalyptusData;
 import java.util.ArrayList;
 
 
 public class <xsl:value-of select="local-name(.)"/> extends EucalyptusData {
 
+  <xsl:call-template name="type-httpembedded"><xsl:with-param name="type" select="member/@shape"/></xsl:call-template>@HttpParameterMapping(parameter = "<xsl:value-of select="concat(member/@locationName, substring('member', 1 div not(member/@locationName)))"/>")
   private ArrayList&lt;<xsl:call-template name="type-mapper"><xsl:with-param name="type" select="member/@shape"/></xsl:call-template>> member = new ArrayList&lt;>();
 
   public ArrayList&lt;<xsl:call-template name="type-mapper"><xsl:with-param name="type" select="member/@shape"/></xsl:call-template>> getMember( ) {
@@ -219,7 +249,7 @@ public class <xsl:value-of select="local-name(.)"/> extends EucalyptusData {
         </xsl:when>
         <xsl:when test="@type='map'">
 <exsl:document href="{$output-path}/{$service-lower}-common/src/main/java/com/eucalyptus/{$service-lower}/common/msgs/{local-name(.)}.java" method="text">/*
- * Copyright 2018 AppScale Systems, Inc
+ * Copyright 2020 AppScale Systems, Inc
  *
  * Use of this source code is governed by a BSD-2-Clause
  * license that can be found in the LICENSE file or at
@@ -266,7 +296,7 @@ public class <xsl:value-of select="local-name(.)"/> extends EucalyptusData {
 </exsl:document>
 <xsl:if test="/service-metadata/metadata[@protocol!='rest-json']">
 <exsl:document href="{$output-path}/{$service-lower}-common/src/main/java/com/eucalyptus/{$service-lower}/common/msgs/{local-name(.)}Entry.java" method="text">/*
- * Copyright 2018 AppScale Systems, Inc
+ * Copyright 2020 AppScale Systems, Inc
  *
  * Use of this source code is governed by a BSD-2-Clause
  * license that can be found in the LICENSE file or at
@@ -304,7 +334,7 @@ public class <xsl:value-of select="local-name(.)"/>Entry extends EucalyptusData 
         </xsl:when>
         <xsl:when test="@type='structure'">
 <exsl:document href="{$output-path}/{$service-lower}-common/src/main/java/com/eucalyptus/{$service-lower}/common/msgs/{local-name(.)}.java" method="text">/*
- * Copyright 2018 AppScale Systems, Inc
+ * Copyright 2020 AppScale Systems, Inc
  *
  * Use of this source code is governed by a BSD-2-Clause
  * license that can be found in the LICENSE file or at
@@ -337,9 +367,9 @@ public class <xsl:value-of select="local-name(.)"/> extends EucalyptusData {
   -->
   <xsl:template match="*" mode="message">
     <xsl:variable name="service-lower"><xsl:value-of select="translate(/service-metadata/metadata/@serviceId, $upper, $lower)"/></xsl:variable>
-    <xsl:variable name="service-sente"><xsl:value-of select="translate(substring(/service-metadata/metadata/@serviceId,1,1), $lower, $upper)"/><xsl:value-of select="translate(substring(/service-metadata/metadata/@serviceId,2), $upper, $lower)"/></xsl:variable>
+    <xsl:variable name="service-sente"><xsl:choose><xsl:when test="/service-metadata/metadata/@serviceIdCamel"><xsl:value-of select="/service-metadata/metadata/@serviceIdCamel"/></xsl:when><xsl:otherwise><xsl:value-of select="translate(substring(/service-metadata/metadata/@serviceId,1,1), $lower, $upper)"/><xsl:value-of select="translate(substring(/service-metadata/metadata/@serviceId,2), $upper, $lower)"/></xsl:otherwise></xsl:choose></xsl:variable>
     <exsl:document href="{$output-path}/{$service-lower}-common/src/main/java/com/eucalyptus/{$service-lower}/common/msgs/{local-name(.)}Type.java" method="text">/*
- * Copyright 2018 AppScale Systems, Inc
+ * Copyright 2020 AppScale Systems, Inc
  *
  * Use of this source code is governed by a BSD-2-Clause
  * license that can be found in the LICENSE file or at
@@ -373,7 +403,7 @@ public class <xsl:value-of select="local-name(.)"/>Type extends <xsl:value-of se
 }
 </exsl:document>
     <exsl:document href="{$output-path}/{$service-lower}-common/src/main/java/com/eucalyptus/{$service-lower}/common/msgs/{local-name(.)}ResponseType.java" method="text">/*
- * Copyright 2018 AppScale Systems, Inc
+ * Copyright 2020 AppScale Systems, Inc
  *
  * Use of this source code is governed by a BSD-2-Clause
  * license that can be found in the LICENSE file or at
@@ -427,7 +457,7 @@ public class <xsl:value-of select="local-name(.)"/>ResponseType extends <xsl:val
 </exsl:document>
 <xsl:if test="output/@resultWrapper">
     <exsl:document href="{$output-path}/{$service-lower}-common/src/main/java/com/eucalyptus/{$service-lower}/common/msgs/{output/@resultWrapper}.java" method="text">/*
- * Copyright 2018 AppScale Systems, Inc
+ * Copyright 2020 AppScale Systems, Inc
  *
  * Use of this source code is governed by a BSD-2-Clause
  * license that can be found in the LICENSE file or at
@@ -439,6 +469,7 @@ import edu.ucsb.eucalyptus.msgs.EucalyptusData;
 import com.eucalyptus.<xsl:value-of select="$service-lower"/>.common.<xsl:value-of select="$service-sente"/>MessageValidation.FieldRange;
 import com.eucalyptus.<xsl:value-of select="$service-lower"/>.common.<xsl:value-of select="$service-sente"/>MessageValidation.FieldRegex;
 import com.eucalyptus.<xsl:value-of select="$service-lower"/>.common.<xsl:value-of select="$service-sente"/>MessageValidation.FieldRegexValue;
+import javax.annotation.Nonnull;
 
 
 public class <xsl:value-of select="output/@resultWrapper"/> extends EucalyptusData {
@@ -554,7 +585,7 @@ public class <xsl:value-of select="output/@resultWrapper"/> extends EucalyptusDa
   -->
   <xsl:template match="*" mode="message-index">
     <xsl:variable name="service-lower"><xsl:value-of select="translate(/service-metadata/metadata/@serviceId, $upper, $lower)"/></xsl:variable>
-    <xsl:variable name="service-sente"><xsl:value-of select="translate(substring(/service-metadata/metadata/@serviceId,1,1), $lower, $upper)"/><xsl:value-of select="translate(substring(/service-metadata/metadata/@serviceId,2), $upper, $lower)"/></xsl:variable>
+    <xsl:variable name="service-sente"><xsl:choose><xsl:when test="/service-metadata/metadata/@serviceIdCamel"><xsl:value-of select="/service-metadata/metadata/@serviceIdCamel"/></xsl:when><xsl:otherwise><xsl:value-of select="translate(substring(/service-metadata/metadata/@serviceId,1,1), $lower, $upper)"/><xsl:value-of select="translate(substring(/service-metadata/metadata/@serviceId,2), $upper, $lower)"/></xsl:otherwise></xsl:choose></xsl:variable>
 <xsl:text>com.eucalyptus.</xsl:text><xsl:value-of select="$service-lower"/>.common.msgs.<xsl:value-of select="local-name(.)"/>Type
 <xsl:text>com.eucalyptus.</xsl:text><xsl:value-of select="$service-lower"/>.common.msgs.<xsl:value-of select="local-name(.)"/>ResponseType
 </xsl:template>
@@ -564,7 +595,7 @@ public class <xsl:value-of select="output/@resultWrapper"/> extends EucalyptusDa
   -->
   <xsl:template match="*" mode="binding-message">
     <xsl:variable name="service-lower"><xsl:value-of select="translate(/service-metadata/metadata/@serviceId, $upper, $lower)"/></xsl:variable>
-    <xsl:variable name="service-sente"><xsl:value-of select="translate(substring(/service-metadata/metadata/@serviceId,1,1), $lower, $upper)"/><xsl:value-of select="translate(substring(/service-metadata/metadata/@serviceId,2), $upper, $lower)"/></xsl:variable>
+    <xsl:variable name="service-sente"><xsl:choose><xsl:when test="/service-metadata/metadata/@serviceIdCamel"><xsl:value-of select="/service-metadata/metadata/@serviceIdCamel"/></xsl:when><xsl:otherwise><xsl:value-of select="translate(substring(/service-metadata/metadata/@serviceId,1,1), $lower, $upper)"/><xsl:value-of select="translate(substring(/service-metadata/metadata/@serviceId,2), $upper, $lower)"/></xsl:otherwise></xsl:choose></xsl:variable>
   <mapping name="{concat(input/@locationName, substring(local-name(.), 1 div not(input/@locationName)))}" class="com.eucalyptus.{$service-lower}.common.msgs.{local-name(.)}Type">
 <xsl:if test="/service-metadata/metadata/@protocol='rest-xml'">
   <xsl:attribute name="ordered">false</xsl:attribute>
@@ -604,9 +635,9 @@ public class <xsl:value-of select="output/@resultWrapper"/> extends EucalyptusDa
   <xsl:template match="/service-metadata">
     <xsl:variable name="service-lower"><xsl:value-of select="translate(metadata/@serviceId, $upper, $lower)"/></xsl:variable>
     <xsl:variable name="service-upper"><xsl:value-of select="translate($service-lower, $lower, $upper)"/></xsl:variable>
-    <xsl:variable name="service-sente"><xsl:value-of select="translate(substring(metadata/@serviceId,1,1), $lower, $upper)"/><xsl:value-of select="translate(substring(metadata/@serviceId,2), $upper, $lower)"/></xsl:variable>
+    <xsl:variable name="service-sente"><xsl:choose><xsl:when test="metadata/@serviceIdCamel"><xsl:value-of select="metadata/@serviceIdCamel"/></xsl:when><xsl:otherwise><xsl:value-of select="translate(substring(metadata/@serviceId,1,1), $lower, $upper)"/><xsl:value-of select="translate(substring(metadata/@serviceId,2), $upper, $lower)"/></xsl:otherwise></xsl:choose></xsl:variable>
     <xsl:variable name="service-ns"><xsl:value-of select="metadata/@xmlNamespace"/></xsl:variable>
-    <xsl:variable name="service-desc"><xsl:value-of select="metadata/@serviceAbbreviation"/></xsl:variable>
+    <xsl:variable name="service-desc"><xsl:choose><xsl:when test="metadata/@serviceAbbreviation"><xsl:value-of select="metadata/@serviceAbbreviation"/></xsl:when><xsl:otherwise><xsl:value-of select="metadata/@serviceId"/></xsl:otherwise></xsl:choose></xsl:variable>
     <xsl:variable name="service-version"><xsl:value-of select="metadata/@apiVersion"/></xsl:variable>
 
     <!--
@@ -614,7 +645,7 @@ public class <xsl:value-of select="output/@resultWrapper"/> extends EucalyptusDa
     -->
     <exsl:document href="{$output-path}/{$service-lower}-common/build.xml" method="xml" standalone="yes" indent="yes">
 <xsl:comment>
-  Copyright 2018 AppScale Systems, Inc
+  Copyright 2020 AppScale Systems, Inc
 
   Use of this source code is governed by a BSD-2-Clause
   license that can be found in the LICENSE file or at
@@ -626,7 +657,7 @@ public class <xsl:value-of select="output/@resultWrapper"/> extends EucalyptusDa
     </exsl:document>
     <exsl:document href="{$output-path}/{$service-lower}/build.xml" method="xml" standalone="yes" indent="yes">
 <xsl:comment>
-  Copyright 2018 AppScale Systems, Inc
+  Copyright 2020 AppScale Systems, Inc
 
   Use of this source code is governed by a BSD-2-Clause
   license that can be found in the LICENSE file or at
@@ -638,7 +669,7 @@ public class <xsl:value-of select="output/@resultWrapper"/> extends EucalyptusDa
     </exsl:document>
     <exsl:document href="{$output-path}/{$service-lower}-common/ivy.xml" method="xml" standalone="yes" indent="yes">
 <xsl:comment>
-  Copyright 2018 AppScale Systems, Inc
+  Copyright 2020 AppScale Systems, Inc
 
   Use of this source code is governed by a BSD-2-Clause
   license that can be found in the LICENSE file or at
@@ -653,7 +684,7 @@ public class <xsl:value-of select="output/@resultWrapper"/> extends EucalyptusDa
     </exsl:document>
     <exsl:document href="{$output-path}/{$service-lower}/ivy.xml" method="xml" standalone="yes" indent="yes">
 <xsl:comment>
-  Copyright 2018 AppScale Systems, Inc
+  Copyright 2020 AppScale Systems, Inc
 
   Use of this source code is governed by a BSD-2-Clause
   license that can be found in the LICENSE file or at
@@ -679,7 +710,7 @@ public class <xsl:value-of select="output/@resultWrapper"/> extends EucalyptusDa
     <xsl:if test="/service-metadata/metadata[@protocol='query' or @protocol='rest-xml']">
     <exsl:document href="{$output-path}/{$service-lower}-common/src/main/resources/{$service-lower}-binding.xml" method="xml" standalone="yes" indent="yes">
 <xsl:comment>
-  Copyright 2018 AppScale Systems, Inc
+  Copyright 2020 AppScale Systems, Inc
 
   Use of this source code is governed by a BSD-2-Clause
   license that can be found in the LICENSE file or at
@@ -700,7 +731,7 @@ public class <xsl:value-of select="output/@resultWrapper"/> extends EucalyptusDa
     <value name="Type" field="type" usage="required"/>
     <value name="Code" field="code" usage="required"/>
     <value name="Message" field="message" usage="required"/>
-    <structure name="Detail" field="detail" usage="required" type="com.eucalyptus.{$service-lower}.common.msgs.ErrorDetail"/>
+    <structure name="Detail" field="detail" usage="optional" type="com.eucalyptus.{$service-lower}.common.msgs.ErrorDetail"/>
   </mapping>
   <mapping class="com.eucalyptus.{$service-lower}.common.msgs.ErrorDetail" abstract="true"/>
   <mapping name="ErrorResponse" class="com.eucalyptus.{$service-lower}.common.msgs.ErrorResponse">
@@ -722,7 +753,7 @@ public class <xsl:value-of select="output/@resultWrapper"/> extends EucalyptusDa
     -->
     <exsl:document href="{$output-path}/{$service-lower}/src/main/resources/{$service-lower}-component-context.xml" method="xml" standalone="yes" indent="yes">
 <xsl:comment>
-  Copyright 2018 AppScale Systems, Inc
+  Copyright 2020 AppScale Systems, Inc
 
   Use of this source code is governed by a BSD-2-Clause
   license that can be found in the LICENSE file or at
@@ -759,7 +790,7 @@ public class <xsl:value-of select="output/@resultWrapper"/> extends EucalyptusDa
       Generate common module code
     -->
     <exsl:document href="{$output-path}/{$service-lower}-common/src/main/java/com/eucalyptus/{$service-lower}/common/{$service-sente}.java" method="text">/*
- * Copyright 2018 AppScale Systems, Inc
+ * Copyright 2020 AppScale Systems, Inc
  *
  * Use of this source code is governed by a BSD-2-Clause
  * license that can be found in the LICENSE file or at
@@ -787,7 +818,7 @@ public class <xsl:value-of select="$service-sente"/> extends ComponentId {
 }
 </exsl:document>
     <exsl:document href="{$output-path}/{$service-lower}-common/src/main/java/com/eucalyptus/{$service-lower}/common/{$service-sente}Metadata.java" method="text">/*
- * Copyright 2018 AppScale Systems, Inc
+ * Copyright 2020 AppScale Systems, Inc
  *
  * Use of this source code is governed by a BSD-2-Clause
  * license that can be found in the LICENSE file or at
@@ -810,7 +841,7 @@ public interface <xsl:value-of select="$service-sente"/>Metadata extends Restric
 }
 </exsl:document>
     <exsl:document href="{$output-path}/{$service-lower}-common/src/main/java/com/eucalyptus/{$service-lower}/common/{$service-sente}Metadatas.java" method="text">/*
- * Copyright 2018 AppScale Systems, Inc
+ * Copyright 2020 AppScale Systems, Inc
  *
  * Use of this source code is governed by a BSD-2-Clause
  * license that can be found in the LICENSE file or at
@@ -818,12 +849,14 @@ public interface <xsl:value-of select="$service-sente"/>Metadata extends Restric
  */
 package com.eucalyptus.<xsl:value-of select="$service-lower"/>.common;
 
+import com.eucalyptus.util.RestrictedTypes;
 
-public class <xsl:value-of select="$service-sente"/>Metadatas {
+
+public class <xsl:value-of select="$service-sente"/>Metadatas extends RestrictedTypes {
 }
 </exsl:document>
     <exsl:document href="{$output-path}/{$service-lower}-common/src/main/java/com/eucalyptus/{$service-lower}/common/{$service-sente}Api.java" method="text">/*
- * Copyright 2018 AppScale Systems, Inc
+ * Copyright 2020 AppScale Systems, Inc
  *
  * Use of this source code is governed by a BSD-2-Clause
  * license that can be found in the LICENSE file or at
@@ -831,15 +864,17 @@ public class <xsl:value-of select="$service-sente"/>Metadatas {
  */
 package com.eucalyptus.<xsl:value-of select="$service-lower"/>.common;
 
+import com.eucalyptus.component.annotation.ComponentPart;
 import com.eucalyptus.<xsl:value-of select="$service-lower"/>.common.msgs.*;
 
 
+@ComponentPart(<xsl:value-of select="$service-sente"/>.class)
 public interface <xsl:value-of select="$service-sente"/>Api {
 <xsl:apply-templates mode="api" select="operations/*"/>
 }
 </exsl:document>
     <exsl:document href="{$output-path}/{$service-lower}-common/src/main/java/com/eucalyptus/{$service-lower}/common/{$service-sente}ApiAsync.java" method="text">/*
- * Copyright 2018 AppScale Systems, Inc
+ * Copyright 2020 AppScale Systems, Inc
  *
  * Use of this source code is governed by a BSD-2-Clause
  * license that can be found in the LICENSE file or at
@@ -847,15 +882,18 @@ public interface <xsl:value-of select="$service-sente"/>Api {
  */
 package com.eucalyptus.<xsl:value-of select="$service-lower"/>.common;
 
+import com.eucalyptus.component.annotation.ComponentPart;
 import com.eucalyptus.<xsl:value-of select="$service-lower"/>.common.msgs.*;
 import com.eucalyptus.util.async.CheckedListenableFuture;
 
+
+@ComponentPart(<xsl:value-of select="$service-sente"/>.class)
 public interface <xsl:value-of select="$service-sente"/>ApiAsync {
 <xsl:apply-templates mode="api-async" select="operations/*"/>
 }
 </exsl:document>
 <exsl:document href="{$output-path}/{$service-lower}-common/src/main/java/com/eucalyptus/{$service-lower}/common/{$service-sente}MessageValidation.java" method="text">/*
- * Copyright 2018 AppScale Systems, Inc
+ * Copyright 2020 AppScale Systems, Inc
  *
  * Use of this source code is governed by a BSD-2-Clause
  * license that can be found in the LICENSE file or at
@@ -946,7 +984,7 @@ public class <xsl:value-of select="$service-sente"/>MessageValidation {
 }
 </exsl:document>
     <exsl:document href="{$output-path}/{$service-lower}-common/src/main/java/com/eucalyptus/{$service-lower}/common/msgs/{$service-sente}Message.java" method="text">/*
- * Copyright 2018 AppScale Systems, Inc
+ * Copyright 2020 AppScale Systems, Inc
  *
  * Use of this source code is governed by a BSD-2-Clause
  * license that can be found in the LICENSE file or at
@@ -994,7 +1032,7 @@ public class <xsl:value-of select="$service-sente"/>Message extends BaseMessage 
 }
 </exsl:document>
     <exsl:document href="{$output-path}/{$service-lower}-common/src/main/java/com/eucalyptus/{$service-lower}/common/msgs/Error.java" method="text">/*
- * Copyright 2018 AppScale Systems, Inc
+ * Copyright 2020 AppScale Systems, Inc
  *
  * Use of this source code is governed by a BSD-2-Clause
  * license that can be found in the LICENSE file or at
@@ -1009,7 +1047,7 @@ public class Error extends EucalyptusData {
   private String type;
   private String code;
   private String message;
-  private ErrorDetail detail = new ErrorDetail( );
+  private ErrorDetail detail;
 
   public String getType( ) {
     return type;
@@ -1045,7 +1083,7 @@ public class Error extends EucalyptusData {
 }
 </exsl:document>
     <exsl:document href="{$output-path}/{$service-lower}-common/src/main/java/com/eucalyptus/{$service-lower}/common/msgs/ErrorDetail.java" method="text">/*
- * Copyright 2018 AppScale Systems, Inc
+ * Copyright 2020 AppScale Systems, Inc
  *
  * Use of this source code is governed by a BSD-2-Clause
  * license that can be found in the LICENSE file or at
@@ -1060,7 +1098,7 @@ public class ErrorDetail extends EucalyptusData {
 }
 </exsl:document>
     <exsl:document href="{$output-path}/{$service-lower}-common/src/main/java/com/eucalyptus/{$service-lower}/common/msgs/ErrorResponse.java" method="text">/*
- * Copyright 2018 AppScale Systems, Inc
+ * Copyright 2020 AppScale Systems, Inc
  *
  * Use of this source code is governed by a BSD-2-Clause
  * license that can be found in the LICENSE file or at
@@ -1117,7 +1155,7 @@ public class ErrorResponse extends <xsl:value-of select="$service-sente"/>Messag
 </exsl:document>
 <xsl:if test="/service-metadata/metadata/@protocol = 'query'">
     <exsl:document href="{$output-path}/{$service-lower}-common/src/main/java/com/eucalyptus/{$service-lower}/common/msgs/ResponseMetadata.java" method="text">/*
- * Copyright 2018 AppScale Systems, Inc
+ * Copyright 2020 AppScale Systems, Inc
  *
  * Use of this source code is governed by a BSD-2-Clause
  * license that can be found in the LICENSE file or at
@@ -1142,7 +1180,7 @@ public class ResponseMetadata extends EucalyptusData {
 </exsl:document>
 </xsl:if>
     <exsl:document href="{$output-path}/{$service-lower}-common/src/main/java/com/eucalyptus/{$service-lower}/common/policy/{$service-sente}PolicySpec.java" method="text">/*
- * Copyright 2018 AppScale Systems, Inc
+ * Copyright 2020 AppScale Systems, Inc
  *
  * Use of this source code is governed by a BSD-2-Clause
  * license that can be found in the LICENSE file or at
@@ -1170,7 +1208,7 @@ public interface <xsl:value-of select="$service-sente"/>PolicySpec {
       Generate service skeleton code
     -->
     <exsl:document href="{$output-path}/{$service-lower}/src/main/java/com/eucalyptus/{$service-lower}/service/{$service-sente}Exception.java" method="text">/*
- * Copyright 2018 AppScale Systems, Inc
+ * Copyright 2020 AppScale Systems, Inc
  *
  * Use of this source code is governed by a BSD-2-Clause
  * license that can be found in the LICENSE file or at
@@ -1196,7 +1234,7 @@ public class <xsl:value-of select="$service-sente"/>Exception extends Eucalyptus
 }
 </exsl:document>
     <exsl:document href="{$output-path}/{$service-lower}/src/main/java/com/eucalyptus/{$service-lower}/service/{$service-sente}ClientException.java" method="text">/*
- * Copyright 2018 AppScale Systems, Inc
+ * Copyright 2020 AppScale Systems, Inc
  *
  * Use of this source code is governed by a BSD-2-Clause
  * license that can be found in the LICENSE file or at
@@ -1220,7 +1258,7 @@ public class <xsl:value-of select="$service-sente"/>ClientException extends <xsl
 }
 </exsl:document>
     <exsl:document href="{$output-path}/{$service-lower}/src/main/java/com/eucalyptus/{$service-lower}/service/{$service-sente}ServiceException.java" method="text">/*
- * Copyright 2018 AppScale Systems, Inc
+ * Copyright 2020 AppScale Systems, Inc
  *
  * Use of this source code is governed by a BSD-2-Clause
  * license that can be found in the LICENSE file or at
@@ -1245,7 +1283,7 @@ public class <xsl:value-of select="$service-sente"/>ServiceException extends <xs
 }
 </exsl:document>
     <exsl:document href="{$output-path}/{$service-lower}/src/main/java/com/eucalyptus/{$service-lower}/service/{$service-sente}Service.java" method="text">/*
- * Copyright 2018 AppScale Systems, Inc
+ * Copyright 2020 AppScale Systems, Inc
  *
  * Use of this source code is governed by a BSD-2-Clause
  * license that can be found in the LICENSE file or at
@@ -1265,7 +1303,7 @@ public class <xsl:value-of select="$service-sente"/>Service {
 }
 </exsl:document>
     <exsl:document href="{$output-path}/{$service-lower}/src/main/java/com/eucalyptus/{$service-lower}/service/config/{$service-sente}Configuration.java" method="text">/*
- * Copyright 2018 AppScale Systems, Inc
+ * Copyright 2020 AppScale Systems, Inc
  *
  * Use of this source code is governed by a BSD-2-Clause
  * license that can be found in the LICENSE file or at
@@ -1299,7 +1337,7 @@ public class <xsl:value-of select="$service-sente"/>Configuration extends Compon
 }
 </exsl:document>
     <exsl:document href="{$output-path}/{$service-lower}/src/main/java/com/eucalyptus/{$service-lower}/service/config/{$service-sente}ServiceBuilder.java" method="text">/*
- * Copyright 2018 AppScale Systems, Inc
+ * Copyright 2020 AppScale Systems, Inc
  *
  * Use of this source code is governed by a BSD-2-Clause
  * license that can be found in the LICENSE file or at
@@ -1338,7 +1376,7 @@ public class <xsl:value-of select="$service-sente"/>ServiceBuilder extends Abstr
 }
 </exsl:document>
     <exsl:document href="{$output-path}/{$service-lower}/src/main/java/com/eucalyptus/{$service-lower}/service/ws/{$service-sente}ErrorHandler.java" method="text">/*
- * Copyright 2018 AppScale Systems, Inc
+ * Copyright 2020 AppScale Systems, Inc
  *
  * Use of this source code is governed by a BSD-2-Clause
  * license that can be found in the LICENSE file or at
@@ -1392,7 +1430,7 @@ public class <xsl:value-of select="$service-sente"/>ErrorHandler extends ErrorHa
 }
 </exsl:document>
     <exsl:document href="{$output-path}/{$service-lower}/src/main/java/com/eucalyptus/{$service-lower}/service/ws/{$service-sente}MessageValidator.java" method="text">/*
- * Copyright 2018 AppScale Systems, Inc
+ * Copyright 2020 AppScale Systems, Inc
  *
  * Use of this source code is governed by a BSD-2-Clause
  * license that can be found in the LICENSE file or at
@@ -1431,7 +1469,7 @@ public class <xsl:value-of select="$service-sente"/>MessageValidator extends Ser
 <xsl:choose>
   <xsl:when test="/service-metadata/metadata/@protocol='json'">
     <exsl:document href="{$output-path}/{$service-lower}/src/main/java/com/eucalyptus/{$service-lower}/service/ws/{$service-sente}JsonBinding.java" method="text">/*
- * Copyright 2018 AppScale Systems, Inc
+ * Copyright 2020 AppScale Systems, Inc
  *
  * Use of this source code is governed by a BSD-2-Clause
  * license that can be found in the LICENSE file or at
@@ -1455,7 +1493,7 @@ public class <xsl:value-of select="$service-sente"/>JsonBinding extends BaseJson
 }
 </exsl:document>
     <exsl:document href="{$output-path}/{$service-lower}/src/main/java/com/eucalyptus/{$service-lower}/service/ws/{$service-sente}JsonPipeline.java" method="text">/*
- * Copyright 2018 AppScale Systems, Inc
+ * Copyright 2020 AppScale Systems, Inc
  *
  * Use of this source code is governed by a BSD-2-Clause
  * license that can be found in the LICENSE file or at
@@ -1499,7 +1537,7 @@ public class <xsl:value-of select="$service-sente"/>JsonPipeline extends JsonPip
   </xsl:when>
   <xsl:when test="/service-metadata/metadata/@protocol='query'">
     <exsl:document href="{$output-path}/{$service-lower}/src/main/java/com/eucalyptus/{$service-lower}/service/ws/{$service-sente}QueryBinding.java" method="text">/*
- * Copyright 2018 AppScale Systems, Inc
+ * Copyright 2020 AppScale Systems, Inc
  *
  * Use of this source code is governed by a BSD-2-Clause
  * license that can be found in the LICENSE file or at
@@ -1528,7 +1566,7 @@ public class <xsl:value-of select="$service-sente"/>QueryBinding extends BaseQue
 }
 </exsl:document>
     <exsl:document href="{$output-path}/{$service-lower}/src/main/java/com/eucalyptus/{$service-lower}/service/ws/{$service-sente}QueryPipeline.java" method="text">/*
- * Copyright 2018 AppScale Systems, Inc
+ * Copyright 2020 AppScale Systems, Inc
  *
  * Use of this source code is governed by a BSD-2-Clause
  * license that can be found in the LICENSE file or at
@@ -1568,7 +1606,7 @@ public class <xsl:value-of select="$service-sente"/>QueryPipeline extends QueryP
   </xsl:when>
   <xsl:when test="/service-metadata/metadata/@protocol='rest-xml'">
     <exsl:document href="{$output-path}/{$service-lower}/src/main/java/com/eucalyptus/{$service-lower}/service/ws/{$service-sente}RestXmlBinding.java" method="text">/*
- * Copyright 2018 AppScale Systems, Inc
+ * Copyright 2020 AppScale Systems, Inc
  *
  * Use of this source code is governed by a BSD-2-Clause
  * license that can be found in the LICENSE file or at
@@ -1615,7 +1653,7 @@ public class <xsl:value-of select="$service-sente"/>RestXmlBinding extends BaseR
 }
 </exsl:document>
     <exsl:document href="{$output-path}/{$service-lower}/src/main/java/com/eucalyptus/{$service-lower}/service/ws/{$service-sente}RestXmlPipeline.java" method="text">/*
- * Copyright 2018 AppScale Systems, Inc
+ * Copyright 2020 AppScale Systems, Inc
  *
  * Use of this source code is governed by a BSD-2-Clause
  * license that can be found in the LICENSE file or at
@@ -1655,7 +1693,7 @@ public class <xsl:value-of select="$service-sente"/>RestXmlPipeline extends Rest
   </xsl:when>
   <xsl:when test="/service-metadata/metadata/@protocol='rest-json'">
     <exsl:document href="{$output-path}/{$service-lower}/src/main/java/com/eucalyptus/{$service-lower}/service/ws/{$service-sente}RestJsonBinding.java" method="text">/*
- * Copyright 2018 AppScale Systems, Inc
+ * Copyright 2020 AppScale Systems, Inc
  *
  * Use of this source code is governed by a BSD-2-Clause
  * license that can be found in the LICENSE file or at
@@ -1680,7 +1718,7 @@ public class <xsl:value-of select="$service-sente"/>RestJsonBinding extends Base
 }
 </exsl:document>
     <exsl:document href="{$output-path}/{$service-lower}/src/main/java/com/eucalyptus/{$service-lower}/service/ws/{$service-sente}RestJsonPipeline.java" method="text">/*
- * Copyright 2018 AppScale Systems, Inc
+ * Copyright 2020 AppScale Systems, Inc
  *
  * Use of this source code is governed by a BSD-2-Clause
  * license that can be found in the LICENSE file or at
@@ -1724,7 +1762,7 @@ public class <xsl:value-of select="$service-sente"/>RestJsonPipeline extends Res
 </xsl:choose>
 <xsl:if test="/service-metadata/metadata[@protocol='query' or @protocol='rest-xml']">
     <exsl:document href="{$output-path}/{$service-lower}/src/test/java/com/eucalyptus/{$service-lower}/service/ws/{$service-sente}BindingTest.groovy" method="text">/*
- * Copyright 2018 AppScale Systems, Inc
+ * Copyright 2020 AppScale Systems, Inc
  *
  * Use of this source code is governed by a BSD-2-Clause
  * license that can be found in the LICENSE file or at
