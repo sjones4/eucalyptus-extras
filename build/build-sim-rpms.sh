@@ -1,5 +1,5 @@
 #!/bin/bash
-# Build eucalyptus service image rpms for the 4.4 series
+# Build eucalyptus service image rpms
 set -e
 
 # dependencies

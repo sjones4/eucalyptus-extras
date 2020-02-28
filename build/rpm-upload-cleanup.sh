@@ -4,7 +4,7 @@
 # setup
 BINTRAY_API="${BINTRAY_API:-https://api.bintray.com}"
 BINTRAY_SUB="${BINTRAY_SUB:-sjones4}"
-BINTRAY_RPO="${BINTRAY_RPO:-eucalyptus-devel-4.4}"
+BINTRAY_RPO="${BINTRAY_RPO:-eucalyptus-devel-5}"
 
 # checks
 if [ -z "${BINTRAY_APIKEY}" ] ; then

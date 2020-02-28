@@ -3,9 +3,8 @@
 
 # config
 MODE="${1:-build}" # setup build build-only
-VERSION="4.4"
 YUM_OPTS="${YUM_OPTS:--y}"
-EUCA_BRANCH="${EUCA_BRANCH:-maint-${VERSION}}"
+EUCA_BRANCH="${EUCA_BRANCH:-master}"
 EUCA_REPO="${EUCA_REPO:-https://github.com/corymbia/eucalyptus.git}"
 EUCA_PATH="${EUCA_PATH:-${PWD}/eucalyptus}"
 REQUIRE=(
@@ -35,6 +34,7 @@ REQUIRE=(
     "xalan-j2-xsltc"
     "yum"
 )
+# once 5.0 is released these dependencies should use the "5" repository
 REQUIRE_EUCA=(
     "http://downloads.eucalyptus.cloud/software/eucalyptus/4.4/rhel/7/x86_64/annogen-0.1.0-8.el7.noarch.rpm"
     "http://downloads.eucalyptus.cloud/software/eucalyptus/4.4/rhel/7/x86_64/axiom-1.2.12-11.el7.noarch.rpm"

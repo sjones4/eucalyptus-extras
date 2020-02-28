@@ -4,21 +4,21 @@
 # setup
 BINTRAY_API="${BINTRAY_API:-https://api.bintray.com}"
 BINTRAY_SUB="${BINTRAY_SUB:-sjones4}"
-BINTRAY_RPO="${BINTRAY_RPO:-eucalyptus-devel-4.4}"
+BINTRAY_RPO="${BINTRAY_RPO:-eucalyptus-devel-5}"
 BINTRAY_PUB="${BINTRAY_PUB:-0}"
 RPM_PACKAGE_JSON=$(mktemp -t package.json.XXXXXXXX)
-PACK_DEFAULT_BRANCH="devel-4.4"
+PACK_DEFAULT_BRANCH="devel"
 PACK_DEFAULT_REPO="sjones4/eucalyptus"
 
 # meta
 declare -A PACK_BRANCH_MAP=(
-  ["eucaconsole"]="devel-4.4"
-  ["eucaconsole-selinux"]="devel-4.4"
-  ["eucalyptus-imaging-worker"]="devel-4.4"
-  ["eucalyptus-java-deps"]="devel-4.4"
-  ["eucalyptus-selinux"]="devel-4.4"
-  ["eucalyptus-service-image"]="devel-4.4"
-  ["load-balancer-servo"]="devel-4.4"
+  ["eucaconsole"]="devel"
+  ["eucaconsole-selinux"]="devel"
+  ["eucalyptus-imaging-worker"]="devel"
+  ["eucalyptus-java-deps"]="devel"
+  ["eucalyptus-selinux"]="devel"
+  ["eucalyptus-service-image"]="devel"
+  ["load-balancer-servo"]="devel"
 )
 declare -A PACK_REPO_MAP=(
   ["eucaconsole"]="sjones4/eucaconsole"
