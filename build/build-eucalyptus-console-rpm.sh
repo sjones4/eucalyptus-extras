@@ -3,9 +3,8 @@
 
 # config
 MODE="${1:-build}" # setup build build-only
-VERSION="4.4"
 YUM_OPTS="${YUM_OPTS:--y}"
-EUCA_CON_BRANCH="${EUCA_CON_BRANCH:-maint-${VERSION}}"
+EUCA_CON_BRANCH="${EUCA_CON_BRANCH:-master}"
 EUCA_CON_REPO="${EUCA_CON_REPO:-https://github.com/corymbia/eucaconsole.git}"
 REQUIRE=(
     "autoconf"

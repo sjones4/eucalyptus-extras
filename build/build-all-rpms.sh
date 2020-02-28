@@ -1,5 +1,5 @@
 #!/bin/bash
-# Build all eucalyptus rpms for the 4.4 series
+# Build all eucalyptus rpms
 set -e
 
 if [ "${1:-}" = "setupenv" ] ; then

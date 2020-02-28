@@ -6,8 +6,9 @@
 #   REPO_EXCLUDES=eucalyptus-release ./rpm-repo-init.sh
 
 # setup
+# once 5.0 is released the mirror should use the "5" repository
 EUCALYPTUS_MIRROR="${EUCALYPTUS_MIRROR:-http://downloads.eucalyptus.cloud/software/eucalyptus/4.4/rhel/7/x86_64/}"
-REPO_VERSION="devel-4.4"
+REPO_VERSION="devel-5"
 REPO_PATH="${REPO_PATH:-eucalyptus-${REPO_VERSION}}"
 REPO_DIR="${1:-/var/www/eucalyptus-repos/${REPO_PATH}}"
 REPO_HTTP_CONF="${REPO_HTTP_CONF:-/etc/httpd/conf.d/eucalyptus-repos.conf}"

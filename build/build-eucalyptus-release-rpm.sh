@@ -6,7 +6,7 @@ MODE="${1:-build}" # setup build build-only
 YUM_OPTS="${YUM_OPTS:--y}"
 EUCA_REL_BRANCH="${EUCA_REL_BRANCH:-master}"
 EUCA_REL_REPO="${EUCA_REL_REPO:-https://github.com/sjones4/eucalyptus-release.git}"
-EUCA_REL_RPM_REPO_URL="${EUCA_REL_RPM_REPO_URL:-http://downloads.eucalyptus.cloud/software/eucalyptus/4.4/rhel/7/x86_64/}"
+EUCA_REL_RPM_REPO_URL="${EUCA_REL_RPM_REPO_URL:-http://downloads.eucalyptus.cloud/software/eucalyptus/5/rhel/7/x86_64/}"
 REQUIRE=(
     "autoconf"
     "git"

@@ -1,4 +1,4 @@
-FROM centos:7.3.1611
+FROM centos:7.5.1804
 
 ADD [ "build-*.sh", "rpm-*.sh", "/root/bin/" ]
 
@@ -9,7 +9,7 @@ RUN chown --recursive root:root /root/bin/*.sh \
  && chmod 755 /root/bin/*.sh \
  && mkdir --parents /eucalyptus \
  && chown --recursive root:root /eucalyptus \
- && build-all-rpms-44.sh setupenv \
+ && build-all-rpms.sh setupenv \
  && build-eucalyptus-cloud-libs-rpm.sh setup \
  && build-eucalyptus-rpms.sh setup \
  && build-eucalyptus-selinux-rpm.sh setup \
