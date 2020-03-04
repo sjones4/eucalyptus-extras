@@ -53,9 +53,9 @@ make dist
 EUCA_ANSI_DIST=$(ls dist/eucalyptus-ansible-*.tar.xz)
 EUCA_ANSI_DIST_BASEDIR="${EUCA_ANSI_DIST%%.tar.xz}"
 EUCA_ANSI_DIST_BASEDIR="${EUCA_ANSI_DIST_BASEDIR##dist/}"
+cp -v "${EUCA_ANSI_DIST}" "${RPMBUILD}/SOURCES/"
+make distclean
 popd
-
-cp -v "${EUCA_ANSI_PATH}/${EUCA_ANSI_DIST}" "${RPMBUILD}/SOURCES/"
 
 # build rpms
 RPMBUILD_OPTS="${RPMBUILD_OPTS}"
