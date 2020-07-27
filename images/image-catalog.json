@@ -19,21 +19,21 @@
       "image-format": "qcow2"
     },
     {
-      "description": "Ubuntu 19.10/Eoan",
+      "description": "Ubuntu 20.04/Focal",
       "login": "ubuntu",
-      "url": "https://cloud-images.ubuntu.com/eoan/current/eoan-server-cloudimg-amd64.img",
+      "url": "https://cloud-images.ubuntu.com/focal/current/focal-server-cloudimg-amd64.img",
       "updates": "yes",
       "architecture": "x86_64",
-      "os": "ubuntu-eoan",
+      "os": "ubuntu-focal",
       "image-format": "qcow2"
     },
     {
-      "description": "Fedora 31",
+      "description": "Fedora 32",
       "login": "fedora",
-      "url": "https://download.fedoraproject.org/pub/fedora/linux/releases/31/Cloud/x86_64/images/Fedora-Cloud-Base-31-1.9.x86_64.raw.xz",
+      "url": "https://download.fedoraproject.org/pub/fedora/linux/releases/32/Cloud/x86_64/images/Fedora-Cloud-Base-32-1.6.x86_64.raw.xz",
       "updates": "no",
       "architecture": "x86_64",
-      "os": "fedora-31",
+      "os": "fedora-32",
       "image-format": "raw"
     },
     {
@@ -83,6 +83,6 @@
       "image-format": "qcow2"
     }
   ],
-  "version": "sjones4-01-31-20"
+  "version": "sjones4-07-25-20"
 }
 
