@@ -15,12 +15,13 @@
 # config
 MODE="${1:-build}" # setup build build-only
 YUM_OPTS="${YUM_OPTS:--y}"
+EUCA_SIM_BASEIMAGE="${EUCA_SIM_BASEIMAGE:-}" # define to create a base image
+EUCA_SIM_USEBASEIMAGE="${EUCA_SIM_USEBASEIMAGE:-}" # location for existing base image to use
 EUCA_SIM_BRANCH="${EUCA_SIM_BRANCH:-master}"
 EUCA_SIM_REPO="${EUCA_SIM_REPO:-https://github.com/corymbia/eucalyptus-service-image.git}"
 EUCALYPTUS_BUILD_REPO_DIR="${EUCALYPTUS_BUILD_REPO_DIR:-""}"
 EUCALYPTUS_BUILD_REPO_IP=${EUCALYPTUS_BUILD_REPO_IP:-""}
-# once 5.0 is released this should be updated to the "5" repository
-EUCALYPTUS_MIRROR="${EUCALYPTUS_MIRROR:-http://downloads.eucalyptus.cloud/software/eucalyptus/4.4/rhel/7/x86_64/}"
+EUCALYPTUS_MIRROR="${EUCALYPTUS_MIRROR:-https://downloads.eucalyptus.cloud/software/eucalyptus/base/5/rhel/7/x86_64/}"
 EUCA2OOLS_MIRROR="${EUCA2OOLS_MIRROR:-http://downloads.eucalyptus.cloud/software/euca2ools/3.3/rhel/7/x86_64/}"
 REQUIRE=(
     "autoconf"
@@ -52,7 +53,7 @@ fi
 [ "${MODE}" != "setup" ] || exit 0
 
 # detect environment
-DOCKER_COUNT=$(grep -c docker /proc/self/cgroup || true)
+DOCKER_COUNT=$(grep -c 'docker\|azpl_job' /proc/self/cgroup || true)
 DOCKER="n"
 if [ ${DOCKER_COUNT} -gt 0 ] ; then
   DOCKER="y"
@@ -118,7 +119,9 @@ name=mirroreuca
 baseurl=${EUCALYPTUS_MIRROR}
 HERE
 
-cp -v "${RPMBUILD}/RPMS"/*/*.rpm "${EUCALYPTUS_BUILD_REPO_DIR}"
+if [ -z "${EUCA_SIM_BASEIMAGE}" ] ; then
+  cp -v "${RPMBUILD}/RPMS"/*/*.rpm "${EUCALYPTUS_BUILD_REPO_DIR}"
+fi
 
 # exclude rpms from mirror if they were otherwise provided
 for RPMFILE in "${EUCALYPTUS_BUILD_REPO_DIR}"/* ; do
@@ -179,6 +182,8 @@ export EUCA_SIM_CONFIGURE_OPTS="
   --with-eucalyptus-mirror=http://${EUCALYPTUS_BUILD_REPO_IP}/eucalyptus-local-packages/
   --with-euca2ools-mirror=${EUCA2OOLS_MIRROR}
 "
+[ -z "${EUCA_SIM_BASEIMAGE}" ]    || EUCA_SIM_CONFIGURE_OPTS="${EUCA_SIM_CONFIGURE_OPTS} --enable-base-image-only"
+[ -z "${EUCA_SIM_USEBASEIMAGE}" ] || EUCA_SIM_CONFIGURE_OPTS="${EUCA_SIM_CONFIGURE_OPTS} --with-base-image-file=${EUCA_SIM_USEBASEIMAGE}"
 
 rpmbuild \
     --define "_topdir ${RPMBUILD}" \
