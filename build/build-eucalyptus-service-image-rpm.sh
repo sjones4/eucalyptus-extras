@@ -51,7 +51,7 @@ fi
 [ "${MODE}" != "setup" ] || exit 0
 
 # detect environment
-DOCKER_COUNT=$(grep -c docker /proc/self/cgroup || true)
+DOCKER_COUNT=$(grep -c 'docker\|azpl_job' /proc/self/cgroup || true)
 DOCKER="n"
 if [ ${DOCKER_COUNT} -gt 0 ] ; then
   DOCKER="y"
