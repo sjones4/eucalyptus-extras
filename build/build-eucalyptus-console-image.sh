@@ -38,7 +38,7 @@ mount -t tmpfs -o size=512m tmpfs "${IMAGE_MOUNT}/tmp"
 # YUM repository and packages
 cat > "${IMAGE_MOUNT}/etc/yum.repos.d/eucalyptus.repo" << EOF
 [eucalyptus]
-name=Eucalyptus 5 - $basearch
+name=Eucalyptus 5 - \$basearch
 baseurl=${REPO_EUCALYPTUS}
 gpgkey=https://downloads.eucalyptus.cloud/software/gpg/eucalyptus-release-key.pub
        https://downloads.eucalyptus.cloud/software/gpg/eucalyptus-release-as-key.pub
@@ -46,7 +46,7 @@ enabled=1
 gpgcheck=1
 fastestmirror_enabled=0
 EOF
-chroot "${IMAGE_MOUNT}" yum install --assumeyes awscli certbot eucaconsole
+chroot "${IMAGE_MOUNT}" yum install --assumeyes awscli certbot cloud-utils-growpart eucaconsole
 
 # Configure and enable services
 chroot "${IMAGE_MOUNT}" sed --in-place 's/^\(ufshost\|ufsport\|product.url\|pyramid.default_locale_name\|pyramid.locale_negotiator\|aws.enabled\|aws.default.region\) =/#\1/' /etc/eucaconsole/console.ini
