@@ -1,9 +1,6 @@
 #!/bin/bash
 # Install eucalyptus console and dependencies on the base service image
 #
-# The base image should not have any eucalyptus build specific content
-# the post step will customize the image.
-#
 set -euxo pipefail
 
 # Config
@@ -83,7 +80,7 @@ EOF
 cat > "${IMAGE_MOUNT}/etc/systemd/system/eucaconsole-elastic-ip-association.service" << "EOF"
 [Unit]
 Description=Eucalyptus Console Elastic IP Address Association
-ConditionPathExists=/etc/eucaconsole/elastic-ip-allocation.txt
+AssertPathExists=/etc/eucaconsole/elastic-ip-allocation.txt
 After=network.target
 Before=eucaconsole.service
 
@@ -100,6 +97,33 @@ ExecStart=/usr/bin/true
 
 [Install]
 WantedBy=multi-user.target
+EOF
+
+cat > "${IMAGE_MOUNT}/usr/bin/eucaconsole-certbot-init" << "EOF"
+#!/bin/sh
+CONSOLE_HOSTNAME="${1:-console.internal}"
+systemctl start eucaconsole.service
+certbot certonly \
+  --non-interactive \
+  --agree-tos \
+  --cert-name eucaconsole \
+  --domain "${CONSOLE_HOSTNAME}" \
+  --webroot \
+  --webroot-path /var/lib/eucaconsole/well-known-root/ \
+  --no-eff-email \
+  --register-unsafely-without-email
+ln -s -f -T /etc/letsencrypt/live/eucaconsole/fullchain.pem /etc/pki/tls/certs/eucaconsole.crt
+ln -s -f -T /etc/letsencrypt/live/eucaconsole/privkey.pem /etc/pki/tls/private/eucaconsole.key
+eucaconsole-reload-https
+systemctl enable --now certbot-renew.timer
+EOF
+chmod +x "${IMAGE_MOUNT}/usr/bin/eucaconsole-certbot-init"
+
+mkdir -p "${IMAGE_MOUNT}/etc/systemd/system/certbot-renew.service.d"
+cat > "${IMAGE_MOUNT}/etc/systemd/system/certbot-renew.service.d/certbot-renew-eucaconsole.conf" << "EOF"
+[Service]
+EnvironmentFile=
+Environment="DEPLOY_HOOK=--deploy-hook /usr/bin/eucaconsole-reload-https "CERTBOT_ARGS=--cert-name eucaconsole"
 EOF
 
 chroot "${IMAGE_MOUNT}" systemctl enable eucaconsole.service
