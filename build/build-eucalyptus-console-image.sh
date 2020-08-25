@@ -72,20 +72,13 @@ aws.default.region = us-east-1
 EOF
 
 mkdir -p "${IMAGE_MOUNT}/etc/systemd/system/eucaconsole.service.d"
-cat > "${IMAGE_MOUNT}/etc/systemd/system/eucaconsole.service.d/eucaconsole-elastic-ip-require.conf" << "EOF"
+cat > "${IMAGE_MOUNT}/etc/systemd/system/eucaconsole.service.d/eucaconsole-elastic-ip.conf" << "EOF"
 [Unit]
-Requires=eucaconsole-elastic-ip-association.service
-EOF
-
-cat > "${IMAGE_MOUNT}/etc/systemd/system/eucaconsole-elastic-ip-association.service" << "EOF"
-[Unit]
-Description=Eucalyptus Console Elastic IP Address Association
 AssertPathExists=/etc/eucaconsole/elastic-ip-allocation.txt
-After=network.target
-Before=eucaconsole.service
 
 [Service]
-Type=oneshot
+Restart=on-failure
+RestartSec=60
 ExecStartPre=-/bin/curl --output /run/eucaconsole/instance-id.txt --silent http://169.254.169.254/latest/meta-data/instance-id
 ExecStartPre=-/usr/bin/python2 /bin/aws ec2 associate-address \
   --region eucalyptus \
@@ -93,7 +86,11 @@ ExecStartPre=-/usr/bin/python2 /bin/aws ec2 associate-address \
   --allow-reassociation \
   --instance-id file:///run/eucaconsole/instance-id.txt \
   --allocation-id file:///etc/eucaconsole/elastic-ip-allocation.txt
-ExecStart=/usr/bin/true
+EOF
+
+cat > "${IMAGE_MOUNT}/etc/systemd/system/eucaconsole.path" << "EOF"
+[Path]
+PathChanged=/etc/eucaconsole/elastic-ip-allocation.txt
 
 [Install]
 WantedBy=multi-user.target
@@ -126,7 +123,7 @@ EnvironmentFile=
 Environment="DEPLOY_HOOK=--deploy-hook /usr/bin/eucaconsole-reload-https "CERTBOT_ARGS=--cert-name eucaconsole"
 EOF
 
-chroot "${IMAGE_MOUNT}" systemctl enable eucaconsole.service
+chroot "${IMAGE_MOUNT}" systemctl enable eucaconsole.service eucaconsole.path
 
 rm -rf "${IMAGE_MOUNT}/var/lib/yum/uuid"
 rm -rf "${IMAGE_MOUNT}/var/cache/yum/"*
