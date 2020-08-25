@@ -1,0 +1,45 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: >-
+  Route53 HostedZone and management console dns for Eucalyptus
+
+Resources:
+
+  HostedZone:
+    Type: AWS::Route53::HostedZone
+    Properties:
+      HostedZoneConfig:
+        Comment: Eucalyptus system hosted zone
+      Name: !Ref AWS::URLSuffix
+
+  RecordSet:
+    Type: AWS::Route53::RecordSet
+    Properties:
+      HostedZoneId: !Ref HostedZone
+      Name: !Sub "console.${AWS::URLSuffix}"
+      ResourceRecords:
+      - !Ref ElasticIp
+      TTL: 900
+      Type: A
+
+  ElasticIp:
+    Type: AWS::EC2::EIP
+    Properties:
+      Domain: vpc
+      Tags:
+      - Key: Name
+        Value: !Sub "console.${AWS::URLSuffix}"
+
+Outputs:
+
+  HostedZoneId:
+    Description: The identifier for the system hosted zone
+    Value: !Ref HostedZone
+
+  ElasticIp:
+    Description: The IP address for the console
+    Value: !Ref ElasticIp
+
+  ElasticIpAllocationId:
+    Description: The IP address for the console
+    Value: !GetAtt ElasticIp.AllocationId
+
