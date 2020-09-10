@@ -1,0 +1,25 @@
+{
+  "images": [
+    {
+      "description": "Eucalyptus Console Image",
+      "login": "cloud-user",
+      "url-meta": "https://downloads.eucalyptus.cloud/software/eucalyptus/images/latest-eucalyptus-console-image.txt",
+      "url-meta-regex": "https://downloads\\.eucalyptus\\.cloud/software/eucalyptus/images/eucalyptus-console-image-[a-z0-9_-]{1,32}\\.raw\\.xz",
+      "updates": "yes",
+      "architecture": "x86_64",
+      "os": "eucalyptus-console-image",
+      "image-format": "raw"
+    },
+    {
+      "description": "Eucalyptus Service Image",
+      "login": "cloud-user",
+      "url-meta": "https://downloads.eucalyptus.cloud/software/eucalyptus/images/latest-eucalyptus-service-image.txt",
+      "url-meta-regex": "https://downloads\\.eucalyptus\\.cloud/software/eucalyptus/images/eucalyptus-service-image-[a-z0-9_-]{1,32}\\.raw\\.xz",
+      "updates": "yes",
+      "architecture": "x86_64",
+      "os": "eucalyptus-service-image",
+      "image-format": "raw"
+    }
+  ],
+  "version": "2020-09-09"
+}
