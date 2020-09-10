@@ -120,7 +120,7 @@ baseurl=${EUCALYPTUS_MIRROR}
 HERE
 
 if [ -z "${EUCA_SIM_BASEIMAGE}" ] ; then
-  cp -v "${RPMBUILD}/RPMS"/*/*.rpm "${EUCALYPTUS_BUILD_REPO_DIR}"
+  cp -v "${RPMBUILD}/RPMS"/*/*.rpm "${EUCALYPTUS_BUILD_REPO_DIR}" || true
 fi
 
 # exclude rpms from mirror if they were otherwise provided
