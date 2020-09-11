@@ -71,21 +71,35 @@ aws.enabled = false
 aws.default.region = us-east-1
 EOF
 
+echo -n "http://ec2.internal:8773/" > "${IMAGE_MOUNT}/etc/eucaconsole/ec2-endpoint.txt"
+
+mkdir -p "${IMAGE_MOUNT}/usr/local/bin"
+cat > "${IMAGE_MOUNT}/usr/local/bin/eucaconsole-elastic-ip" << "EOF"
+#!/bin/sh
+
+curl \
+  --output /run/eucaconsole/instance-id.txt \
+  --silent http://169.254.169.254/latest/meta-data/instance-id
+
+aws ec2 associate-address \
+  --region eucalyptus \
+  --endpoint-url $(</etc/eucaconsole/ec2-endpoint.txt) \
+  --allow-reassociation \
+  --instance-id $(</run/eucaconsole/instance-id.txt) \
+  --allocation-id $(</etc/eucaconsole/elastic-ip-allocation.txt)
+EOF
+chmod +x "${IMAGE_MOUNT}/usr/local/bin/eucaconsole-elastic-ip"
+
 mkdir -p "${IMAGE_MOUNT}/etc/systemd/system/eucaconsole.service.d"
 cat > "${IMAGE_MOUNT}/etc/systemd/system/eucaconsole.service.d/eucaconsole-elastic-ip.conf" << "EOF"
 [Unit]
+AssertPathExists=/etc/eucaconsole/ec2-endpoint.txt
 AssertPathExists=/etc/eucaconsole/elastic-ip-allocation.txt
 
 [Service]
 Restart=on-failure
 RestartSec=60
-ExecStartPre=-/bin/curl --output /run/eucaconsole/instance-id.txt --silent http://169.254.169.254/latest/meta-data/instance-id
-ExecStartPre=-/usr/bin/python2 /bin/aws ec2 associate-address \
-  --region eucalyptus \
-  --endpoint http://ec2.internal:8773/ \
-  --allow-reassociation \
-  --instance-id file:///run/eucaconsole/instance-id.txt \
-  --allocation-id file:///etc/eucaconsole/elastic-ip-allocation.txt
+ExecStartPre=-/usr/bin/sh /usr/local/bin/eucaconsole-elastic-ip
 EOF
 
 cat > "${IMAGE_MOUNT}/etc/systemd/system/eucaconsole.path" << "EOF"
