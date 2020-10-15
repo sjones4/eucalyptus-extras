@@ -52,7 +52,7 @@ class ImageManager:
     def __init__(self, user, region,
                  catalog="https://raw.githubusercontent.com/sjones4/eucalypt"
                          "us-extras/master/images/image-catalog.json",
-                 size=5):
+                 size=10):
         self.user = user
         self.region = region
         self.catalog = catalog
@@ -76,7 +76,7 @@ class ImageManager:
             time.sleep(0.5)
             print_error("Euca2ools not found.\n")
             print_info("Install instructions can be found here:\n"
-                       "https://docs.eucalyptus.cloud/eucalyptus/4.4.3/"
+                       "https://docs.eucalyptus.cloud/eucalyptus/4.4.5/"
                        "#shared/installing_euca2ools.html")
             sys.exit("Bye")
         sys.stdout.flush()
@@ -116,7 +116,7 @@ class ImageManager:
         return json.loads(urllib.urlopen(self.catalog).read(1024*64))["images"]
 
     def print_catalog(self):
-        print "Select an image Id from the following table: "
+        print "Select an image ID from the following table: "
         print
         catalog = self.get_catalog()
         format_spec = '{0:5} {1:8} {2:8} {3:8} {4:42}'
@@ -142,11 +142,13 @@ class ImageManager:
                     "Enter the image ID you would like to install: "))
                 if (number - 1 < 0) or (number - 1 > len(self.get_catalog())):
                     print_error(
-                        "Invalid image Id. "
-                        "Please select an Id from the table.")
+                        "Invalid image ID. "
+                        "Please select an ID from the table.")
                     raise ValueError
                 image = self.get_catalog()[number - 1]
                 return image
+            except KeyboardInterrupt:
+                retry = 0
             except (ValueError, KeyError, IndexError):
                 retry -= 1
         sys.exit("Bye")
@@ -382,7 +384,7 @@ class EucaCredentials(object):
             try:
                 print format_spec.format(str(index), kv[0], kv[1])
             except IndexError, e:
-                print_error("Incorrect syntaxt for: " + kv)
+                print_error("Incorrect syntax for: " + kv)
             index += 1
 
 
@@ -431,25 +433,6 @@ def print_bold(message):
     print bcolors.BOLD + message + bcolors.ENDC
 
 
-def print_title():
-    title = """
- _____                _             _
-| ____|   _  ___ __ _| |_   _ _ __ | |_ _   _ ___
-|  _|| | | |/ __/ _` | | | | | '_ \| __| | | / __|
-| |__| |_| | (_| (_| | | |_| | |_) | |_| |_| \__ \\
-|_____\__,_|\___\__,_|_|\__, | .__/ \__|\__,_|___/
-                        |___/|_|
-       ___
-      |_ _|_ __ ___   __ _  __ _  ___  ___
-       | || '_ ` _ \ / _` |/ _` |/ _ \/ __|
-       | || | | | | | (_| | (_| |  __/\__ \\
-      |___|_| |_| |_|\__,_|\__, |\___||___/
-                           |___/
-"""
-
-    print_success(title)
-
-
 def exit_message():
     print
 
@@ -458,11 +441,10 @@ def main():
     parser = argparse.ArgumentParser(description='Process Arguments.')
     parser.add_argument('-c', '--catalog', default=argparse.SUPPRESS,
                         help='Image catalog json file')
-    parser.add_argument('-s', '--size', type=int, default=5,
+    parser.add_argument('-s', '--size', type=int, default=10,
                         help='Image minimum size in GB')
     args = parser.parse_args()
 
-    print_title()
     euca_creds = EucaCredentials()
     image_manager = ImageManager(euca_creds.user, euca_creds.region,
                                  **vars(args))
