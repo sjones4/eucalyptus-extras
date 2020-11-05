@@ -28,12 +28,21 @@
       "image-format": "qcow2"
     },
     {
-      "description": "Fedora 32",
+      "description": "Ubuntu 20.10/Groovy",
+      "login": "ubuntu",
+      "url": "https://cloud-images.ubuntu.com/groovy/current/groovy-server-cloudimg-amd64.img",
+      "updates": "yes",
+      "architecture": "x86_64",
+      "os": "ubuntu-groovy",
+      "image-format": "qcow2"
+    },
+    {
+      "description": "Fedora 33",
       "login": "fedora",
-      "url": "https://download.fedoraproject.org/pub/fedora/linux/releases/32/Cloud/x86_64/images/Fedora-Cloud-Base-32-1.6.x86_64.raw.xz",
+      "url": "https://download.fedoraproject.org/pub/fedora/linux/releases/33/Cloud/x86_64/images/Fedora-Cloud-Base-33-1.2.x86_64.raw.xz",
       "updates": "no",
       "architecture": "x86_64",
-      "os": "fedora-32",
+      "os": "fedora-33",
       "image-format": "raw"
     },
     {
@@ -83,6 +92,6 @@
       "image-format": "qcow2"
     }
   ],
-  "version": "sjones4-07-25-20"
+  "version": "sjones4-10-31-20"
 }
 
