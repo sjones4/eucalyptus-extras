@@ -1,0 +1,32 @@
+---
+all:
+  hosts:
+    host1:
+      ansible_connection: local
+      host_cluster_ipv4: "{{ ansible_default_ipv4.address }}"
+      host_public_ipv4: "{{ ansible_default_ipv4.address }}"
+
+  vars:
+    eucalyptus_yum_baseurl: "{{ eucalyptus_yum_baseurl_master}}"
+    eucalyptus_console_cloud_deploy: yes
+
+    cloud_public_port: 443
+    cloud_service_image_rpm: no
+    cloud_system_dns_dnsdomain: "cloud-{{ ansible_default_ipv4.address|replace('.', '-') }}.euca.me"
+
+    vpcmido_gw_srv_veth_create: no
+
+  children:
+    midonet_nsdb:
+      hosts:
+        host1:
+    cloud:
+      hosts:
+        host1:
+    zone:
+      hosts:
+        host1:
+    node:
+      hosts:
+        host1:
+
