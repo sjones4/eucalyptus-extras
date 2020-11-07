@@ -42,16 +42,16 @@
 
 - name: create systemd network gateway service
   copy:
-    src: systemd-eucalyptus-gateway.service
-    dest: /etc/systemd/system/eucalyptus-gateway.service
+    src: systemd-podalyptus-gateway.service
+    dest: /etc/systemd/system/podalyptus-gateway.service
     owner: root
     group: root
     mode: 0644
 
-- name: configure eucalyptus sysconfig
+- name: configure podalyptus sysconfig
   template:
-    src: sysconfig-eucalyptus.j2
-    dest: /etc/sysconfig/eucalyptus
+    src: sysconfig-podalyptus.j2
+    dest: /etc/sysconfig/podalyptus
     owner: root
     group: root
     mode: 0644
@@ -88,10 +88,10 @@
 - name: set podalyptus netns fact
   set_fact: "eucalyptus_pod_netns='{{ shell_result.stdout }}'"
 
-- name: configure podalyptus sysconfig
+- name: configure podalyptus-gateway sysconfig
   template:
-    src: sysconfig-podalyptus.j2
-    dest: /etc/sysconfig/podalyptus
+    src: sysconfig-podalyptus-gateway.j2
+    dest: /etc/sysconfig/podalyptus-gateway
     owner: root
     group: root
     mode: 0644
@@ -100,5 +100,5 @@
   systemd:
     enabled: true
     state: started
-    name: eucalyptus-gateway
+    name: podalyptus-gateway
 
