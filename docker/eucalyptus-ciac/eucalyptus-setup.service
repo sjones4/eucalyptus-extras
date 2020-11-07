@@ -1,0 +1,18 @@
+[Unit]
+Description=Eucalyptus Setup
+After=network.target
+ConditionPathExists=!/var/lib/eucalyptus/keys/cloud-cert.pem
+
+[Service]
+Type=oneshot
+EnvironmentFile=/etc/sysconfig/eucalyptus
+ExecStart=/usr/bin/python2 /usr/bin/ansible-playbook \
+  --skip-tags image \
+  --skip-tags selinux \
+  --extra-vars vpcmido_public_ip_cidr="${EUCALYPTUS_PUBLIC_IP_CIDR}" \
+  --extra-vars vpcmido_public_ip_range="${EUCALYPTUS_PUBLIC_IP_RANGE}" \
+  --inventory /root/inventory.yml \
+  /usr/share/eucalyptus-ansible/playbook_vpcmido.yml
+
+[Install]
+WantedBy=multi-user.target
