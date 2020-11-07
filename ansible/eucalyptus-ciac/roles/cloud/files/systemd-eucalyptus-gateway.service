@@ -1,0 +1,17 @@
+[Unit]
+Description=Eucalyptus Network Gateway
+After=network.target
+
+[Service]
+Type=oneshot
+EnvironmentFile=/etc/sysconfig/eucalyptus
+EnvironmentFile=/etc/sysconfig/podalyptus
+ExecStartPre=-/usr/sbin/ip link add euca-mgw-veth0 type veth peer name euca-mgw-veth1 netns ${EUCALYPTUS_POD_NETNS}
+ExecStartPre=-/usr/sbin/ip link set dev euca-mgw-veth0 up
+ExecStartPre=-/usr/sbin/ip netns exec ${EUCALYPTUS_POD_NETNS} ip link set dev euca-mgw-veth1 up
+ExecStartPre=-/usr/sbin/ip addr add 10.234.234.234/27 dev euca-mgw-veth0
+ExecStartPre=-/usr/sbin/ip route add ${EUCALYPTUS_PUBLIC_IP_CIDR} via 10.234.234.235 dev euca-mgw-veth0
+ExecStart=/usr/bin/true
+
+[Install]
+WantedBy=multi-user.target

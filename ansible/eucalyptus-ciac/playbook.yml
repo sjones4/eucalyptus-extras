@@ -1,0 +1,11 @@
+# Playbook for localhost cloud-in-a-container deployment
+
+---
+
+- hosts: cloud
+  roles:
+  - cloud
+
+- hosts: client
+  roles:
+  - client

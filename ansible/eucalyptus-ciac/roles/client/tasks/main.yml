@@ -1,0 +1,51 @@
+---
+
+- name: eucalyptus appscale gpg key
+  copy:
+    src: RPM-GPG-KEY-eucalyptus-release-as
+    dest: /etc/pki/rpm-gpg/RPM-GPG-KEY-eucalyptus-release-as
+    owner: root
+    group: root
+    mode: 0644
+
+- name: install eucalyptus appscale gpg key
+  rpm_key:
+    state: present
+    key: /etc/pki/rpm-gpg/RPM-GPG-KEY-eucalyptus-release-as
+
+- name: eucalyptus yum repository
+  template:
+    src: eucalyptus.repo.j2
+    dest: /etc/yum.repos.d/eucalyptus.repo
+    owner: root
+    group: root
+    mode: 0644
+
+- name: install awscli and eucalyptus-awscli-plugin
+  yum:
+    name:
+      - eucalyptus-awscli-plugin
+    state: present
+
+- name: awscli configuration directory
+  file:
+    path: /root/.aws
+    state: directory
+    owner: root
+    group: root
+    mode: 0755
+
+- name: awscli configuration from container
+  shell: |
+    podman exec -it podalyptus cat /root/.aws/config > /root/.aws/config
+    chmod 0644 /root/.aws/config
+  args:
+    creates: /root/.aws/config
+
+- name: awscli credentials from container
+  shell: |
+    podman exec -it podalyptus cat /root/.aws/credentials > /root/.aws/credentials
+    chmod 0600 /root/.aws/credentials
+  args:
+    creates: /root/.aws/credentials
+

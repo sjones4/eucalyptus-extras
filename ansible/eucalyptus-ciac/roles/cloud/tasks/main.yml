@@ -1,0 +1,104 @@
+---
+
+- name: install podman
+  yum:
+    name:
+      - podman
+    state: present
+
+- name: configure selinux bool container_manage_cgroup
+  seboolean:
+    name: container_manage_cgroup
+    persistent: yes
+    state: yes
+
+- name: configure kernel modules
+  copy:
+    src: modules-load-podalyptus.conf
+    dest: /etc/modules-load.d/80-podalyptus.conf
+    owner: root
+    group: root
+    mode: 0644
+  register: kernel_modules
+
+- name: load kernel modules
+  shell: |
+    /usr/lib/systemd/systemd-modules-load /etc/modules-load.d/80-podalyptus.conf
+  when: kernel_modules.changed
+
+- name: configure sysctls
+  template:
+    src: sysctl-podalyptus.conf.j2
+    dest: /etc/sysctl.d/80-podalyptus.conf
+    owner: root
+    group: root
+    mode: 0644
+  register: sysctls
+
+- name: apply sysctls
+  shell: |
+    sysctl -p /etc/sysctl.d/80-podalyptus.conf
+  when: sysctls.changed
+
+- name: create systemd network gateway service
+  copy:
+    src: systemd-eucalyptus-gateway.service
+    dest: /etc/systemd/system/eucalyptus-gateway.service
+    owner: root
+    group: root
+    mode: 0644
+
+- name: configure eucalyptus sysconfig
+  template:
+    src: sysconfig-eucalyptus.j2
+    dest: /etc/sysconfig/eucalyptus
+    owner: root
+    group: root
+    mode: 0644
+
+- name: create container systemd service
+  shell: |
+    podman create \
+      --name podalyptus \
+      --detach \
+      --privileged \
+      --publish 53 \
+      --publish 443 \
+      --mount type=tmpfs,destination=/tmp,exec \
+      --mount type=bind,source=/etc/sysconfig/eucalyptus,destination=/etc/sysconfig/eucalyptus,ro=true \
+      --mount type=bind,source=/dev,destination=/dev \
+      docker.io/sjones4/eucalyptus-ciac:5
+    podman generate systemd --name podalyptus > /etc/systemd/system/podalyptus.service
+    chmod 0644 /etc/systemd/system/podalyptus.service
+  args:
+    creates: /etc/systemd/system/podalyptus.service
+
+- name: start systemd podalyptus service
+  systemd:
+    enabled: true
+    state: started
+    name: podalyptus
+
+- name: get podalyptus netns
+  shell: |
+    NETNS=$(podman inspect --format "{{.NetworkSettings.SandboxKey}}" podalyptus)
+    echo -n ${NETNS##/var/run/netns/}
+  register: shell_result
+
+- name: set podalyptus netns fact
+  set_fact: "eucalyptus_pod_netns='{{ shell_result.stdout }}'"
+
+- name: configure podalyptus sysconfig
+  template:
+    src: sysconfig-podalyptus.j2
+    dest: /etc/sysconfig/podalyptus
+    owner: root
+    group: root
+    mode: 0644
+
+- name: start network gateway service
+  systemd:
+    enabled: true
+    state: started
+    name: eucalyptus-gateway
+

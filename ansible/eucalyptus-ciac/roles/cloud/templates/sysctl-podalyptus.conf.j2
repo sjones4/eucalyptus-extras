@@ -1,0 +1,6 @@
+# PostgreSQL settings
+kernel/sem="250 32000 32 1536"
+
+# MidoNet Gateway
+net/ipv4/conf/{{ eucalyptus_public_interface }}/forwarding=1
+net/ipv4/conf/{{ eucalyptus_public_interface }}/proxy_arp=1

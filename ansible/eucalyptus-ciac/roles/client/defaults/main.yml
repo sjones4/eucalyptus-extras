@@ -1,0 +1,5 @@
+---
+
+eucalyptus_yum_baseurl: "http://downloads.eucalyptus.cloud/software/eucalyptus/master/rhel/7/x86_64/"
+eucalyptus_yum_gpgcheck: "1"
+
