@@ -1,2 +1,0 @@
-[zookeeper]
-zookeeper_hosts = {{ groups.midonet_nsdb | map('extract', hostvars, ['eucalyptus_host_cluster_ipv4']) | map('regex_replace', '^(.*)$', '\\1:2181')  | list | sort | join(',') }}

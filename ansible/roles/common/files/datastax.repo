@@ -1,7 +1,0 @@
-[datastax]
-name=DataStax Repo for Apache Cassandra
-baseurl=http://rpm.datastax.com/community
-enabled=1
-fastestmirror_enabled=0
-gpgcheck=1
-gpgkey=file:///etc/pki/rpm-gpg/RPM-GPG-KEY-datastax

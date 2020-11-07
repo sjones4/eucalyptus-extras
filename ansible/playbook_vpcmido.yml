@@ -1,5 +1,0 @@
----
-# Eucalyptus playbook for VPCMIDO mode
-- import_playbook: playbook.yml
-  vars:
-    net_mode: VPCMIDO

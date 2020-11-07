@@ -1,4 +1,0 @@
----
-ceph_mgr_create: "{{ False if (ceph_release == 'hammer' or ceph_release == 'jewel') else True }}"
-
-ceph_osd_create: "{{ ceph_mgr_create }}"

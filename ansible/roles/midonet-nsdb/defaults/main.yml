@@ -1,7 +1,0 @@
----
-# Midonet settings
-midonet_cassandra_name: Eucalyptus Midonet Cluster
-midonet_cassandra_heap: Null
-midonet_cassandra_heapnew: Null
-midonet_zookeeper_heap: Null
-

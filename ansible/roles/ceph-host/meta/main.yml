@@ -1,5 +1,0 @@
----
-dependencies:
-- role: ceph-common
-  vars:
-    ceph_facts: no

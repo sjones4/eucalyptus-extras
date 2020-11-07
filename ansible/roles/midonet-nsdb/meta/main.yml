@@ -1,6 +1,0 @@
----
-dependencies:
-- role: common
-  vars:
-    ceph_facts: no
-    key_facts: no
