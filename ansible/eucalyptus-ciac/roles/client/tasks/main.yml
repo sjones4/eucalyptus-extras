@@ -37,14 +37,22 @@
 
 - name: awscli configuration from container
   shell: |
-    podman exec -it podalyptus cat /root/.aws/config > /root/.aws/config
+    set -eu
+    test -f /root/.aws/config
+    podman exec podalyptus cat /root/.aws/config > /root/.aws/config
     chmod 0644 /root/.aws/config
   args:
     creates: /root/.aws/config
+  register: shell_result
+  until: shell_result.rc == 0
+  retries: 90
+  delay: 10
 
 - name: awscli credentials from container
   shell: |
-    podman exec -it podalyptus cat /root/.aws/credentials > /root/.aws/credentials
+    set -eu
+    test -f /root/.aws/credentials
+    podman exec podalyptus cat /root/.aws/credentials > /root/.aws/credentials
     chmod 0600 /root/.aws/credentials
   args:
     creates: /root/.aws/credentials

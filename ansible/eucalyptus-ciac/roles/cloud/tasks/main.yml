@@ -58,6 +58,7 @@
 
 - name: create container systemd service
   shell: |
+    set -eu
     podman create \
       --name podalyptus \
       --detach \
@@ -65,7 +66,7 @@
       --publish 53 \
       --publish 443 \
       --mount type=tmpfs,destination=/tmp,exec \
-      --mount type=bind,source=/etc/sysconfig/eucalyptus,destination=/etc/sysconfig/eucalyptus,ro=true \
+      --mount type=bind,source=/etc/sysconfig/podalyptus,destination=/etc/sysconfig/eucalyptus,ro=true \
       --mount type=bind,source=/dev,destination=/dev \
       docker.io/sjones4/eucalyptus-ciac:5
     podman generate systemd --name podalyptus > /etc/systemd/system/podalyptus.service
@@ -81,7 +82,8 @@
 
 - name: get podalyptus netns
   shell: |
-    NETNS=$(podman inspect --format "{{.NetworkSettings.SandboxKey}}" podalyptus)
+    set -eu
+    NETNS=$(podman inspect --format "{{ '{{' }}.NetworkSettings.SandboxKey{{ '}}' }}" podalyptus)
     echo -n ${NETNS##/var/run/netns/}
   register: shell_result
 
@@ -101,4 +103,3 @@
     enabled: true
     state: started
     name: podalyptus-gateway
-
