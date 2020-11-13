@@ -6,6 +6,7 @@ COPY inventory.yml /root/
 RUN yum install --assumeyes --disablerepo=updates* epel-release https://downloads.eucalyptus.cloud/software/eucalyptus/master/rhel/7/x86_64/eucalyptus-release-5-1.15.as.el7.noarch.rpm \
  && yum install --assumeyes --disablerepo=updates* eucalyptus-ansible \
  && ansible-playbook --tags image --skip-tags selinux --inventory /root/inventory.yml /usr/share/eucalyptus-ansible/playbook_vpcmido.yml \
+ && systemctl disable dnsmasq.service midolman.service midonet-cluster.service \
  && systemctl enable eucalyptus-setup.service \
  && yum clean all
 
