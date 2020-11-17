@@ -15,7 +15,7 @@ RUN yum -y install epel-release \
  && python setup.py install \
  && cd /root \
  && rm -rf adminapi nephoria \
- && pip uninstall -y setuptools pip \
+ && pip uninstall -y pip \
  && yum -y erase make gcc git python-setuptools perl openssl-devel \
     python-devel readline-devel libyaml-devel *-headers patch \
  && yum -y clean all
