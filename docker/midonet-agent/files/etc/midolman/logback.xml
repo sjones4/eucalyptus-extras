@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration scan="false">
+
+    <jmxConfigurator/>
+
+    <appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder>
+            <pattern>%d{yyyy.MM.dd HH:mm:ss.SSS} %-5level [%thread] %logger{0} - %X{cookie} %marker%m%n%rEx</pattern>
+        </encoder>
+    </appender>
+
+    <appender name="TRACE-FILE" class="ch.qos.logback.core.FileAppender">
+        <file>${midolman.log.dir}mm-trace.log</file>
+        <append>true</append>
+        <encoder>
+            <pattern>%d{yyyy.MM.dd HH:mm:ss.SSS} %-5level %X{cookie} %marker%m%n%rEx</pattern>
+        </encoder>
+    </appender>
+
+    <appender name="EVENT-FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <file>${midolman.log.dir}midolman.event.log</file>
+        <append>true</append>
+        <encoder>
+            <pattern>%d{yyyy.MM.dd HH:mm:ss.SSS} ${HOSTNAME} %-5level %logger - %m%n%rEx </pattern>
+        </encoder>
+        <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+            <fileNamePattern>${midolman.log.dir}midolman.event.%d{yyyy-MM-dd}.log</fileNamePattern>
+            <maxHistory>30</maxHistory>
+        </rollingPolicy>
+
+    </appender>
+
+    <!-- These are static for internal use, do not touch -->
+    <logger name="org.midonet.packets.debug.packet-processor" level="DEBUG" >
+        <appender-ref ref="TRACE-FILE" />
+    </logger>
+    <logger name="org.midonet.packets.trace.packet-processor" level="TRACE" >
+        <appender-ref ref="TRACE-FILE" />
+    </logger>
+
+    <!-- logs under "org.midonet.event" logger also goes to EVENT-FILE appender as well as those defined in <root> -->
+    <logger name="org.midonet.event" level="INFO" additivity="false">
+         <appender-ref ref="EVENT-FILE"/>
+    </logger>
+
+    <!--+                                   ***NOTE***
+        |
+        |  Use this file to configure log appenders, but not log levels. Log
+        |  levels are configured in mn-conf(1), in the 'agent.loggers' section.
+        |
+        |  Example, make all agents log at DEBUG level with this command:
+        |
+        |      $ mn-conf set -t default "agent.loggers.root : DEBUG"
+        +-->
+    <root level="INFO">
+        <appender-ref ref="STDOUT" />
+    </root>
+
+</configuration>
+

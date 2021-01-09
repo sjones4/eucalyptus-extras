@@ -1,0 +1,18 @@
+#!/bin/bash
+
+JMXDISABLE="${JMXDISABLE:-true}"
+MAX_HEAP_SIZE="${MAX_HEAP_SIZE:-2048M}"
+
+cat > "/etc/midolman/midolman.conf" << EOF
+[zookeeper]
+zookeeper_hosts = "${ZK_ENDPOINTS}"
+EOF
+
+if [ -z "${UUID}" ] ; then
+  export UUID=$(hostname | md5sum | awk '{print $1}' | sed 's/\(........\)\(....\)\(....\)\(....\)\(............\)/\1-\2-\3-\4-\5/')
+fi
+echo "host_uuid=${UUID}" > "/etc/midonet_host_id.properties"
+
+"/usr/share/midolman/midolman-prepare"
+
+exec "/usr/share/midolman/midolman-start"

@@ -1,0 +1,25 @@
+#!/bin/bash
+
+JMXDISABLE="${JMXDISABLE:-true}"
+MAX_HEAP_SIZE="${MAX_HEAP_SIZE:-2048M}"
+HEAP_NEWSIZE="${HEAP_NEWSIZE:-1024M}"
+
+cat > "/etc/midonet/midonet.conf" << EOF
+[zookeeper]
+zookeeper_hosts = "${ZK_ENDPOINTS}"
+EOF
+
+mn-conf set -t "default" << EOF
+zookeeper.zookeeper_hosts="${ZK_ENDPOINTS}"
+EOF
+
+mn-conf set -t "default" << EOF
+cassandra.replication_factor=${CASSANDRA_FACTOR}
+cassandra.servers="${CASSANDRA_ENDPOINTS}"
+EOF
+
+if [ -n "${UUID}" ] ; then
+  echo "host_uuid=${UUID}" > "/etc/midonet_host_id.properties"
+fi
+
+exec "/usr/share/midonet-cluster/midonet-cluster-start"

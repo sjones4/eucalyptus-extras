@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration scan="false">
+
+    <jmxConfigurator/>
+
+    <appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder>
+            <pattern>%d{yyyy.MM.dd HH:mm:ss.SSS} %-4level [%thread] %logger{0} %marker%m%n%rEx</pattern>
+        </encoder>
+    </appender>
+
+    <!--+                                   ***NOTE***
+        |
+        |  Use this file to configure log appenders, but not log levels. Log
+        |  levels are configured in mn-conf(1), in the 'cluster.loggers' section.
+        |
+        |  Example, make all cluster log at DEBUG level with this command:
+        |
+        |      $ mn-conf set -t default "cluster.loggers.root : DEBUG"
+        +-->
+    <root level="INFO">
+        <appender-ref ref="STDOUT" />
+    </root>
+
+</configuration>
