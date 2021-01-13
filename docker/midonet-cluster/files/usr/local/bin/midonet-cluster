@@ -3,6 +3,12 @@
 JMXDISABLE="${JMXDISABLE:-true}"
 MAX_HEAP_SIZE="${MAX_HEAP_SIZE:-2048M}"
 HEAP_NEWSIZE="${HEAP_NEWSIZE:-1024M}"
+CLUSTER_RESTAPI_HTTPHOST="${CLUSTER_RESTAPI_HTTPHOST:-0.0.0.0}"
+CLUSTER_RESTAPI_HTTPPORT="${CLUSTER_RESTAPI_HTTPPORT:-8181}"
+
+if [ -n "${UUID}" ] ; then
+  echo "host_uuid=${UUID}" > "/etc/midonet_host_id.properties"
+fi
 
 cat > "/etc/midonet/midonet.conf" << EOF
 [zookeeper]
@@ -18,8 +24,9 @@ cassandra.replication_factor=${CASSANDRA_FACTOR}
 cassandra.servers="${CASSANDRA_ENDPOINTS}"
 EOF
 
-if [ -n "${UUID}" ] ; then
-  echo "host_uuid=${UUID}" > "/etc/midonet_host_id.properties"
-fi
+mn-conf set -t "default" << EOF
+cluster.rest_api.http_host="${CLUSTER_RESTAPI_HTTPHOST}"
+cluster.rest_api.http_port=${CLUSTER_RESTAPI_HTTPPORT}
+EOF
 
 exec "/usr/share/midonet-cluster/midonet-cluster-start"
