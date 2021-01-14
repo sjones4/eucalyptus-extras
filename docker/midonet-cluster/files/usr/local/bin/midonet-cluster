@@ -29,4 +29,12 @@ cluster.rest_api.http_host="${CLUSTER_RESTAPI_HTTPHOST}"
 cluster.rest_api.http_port=${CLUSTER_RESTAPI_HTTPPORT}
 EOF
 
+ln --symbolic --force /dev/stdout \
+  /var/log/midonet-cluster/upstart-stderr.log
+
+export \
+  JMXDISABLE \
+  MAX_HEAP_SIZE \
+  HEAP_NEWSIZE
+
 exec "/usr/share/midonet-cluster/midonet-cluster-start"

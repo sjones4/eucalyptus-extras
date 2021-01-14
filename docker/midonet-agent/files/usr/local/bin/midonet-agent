@@ -13,6 +13,13 @@ if [ -z "${UUID}" ] ; then
 fi
 echo "host_uuid=${UUID}" > "/etc/midonet_host_id.properties"
 
+ln --symbolic --force /dev/stdout \
+  /var/log/midolman/upstart-stderr.log
+
+export \
+  JMXDISABLE \
+  MAX_HEAP_SIZE
+
 "/usr/share/midolman/midolman-prepare"
 
 exec "/usr/share/midolman/midolman-start"
