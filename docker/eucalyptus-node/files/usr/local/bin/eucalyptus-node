@@ -1,0 +1,42 @@
+#!/bin/bash
+
+APACHE2_MODULE_DIR="/usr/lib64/httpd/modules"
+AXIS2C_HOME="/usr/lib64/axis2c"
+EUCALYPTUS=""
+EUCALYPTUS_SERVICE="node"
+EUCA_USER="${EUCA_USER:-eucalyptus}"
+HTTPD_CONF="/run/eucalyptus/httpd-nc.conf"
+HTTPD_CONF_TEMPLATE="/etc/eucalyptus/httpd.conf"
+HTTPD_LOGFILE="/var/log/eucalyptus/httpd-node_error_log"
+HTTPD_OPTS="${HTTPD_OPTS:--D FOREGROUND}"
+LD_LIBRARY_PATH="${AXIS2C_HOME}/lib:${AXIS2C_HOME}/modules/rampart:/usr/lib/eucalyptus"
+NC_ADDR="${NC_ADDR:-0.0.0.0}"
+NC_PORT="${NC_PORT:-8775}"
+PIDFILE="/run/eucalyptus/eucalyptus-node.pid"
+
+sed -e "s|EUCALYPTUS|${EUCALYPTUS}|" \
+    -e "s|APACHE2_MODULE_DIR|${APACHE2_MODULE_DIR}|" \
+    -e "s|AXIS2C_HOME|${AXIS2C_HOME}|" \
+    -e "s|\(ServerRoot\).*|\1 /|" \
+    -e "s|EUCA_USER|${EUCA_USER}|" \
+    -e "s|\(Listen\).*|\1 ${NC_ADDR}:${NC_PORT}|" \
+    -e "s|\(PidFile\).*|\1 ${PIDFILE}|" \
+    -e "s|\(Allow from\).*|\1 all|" \
+    -e "s|\(ErrorLog\).*|\1 ${HTTPD_LOGFILE}|" \
+    "${HTTPD_CONF_TEMPLATE}" > "${HTTPD_CONF}"
+
+for mod in authn_core authz_core authz_host mpm_prefork unixd ; do
+    if [ -e "${APACHE2_MODULE_DIR}/mod_${mod}.so" ] ; then
+        sed -i "1iLoadModule ${mod}_module ${APACHE2_MODULE_DIR}/mod_${mod}.so" "${HTTPD_CONF}"
+    fi
+done
+
+envsubst < "/etc/eucalyptus/eucalyptus.conf.env" > "/etc/eucalyptus/eucalyptus.conf"
+
+export \
+  AXIS2C_HOME \
+  EUCALYPTUS \
+  EUCALYPTUS_SERVICE \
+  LD_LIBRARY_PATH
+
+exec /usr/sbin/httpd ${HTTPD_OPTS} -f "${HTTPD_CONF}"

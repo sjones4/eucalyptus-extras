@@ -1,0 +1,8 @@
+[euca2ools]
+name=Euca2ools 3.4 - $basearch
+baseurl=http://downloads.eucalyptus.cloud/software/euca2ools/3.4/rhel/7/x86_64/
+gpgkey=file:///etc/pki/rpm-gpg/RPM-GPG-KEY-euca2ools-release-as
+       file:///etc/pki/rpm-gpg/RPM-GPG-KEY-euca2ools-release
+gpgcheck=1
+enabled=1
+fastestmirror_enabled=0
