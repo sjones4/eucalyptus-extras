@@ -99,7 +99,7 @@ AssertPathExists=/etc/eucaconsole/elastic-ip-allocation.txt
 [Service]
 Restart=on-failure
 RestartSec=60
-ExecStartPre=-/usr/bin/sh /usr/local/bin/eucaconsole-elastic-ip
+ExecStartPre=/usr/bin/sh /usr/local/bin/eucaconsole-elastic-ip
 EOF
 
 cat > "${IMAGE_MOUNT}/etc/systemd/system/eucaconsole.path" << "EOF"
