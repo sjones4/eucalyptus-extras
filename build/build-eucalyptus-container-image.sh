@@ -6,6 +6,7 @@ set -euxo pipefail
 # Config
 IMAGE_PATH="${1:-base-image.raw}"
 IMAGE_MOUNT="${IMAGE_MOUNT:-/tmp/image}"
+REGISTRY_PATH="${2:-registry.tar}"
 
 # Image setup
 LOOP_DEVICE=$(losetup --find)
@@ -35,7 +36,8 @@ chroot "${IMAGE_MOUNT}" yum install --assumeyes podman
 chroot "${IMAGE_MOUNT}" rpm -e --nodeps subscription-manager-rhsm-certificates subscription-manager-rhsm subscription-manager # https://bugs.centos.org/view.php?id=17315
 
 # Configure and enable services
-chroot "${IMAGE_MOUNT}" podman pull docker.io/library/registry:2
+mkdir -pv "${IMAGE_MOUNT}/usr/local/share/registry-container"
+cp -fv "${REGISTRY_PATH}" "${IMAGE_MOUNT}/usr/local/share/registry-container/registry.tar"
 
 cat > "${IMAGE_MOUNT}/etc/sysconfig/registry-container" << "EOF"
 REGISTRY_HTTP_ADDR=0.0.0.0:5000
