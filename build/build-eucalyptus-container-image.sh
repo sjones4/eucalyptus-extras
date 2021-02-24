@@ -45,6 +45,7 @@ REGISTRY_STORAGE=s3
 REGISTRY_STORAGE_S3_REGION=eucalyptus
 REGISTRY_STORAGE_S3_REGIONENDPOINT=http://s3.internal:8773
 REGISTRY_STORAGE_S3_ENCRYPT=false
+REGISTRY_STORAGE_S3_MULTIPARTCOPYTHRESHOLDSIZE=5368709120
 REGISTRY_STORAGE_S3_SECURE=true
 REGISTRY_STORAGE_S3_V4AUTH=true
 REGISTRY_STORAGE_CACHE_BLOBDESCRIPTOR=inmemory
@@ -62,16 +63,6 @@ cat > "${IMAGE_MOUNT}/etc/sysconfig/registry-container-readonly" << "EOF"
 REGISTRY_STORAGE_MAINTENANCE_READONLY={"enabled":true}
 REGISTRY_STORAGE_MAINTENANCE_UPLOADPURGING={"enabled":false}
 EOF
-
-#TODO any registry service overrides?
-#mkdir -p "${IMAGE_MOUNT}/etc/systemd/system/certbot-renew.service.d"
-#cat > "${IMAGE_MOUNT}/etc/systemd/system/certbot-renew.service.d/certbot-renew-eucaconsole.conf" << "EOF"
-#[Service]
-#EnvironmentFile=
-#Environment="DEPLOY_HOOK=--deploy-hook /usr/bin/eucaconsole-reload-https "CERTBOT_ARGS=--cert-name eucaconsole"
-#EOF
-#
-#chroot "${IMAGE_MOUNT}" systemctl enable eucaconsole.service eucaconsole.path
 
 rm -rf "${IMAGE_MOUNT}/var/lib/yum/uuid"
 rm -rf "${IMAGE_MOUNT}/var/cache/yum/"*
