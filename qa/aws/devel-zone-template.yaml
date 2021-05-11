@@ -1,0 +1,884 @@
+# Template for development against an i3 zone ADO ansible deployment
+---
+AWSTemplateFormatVersion: 2010-09-09
+Description: Eucalyptus Cloud ADO zone devel template
+
+Metadata:
+
+  AWS::CloudFormation::Interface:
+    ParameterGroups:
+      - Label:
+          default: Build Selection
+        Parameters: [AdoBuildId]
+      - Label:
+          default: Instance Settings
+        Parameters: [CephInstanceType, CloudInstanceType, ZoneInstanceType, NodeInstanceType, NodeInstanceTypeSpotMaxPrice]
+      - Label:
+          default: Deployment Settings
+        Parameters: [DeploymentName, KeyName, SshCidr, PublicCidr, Zone, HostedZoneId]
+
+Parameters:
+
+  DeploymentName:
+    Description: Short deployment description (used in DNS)
+    Type: String
+    AllowedPattern: "[a-z0-9-]{1,32}"
+    Default: devel
+
+  AdoBuildId:
+    Description: The build identifier for deployment / testing
+    Type: String
+    AllowedPattern: "[1-9][0-9]{2,6}"
+
+  CephInstanceType:
+    Description: Instance type for ceph storage instances
+    Type: String
+    AllowedValues:
+      - i3.large
+    Default: i3.large
+
+  CloudInstanceType:
+    Description: Instance type for cloud controller instances
+    Type: String
+    AllowedValues:
+      - i3.large
+    Default: i3.large
+
+  ZoneInstanceType:
+    Description: Instance type for zone instances
+    Type: String
+    AllowedValues:
+      - i3.large
+    Default: i3.large
+
+  NodeInstanceType:
+    Description: Instance type for node instances
+    Type: String
+    AllowedValues:
+      - i3.large
+      - i3.metal
+      - c5d.metal
+    Default: c5d.metal
+
+  NodeInstanceTypeSpotMaxPrice:
+    Description: Maximum spot price for the node instance type (~2 for metal)
+    Type: String
+    Default: "1.75"
+
+  KeyName:
+    Description: Key Name
+    Type: AWS::EC2::KeyPair::KeyName
+
+  SshCidr:
+    Description: CIDR for source of SSH connections
+    Type: String
+    Default: 0.0.0.0/0
+
+  PublicCidr:
+    Description: CIDR for end-user cloud access
+    Type: String
+    AllowedValues:
+      - ""
+      - "0.0.0.0/0"
+    Default: ""
+
+  Zone:
+    Description: Availability zone
+    Type: AWS::EC2::AvailabilityZone::Name
+    Default: us-west-1a
+
+  HostedZoneId:
+    Description: Route53 hosted zone to use
+    Type: String
+    Default: Z03669683K9LKCWCNN3BJ
+
+Conditions:
+
+  UseKeyNameParameter: !Not
+    - !Equals
+      - !Ref KeyName
+      - ""
+
+  UsePublicCidr: !Not
+    - !Equals
+      - !Ref PublicCidr
+      - ""
+
+Mappings:
+
+  # From: https://wiki.centos.org/Cloud/AWS
+  #
+  # Test assets are only in us-west-1 so other regions should not
+  # be used
+  AWSRegion2AMI:
+    us-west-1:
+      CentOS7: ami-08d2d8b00f270d03b
+
+Resources:
+
+  Vpc:
+    Type: AWS::EC2::VPC
+    Properties:
+      EnableDnsSupport: true
+      EnableDnsHostnames: true
+      CidrBlock: 10.111.0.0/16
+      Tags:
+       - Key: stack-description
+         Value: !Sub "ADO ansible dev build: ${AdoBuildId}"
+
+  Subnet:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref Vpc
+      AvailabilityZone: !Ref Zone
+      CidrBlock: 10.111.10.0/24
+      Tags:
+       - Key: stack-description
+         Value: !Sub "ADO ansible dev build: ${AdoBuildId}"
+
+  ClusterSubnet:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref Vpc
+      AvailabilityZone: !Ref Zone
+      CidrBlock: 10.111.0.0/24
+      Tags:
+       - Key: stack-description
+         Value: !Sub "ADO ansible dev build: ${AdoBuildId}"
+
+  InternetGateway:
+    Type: AWS::EC2::InternetGateway
+    Properties:
+      Tags:
+       - Key: stack-description
+         Value: !Sub "ADO ansible dev build: ${AdoBuildId}"
+
+  InternetGatewayAttach:
+    Type: AWS::EC2::VPCGatewayAttachment
+    Properties:
+      VpcId: !Ref Vpc
+      InternetGatewayId: !Ref InternetGateway
+
+  RouteTable:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId: !Ref Vpc
+      Tags:
+       - Key: stack-description
+         Value: !Sub "ADO ansible dev build: ${AdoBuildId}"
+
+  NatGateway:
+    Type: AWS::EC2::NatGateway
+    Properties:
+      AllocationId: !GetAtt NatGatewayEip.AllocationId
+      SubnetId: !Ref Subnet
+      Tags:
+       - Key: stack-description
+         Value: !Sub "ADO ansible dev build: ${AdoBuildId}"
+
+  NatGatewayEip:
+    Type: AWS::EC2::EIP
+    Properties:
+      Domain: vpc
+      Tags:
+       - Key: stack-description
+         Value: !Sub "ADO ansible dev build: ${AdoBuildId}"
+
+  RouteTableAssociate:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      RouteTableId: !Ref RouteTable
+      SubnetId: !Ref Subnet
+
+  PublicRoute:
+    Type: AWS::EC2::Route
+    DependsOn: InternetGatewayAttach
+    Properties:
+      RouteTableId: !Ref RouteTable
+      DestinationCidrBlock: 0.0.0.0/0
+      GatewayId: !Ref InternetGateway
+
+  MidonetRoute:
+    Type: AWS::EC2::Route
+    Properties:
+      RouteTableId: !Ref RouteTable
+      DestinationCidrBlock: "10.222.0.0/24"
+      NetworkInterfaceId: !Ref InstanceNetworkInterface
+
+  ClusterRouteTable:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId: !Ref Vpc
+      Tags:
+       - Key: stack-description
+         Value: !Sub "ADO ansible dev build: ${AdoBuildId}"
+
+  ClusterRouteTableAssociate:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      RouteTableId: !Ref ClusterRouteTable
+      SubnetId: !Ref ClusterSubnet
+
+  ClusterNatRoute:
+    Type: AWS::EC2::Route
+    Properties:
+      RouteTableId: !Ref ClusterRouteTable
+      DestinationCidrBlock: 0.0.0.0/0
+      NatGatewayId: !Ref NatGateway
+
+  SecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: !Sub "ADO ansible devel ${DeploymentName}"
+      VpcId: !Ref Vpc
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 22
+          ToPort: 22
+          CidrIp: !Ref SshCidr
+        - IpProtocol: tcp
+          FromPort: 53
+          ToPort: 53
+          CidrIp: "0.0.0.0/0"
+        - IpProtocol: udp
+          FromPort: 53
+          ToPort: 53
+          CidrIp: "0.0.0.0/0"
+        - IpProtocol: tcp
+          FromPort: 80
+          ToPort: 80
+          CidrIp: !If [UsePublicCidr, !Ref PublicCidr, "10.111.0.0/16"]
+        - IpProtocol: tcp
+          FromPort: 443
+          ToPort: 443
+          CidrIp: !If [UsePublicCidr, !Ref PublicCidr, "10.111.0.0/16"]
+        - IpProtocol: tcp
+          FromPort: 8773
+          ToPort: 8773
+          CidrIp: !If [UsePublicCidr, !Ref PublicCidr, "10.111.0.0/16"]
+      Tags:
+       - Key: stack-description
+         Value: !Sub "ADO ansible dev build: ${AdoBuildId}"
+
+  PublicSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: !Sub "ADO ansible devel ${DeploymentName}"
+      VpcId: !Ref Vpc
+      SecurityGroupIngress:
+        - IpProtocol: -1
+          CidrIp: !If [UsePublicCidr, !Ref PublicCidr, "10.111.0.0/16"]
+      Tags:
+       - Key: stack-description
+         Value: !Sub "ADO ansible dev build: ${AdoBuildId}"
+
+  ClusterSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: !Sub "ADO ansible devel ${DeploymentName}"
+      VpcId: !Ref Vpc
+      SecurityGroupIngress:
+        - IpProtocol: -1
+          CidrIp: "10.111.0.0/24"
+      Tags:
+       - Key: stack-description
+         Value: !Sub "ADO ansible dev build: ${AdoBuildId}"
+
+  InstanceNetworkInterface:
+    Type: AWS::EC2::NetworkInterface
+    Properties:
+      GroupSet:
+        - !GetAtt SecurityGroup.GroupId
+        - !GetAtt PublicSecurityGroup.GroupId
+      PrivateIpAddress: 10.111.10.10
+      SubnetId: !Ref Subnet
+      SourceDestCheck: no
+      Tags:
+        - Key: stack-description
+          Value: !Sub "ADO ansible dev build: ${AdoBuildId}"
+
+  InstanceClusterNetworkInterface:
+    Type: AWS::EC2::NetworkInterface
+    Properties:
+      GroupSet:
+        - !GetAtt SecurityGroup.GroupId
+        - !GetAtt ClusterSecurityGroup.GroupId
+      PrivateIpAddress: 10.111.0.10
+      SubnetId: !Ref ClusterSubnet
+      Tags:
+        - Key: stack-description
+          Value: !Sub "ADO ansible dev build: ${AdoBuildId}"
+
+  InstanceEip:
+    Type: AWS::EC2::EIP
+    Properties:
+      Domain: vpc
+      Tags:
+       - Key: stack-description
+         Value: !Sub "ADO ansible dev build: ${AdoBuildId}"
+
+  InstanceEipAssociate:
+    Type: AWS::EC2::EIPAssociation
+    Properties:
+      AllocationId: !GetAtt InstanceEip.AllocationId
+      NetworkInterfaceId: !Ref InstanceNetworkInterface
+
+  RecordSetGroup:
+    Type: AWS::Route53::RecordSetGroup
+    Properties:
+      HostedZoneId: !Ref HostedZoneId
+      RecordSets:
+      - Name: !Sub "cloud-${DeploymentName}.qa.eucalyptuscloud.net."
+        Type: NS
+        TTL: 300
+        ResourceRecords:
+        - !Sub "ns1.cloud-${DeploymentName}.qa.eucalyptuscloud.net."
+      - Name: !Sub "ns1.cloud-${DeploymentName}.qa.eucalyptuscloud.net."
+        Type: A
+        TTL: 300
+        ResourceRecords:
+        - !Ref InstanceEip
+
+  HostsWaitConditionHandle:
+    Type: AWS::CloudFormation::WaitConditionHandle
+
+  HostsWaitCondition:
+    Type: AWS::CloudFormation::WaitCondition
+    Properties:
+      Handle: !Ref HostsWaitConditionHandle
+      Count: 5
+      Timeout: 1800
+
+  LaunchTemplate:
+    Type: AWS::EC2::LaunchTemplate
+    Properties:
+      LaunchTemplateData:
+        ImageId: !FindInMap
+          - AWSRegion2AMI
+          - !Ref AWS::Region
+          - CentOS7
+        InstanceType: !Ref CloudInstanceType
+        BlockDeviceMappings:
+          - DeviceName: /dev/sda1
+            Ebs:
+              VolumeSize: 20
+        KeyName: !If
+          - UseKeyNameParameter
+          - !Ref KeyName
+          - !Ref AWS::NoValue
+        NetworkInterfaces:
+          - DeviceIndex: 0
+            NetworkInterfaceId: !Ref InstanceNetworkInterface
+          - DeviceIndex: 1
+            NetworkInterfaceId: !Ref InstanceClusterNetworkInterface
+
+  Instance:
+    Type: AWS::EC2::Instance
+    DependsOn: HostsWaitCondition
+    Properties:
+      LaunchTemplate:
+        LaunchTemplateId: !Ref LaunchTemplate
+        Version: !GetAtt LaunchTemplate.LatestVersionNumber
+      UserData:
+        Fn::Base64: !Sub |
+          #cloud-config
+          disable_root: no
+          ssh_pwauth: yes
+          packages:
+           - epel-release
+           - lvm2
+           - nvme-cli
+          write_files:
+           - path: /etc/pki/rpm-gpg/RPM-GPG-KEY-eucalyptus-release-as
+             permissions: 0644
+             content: |
+               The following public key can be used to verify RPM packages built
+               and signed by AppScale Systems, Inc for Eucalyptus releases.
+               
+               -----BEGIN PGP PUBLIC KEY BLOCK-----
+               
+               mQENBFqy/18BCACzDLAmcAEalDnql2UBQySK+2BwXYPUPZXD/WknUHIYbIwFvUX1
+               YedT5deJ5b8l/DJ2xclutfP9o7Q2MVFzaA92fhpliS6ZbkGRDPDv9Kmev+HYdkFS
+               g7f62TzvQKiR5kxCnplnaeoA6Mn2JFWU7n950wYtdZZgpk5MOKHda5Ho6CRckKX6
+               gMqXpJhk4wgb3AxbQRxyqisFCBnDBoTrJI8XR5gD8MIPGfLBY6XmbDO1MO5AWJle
+               IaItAb08+Ggoi/gJMzE7O3nWYllABK6DK7Skazm9X6iRKv/MsNu3sqQNwiHhM+Cu
+               BZH4PfCi6xYbgIG7K7Xe99VZQt2l0vX+e6vBABEBAAG0JUV1Y2FseXB0dXMgQnVp
+               bGQgPGJ1aWxkQGFwcHNjYWxlLmNvbT6JAU4EEwEIADgWIQTX9i2L8FVEXRtZ78JQ
+               KJzVxVFQQgUCWrL/XwIbAwULCQgHAgYVCgkICwIEFgIDAQIeAQIXgAAKCRBQKJzV
+               xVFQQpSkB/9h0Acb4b9PkADZmXUOj8syplMJUhCuO5X8L3kCWI2JhLeES5Pbp2nW
+               jm1EbkHWCDGtzbaN0uJIs1nJg6yDdlmkbbPjDO3UJk3UQ68grxn9nAl7jAMR/hDz
+               hRHwyMEsnPz7OPzza5j+05sdWrsa7Gb4cLNMVqnfd+WHwwBmj1BgB2A5AFBtQDB0
+               yzHsNDMHSBt14g7K07/fZ78PBFe4ALR0IdJG0eAVLpg/dKXEhNkduAKhXotHHR/M
+               Nf/8LHxGwyuqNOf7qhnBwy1ISi9liiwmwCyilYVCzli9AbEXyFRUqp95PT4JXVt6
+               PDKyNNcCtLv15bwC/DglDkbrQ46rdY1wuQENBFqy/18BCAC5t3GHdiKPkG9h79qM
+               5XeSepXU+vMuK+FuzAkPkDrpb7uSIhdAOtYrPym2Tbxkat9Zx4PTAlzPmGoPIn+n
+               8exAwVGJZTqQ7oo1TH0tLDh0qy4PRgYR3n7bcXgUtOqtCBzX7iY3KUZYVEsnf3Xd
+               wQbzWryhV6RB9hZFotWyYwz8sv+a6D4WXx7ofdMUIdvOP61+b3fU3UuFZaee2xKj
+               4Fp0lXvia1AQDUWqmhaL6jJz1qJ0SP247A+b/aD8SZEXwAyPdf92sjyAzo6ZRf+l
+               p8vkcWWtw748r1k24RRlITlfg0o4os+7JureaVr76CKmpm/wn+k70kVkW/3+iJVE
+               m3vfABEBAAGJATYEGAEIACAWIQTX9i2L8FVEXRtZ78JQKJzVxVFQQgUCWrL/XwIb
+               DAAKCRBQKJzVxVFQQrihCACuNRtcyDWziGAb22qfnhj3JILLfZ7zEDLQMzZOxLG3
+               40+ooEYfG98fhHntOD2vAGHoRvBzemloze356tX8UXUUfLzYjmv7i1kp0EGAAl+G
+               kOzL7h+0cIdywAwy4BGTx13weEjDgQuGIKWzI5ynQthKHddR0PjHlUxhsLVpwIrd
+               vvbdLHNsGTzDasHcrTMDyZP8NpHD6unFKBrfyDIB59QDHhZvmdA06OkTIJ+6X0BR
+               CAbqr2Guq2D6YjnGULBq6xJRZkgThsC36ClktFhyQLAm0FuLxsYT8j4rs928wYtC
+               hd5lKw4boxgjLF+UcYGchrV7U45wbrELY8ccwhmg4MVq
+               =KpLt
+               -----END PGP PUBLIC KEY BLOCK-----
+           - path: /etc/pki/rpm-gpg/RPM-GPG-KEY-eucalyptus-release
+             permissions: 0644
+             content: |
+               The following public key can be used to verify RPM packages built and
+               signed by Eucalyptus Systems, Hewlett-Packard, and Hewlett Packard
+               Enterprise for Eucalyptus products shipped after July of 2011, and for
+               all updates to those products.
+               
+               Questions about this key should be sent to euca-security@hpe.com.
+               
+               pub  rsa4096/BE264D09C1240596 2011-07-29 Eucalyptus Systems, Inc. (release key) <security@eucalyptus.com>
+               
+               -----BEGIN PGP PUBLIC KEY BLOCK-----
+               Version: GnuPG v1.4.15 (GNU/Linux)
+               
+               mQINBE4yDpIBEADNEtgH4rY7UvCJ5M/i3z1hNaIPyWaDx2CpiCDR+P13eDDBSQ7m
+               9n8lOKYQtFG3v37XgtNeZSiKvcelNflYsAlGohcPnGcYE3QU58oq7nBhKer2ozdQ
+               3GDm/KxsvwUF2sqiRHG+HVcK3QGeZHaOGhIj2n/4d0dmbphvDf7EzYhsz+ylZGRo
+               0S1jL1VXi1hDqjTNYvdv3BS2lmpRKnfuyTF2vBP11m/i2y0JvrZkWgQB1CcMU1U5
+               tQSuxV6q0e2rTU3w4NPrDJwC9+Y2ajWGGZozqyN+tPJ6DZTbql/5msFJXdS2tvKq
+               nWvyo5M2Ke92tn6JnNWl6a/NudtQOitlgky0DkgFhTGArGwPImdhKGTOsQOw2vln
+               SbhOOd0+Fg8woEM8S27ViVH75ULe5WsxqzN9EdlgFh0JfFT6HgN95U5o+yjOsAr3
+               xaX/r1uyevooe3ow+MiFEMYlASgkxfjklveaPE4b00n/cZSq03i0Fz5+Nwgq1Uwj
+               wqSEJMOGtBO2sXroB7Qzcm1dlQJL2au+by5yFvmIR3v2tDyu84T4SVSMfU61B0+b
+               Z2+ufwUrGHkvQSEmfI3NswzJKP4lEh52VaLQx9NZ0qYlap2i3QkW+xCx37VTAViU
+               TbggQzck25fiIveVpyi/0khDHio3ZeX06i4XoAdtsaYckfROzpwZnu0MawARAQAB
+               tEBFdWNhbHlwdHVzIFN5c3RlbXMsIEluYy4gKHJlbGVhc2Uga2V5KSA8c2VjdXJp
+               dHlAZXVjYWx5cHR1cy5jb20+iQI4BBMBAgAiBQJOMhAnAhsDBgsJCAcDAgYVCAIJ
+               CgsEFgIDAQIeAQIXgAAKCRC+Jk0JwSQFluz9D/sHoShHF6MCc+c+VI8yYHXAkv7h
+               nOahm/H76Pnt1VTGI2J4Sl+A/e3KpGjxa3Ii8xN5MhQNQ9jSJFDdLuaD4BmbjZF3
+               WOObFvgTTw42mfXrUo/F4sthVwEvU4o1cvfVyM91kzg5X6u8K91gcVmsJvPOn3Uh
+               Z7SQOfv0BzbBb6XR3Wi5fvMlE0Tfbc2SEJ1l0Au9QjvuH2tVfCaHkPsWn6s8ONfQ
+               l+jclkfZNjfaAPStMj8ZylizA0Wgib+RffNAe8BlbGrZwum8Sk005jhGKkQmYz7L
+               nMg8dPIvQFxKeQddE4o11Jy9LUMXuJBsu2TMFWf1zEzrVi+BzBj61HeM3CbTYO9i
+               fbOhYdiaRtHHuWnH2Nh7+u2rDkU1lfNotFM1yEoldhYnHklN2ZB4OiY3yCG1a4qN
+               KYTshqoyQPOa8PYAObydKJweNgNRhO74s6AZHMR4TR/Mp+cgXMXZIbnuxut0UwkC
+               GditoANmgURXaZ2GA3Vy+5IgNCwJjOikjeGZLqijCj5T92Viju70UW8nipp5eIXp
+               i23Z9QLc/+V1HhkiONLLAaGPCuAtvPLOCkALKjKOBJ4uMdPRl/Vqo2S7URUbjml1
+               tZQspPYhQh95SwUg0imvo7k2UO4sW/Tatq3oS25T9wtJYREYjn4MbEUI0FBxGn5k
+               2T2jSGSw43cM9hVBqQ==
+               =Xs3z
+               -----END PGP PUBLIC KEY BLOCK-----
+               
+           - path: /etc/yum.repos.d/eucalyptus-base.repo
+             permissions: 0644
+             content: |
+               [eucalyptus-base]
+               name=Eucalyptus 5 Base - $basearch
+               baseurl=https://downloads.eucalyptus.cloud/software/eucalyptus/base/5/rhel/7/x86_64/
+               gpgkey=file:///etc/pki/rpm-gpg/RPM-GPG-KEY-eucalyptus-release-as
+                      file:///etc/pki/rpm-gpg/RPM-GPG-KEY-eucalyptus-release
+               gpgcheck=1
+               enabled=1
+               fastestmirror_enabled=0
+           - path: /etc/yum.repos.d/eucalyptus.repo
+             permissions: 0644
+             content: |
+               [eucalyptus]
+               name=Eucalyptus 5 - $basearch
+               baseurl=https://downloads.eucalyptus.cloud/software/eucalyptus/dev/ado/${AdoBuildId}/
+               gpgkey=file:///etc/pki/rpm-gpg/RPM-GPG-KEY-eucalyptus-release-as
+                      file:///etc/pki/rpm-gpg/RPM-GPG-KEY-eucalyptus-release
+               gpgcheck=1
+               enabled=1
+               fastestmirror_enabled=0
+           - path: /root/setup.sh
+             permissions: 0755
+             content: |
+               #!/bin/bash
+               set -eux
+               
+               ip link set eth1 up
+               ip link set dev eth1 mtu 9001
+               ip address add 10.111.0.10/24 dev eth1
+               iptables -t nat -A POSTROUTING -s 10.222.0.0/24 -o eth0 -j MASQUERADE
+               
+               DISK_DEVICE=""
+               if [ -e /dev/nvme4n1 ] ; then
+                 DISK_DEVICE="/dev/disk_vg/disk_lv"
+                 vgcreate disk_vg /dev/nvme3n1
+                 vgcreate ceph_vg /dev/nvme4n1
+                 lvcreate --extents "100%FREE" --name disk_lv disk_vg
+                 lvcreate --extents "100%FREE" --name ceph_lv ceph_vg
+               elif [ -e /dev/nvme1n1 ] ; then
+                 DISK_DEVICE="/dev/ceph_vg/disk_lv"
+                 vgcreate ceph_vg /dev/nvme1n1
+                 lvcreate --size "100G" --name disk_lv ceph_vg
+                 lvcreate --extents "100%FREE" --name ceph_lv ceph_vg
+               else
+                 DISK_DEVICE="/dev/ceph_vg/disk_lv"
+                 vgcreate ceph_vg /dev/nvme0n1
+                 lvcreate --size "100G" --name disk_lv ceph_vg
+                 lvcreate --extents "100%FREE" --name ceph_lv ceph_vg
+               fi
+               mkfs -t xfs -L disk-lv ${!DISK_DEVICE}
+               mkdir -pv /disk
+               mount ${!DISK_DEVICE} /disk
+               
+               ssh-keygen -q -t rsa -f "/root/.ssh/id_rsa" -N ""
+               cat /root/.ssh/id_rsa.pub >> /root/.ssh/authorized_keys
+               ssh-keyscan 10.111.0.11 10.111.0.12 10.111.0.13 10.111.0.20 10.111.0.21 > /root/.ssh/known_hosts
+               chmod 600 /root/.ssh/known_hosts
+           - path: /root/deploy.sh
+             permissions: 0755
+             content: |
+               #!/bin/bash
+               set -eux
+               yum --assumeyes install eucalyptus-ansible
+               
+               SEED_META="${AWS::StackId}${Vpc}${Subnet}"
+               SEED_SKEY=$(curl -sX PUT -H "X-aws-ec2-metadata-token-ttl-seconds: 21600" "http://169.254.169.254/latest/api/token" | xargs -ITOKENHERE -r curl -sH "X-aws-ec2-metadata-token: TOKENHERE" http://169.254.169.254/latest/meta-data/public-keys/0/openssh-key)
+               SSH_PASSWORD=$(echo "${!SEED_META}${!SEED_SKEY}" | sha384sum | head -c 32)
+               ansible --extra-vars ansible_ssh_pass="${!SSH_PASSWORD}" --inventory /root/inventory.yml -m ping all
+               ansible-playbook --extra-vars ansible_ssh_pass="${!SSH_PASSWORD}" --inventory /root/inventory.yml /usr/share/eucalyptus-ansible/playbook_vpcmido.yml
+           - path: /root/dev.sh
+             permissions: 0755
+             content: |
+               #!/bin/bash
+               { /root/setup.sh && /root/deploy.sh ; } &> /root/dev.log
+           - path: /root/inventory.yml
+             permissions: 0644
+             content: |
+               all:
+               
+                  hosts:
+               
+                    10.111.0.10:
+                      ansible_connection: local
+                      host_cluster_interface: eth1
+                      host_cluster_ipv4: 10.111.0.10
+                      host_public_interface: eth0
+                      host_public_ipv4: 10.111.10.10
+                    10.111.0.11:
+                      host_cluster_ipv4: 10.111.0.11
+                      host_public_ipv4: 10.111.0.11
+                    10.111.0.12:
+                      host_cluster_ipv4: 10.111.0.12
+                      host_public_ipv4: 10.111.0.12
+                    10.111.0.13:
+                      host_cluster_ipv4: 10.111.0.13
+                      host_public_ipv4: 10.111.0.13
+                    10.111.0.20:
+                      host_cluster_ipv4: 10.111.0.20
+                      host_public_ipv4: 10.111.0.20
+                      host_zone_key: 1
+                    10.111.0.21:
+                      host_cluster_ipv4: 10.111.0.21
+                      host_public_ipv4: 10.111.0.21
+                      host_zone_key: 1
+               
+                  vars:
+               
+                    eucalyptus_yum_baseurl: 'https://downloads.eucalyptus.cloud/software/eucalyptus/dev/ado/${AdoBuildId}/'
+                    eucalyptus_base_yum_enabled: Y
+               
+                    eucalyptus_console_cloud_deploy: no
+                    eucalyptus_console_certbot_enable: no
+                    eucalyptus_services_certbot_enable: no
+               
+                    cloud_service_image_rpm: yes
+                    cloud_firewalld_configure: no
+                    cloud_firewalld_always_reload: no
+                    cloud_firewalld_cluster_cidr: 10.111.0.0/24
+               
+                    cloud_boostrap_hosts: yes
+                    cloud_public_port: 8773
+                    cloud_region_name: us-euca-1
+                    cloud_system_dns_dnsdomain: cloud-${DeploymentName}.qa.eucalyptuscloud.net
+                    cloud_properties:
+                      services.imaging.worker.instance_type: t2.micro
+                      services.loadbalancing.worker.instance_type: t2.micro
+               
+                    cloud_opts_mem: "-Xmx4g"
+                    cloud_instances_state_dir: /disk/eucalyptus/instances
+               
+                    ceph_release: nautilus
+                    ceph_osd_data_path: ceph_vg/ceph_lv
+                    ceph_public_network: 10.111.0.0/24
+               
+                    vpcmido_public_ip_range: 10.222.0.100-10.222.0.200
+                    vpcmido_public_ip_cidr: 10.222.0.0/24
+               
+                  children:
+               
+                    ceph:
+                      hosts:
+                        10.111.0.11:
+                        10.111.0.12:
+                        10.111.0.13:
+                    console:
+                      hosts:
+                        10.111.0.10:
+                    cloud:
+                      hosts:
+                        10.111.0.10:
+                    zone:
+                      hosts:
+                        10.111.0.20:
+                    node:
+                      hosts:
+                        10.111.0.21:
+          runcmd:
+           - /root/dev.sh &
+      Tags:
+       - Key: stack-description
+         Value: !Sub "ADO ansible dev build: ${AdoBuildId}"
+       - Key: Name
+         Value: !Sub "eucalytpus-devel-${DeploymentName}-cloud"
+
+  ClusterLaunchTemplate:
+    Type: AWS::EC2::LaunchTemplate
+    Properties:
+      LaunchTemplateData:
+        ImageId: !FindInMap
+          - AWSRegion2AMI
+          - !Ref AWS::Region
+          - CentOS7
+        BlockDeviceMappings:
+          - DeviceName: /dev/sda1
+            Ebs:
+              VolumeSize: 20
+        KeyName: !If
+          - UseKeyNameParameter
+          - !Ref KeyName
+          - !Ref AWS::NoValue
+        UserData:
+          Fn::Base64: !Sub |
+            #cloud-config
+            disable_root: no
+            ssh_pwauth: yes
+            packages:
+             - lvm2
+             - nvme-cli
+            write_files:
+             - path: /root/setup.sh
+               permissions: 0755
+               content: |
+                 #!/bin/bash
+                 set -eux
+                 
+                 WAITCONDURL="${HostsWaitConditionHandle}"
+                 SEED_META="${AWS::StackId}${Vpc}${Subnet}"
+                 SEED_SKEY=$(curl -sX PUT -H "X-aws-ec2-metadata-token-ttl-seconds: 21600" "http://169.254.169.254/latest/api/token" | xargs -ITOKENHERE -r curl -sH "X-aws-ec2-metadata-token: TOKENHERE" http://169.254.169.254/latest/meta-data/public-keys/0/openssh-key)
+                 ROOT_PASSWORD=$(echo "${!SEED_META}${!SEED_SKEY}" | sha384sum | head -c 32)
+                 echo "${!ROOT_PASSWORD}" | passwd --stdin root
+                 
+                 DISK_DEVICE=""
+                 if [ -e /dev/nvme4n1 ] ; then
+                   DISK_DEVICE="/dev/disk_vg/disk_lv"
+                   vgcreate disk_vg /dev/nvme3n1
+                   vgcreate ceph_vg /dev/nvme4n1
+                   lvcreate --extents "100%FREE" --name disk_lv disk_vg
+                   lvcreate --extents "100%FREE" --name ceph_lv ceph_vg
+                 elif [ -e /dev/nvme1n1 ] ; then
+                   DISK_DEVICE="/dev/ceph_vg/disk_lv"
+                   vgcreate ceph_vg /dev/nvme1n1
+                   lvcreate --size "100G" --name disk_lv ceph_vg
+                   lvcreate --extents "100%FREE" --name ceph_lv ceph_vg
+                 else
+                   DISK_DEVICE="/dev/ceph_vg/disk_lv"
+                   vgcreate ceph_vg /dev/nvme0n1
+                   lvcreate --size "100G" --name disk_lv ceph_vg
+                   lvcreate --extents "100%FREE" --name ceph_lv ceph_vg
+                 fi
+                 mkfs -t xfs -L disk-lv ${!DISK_DEVICE}
+                 mkdir -pv /disk
+                 mount ${!DISK_DEVICE} /disk
+                 curl -s -X PUT -H 'Content-Type:' --data-binary \
+                   '{"Status": "SUCCESS", "UniqueId": "'$(hostname)'", "Data": "-", "Reason": "Host up" }' \
+                   "${!WAITCONDURL}"
+            runcmd:
+             - /root/setup.sh &
+
+  CephInstance1:
+    Type: AWS::EC2::Instance
+    DependsOn: PublicRoute
+    Properties:
+      LaunchTemplate:
+        LaunchTemplateId: !Ref ClusterLaunchTemplate
+        Version: !GetAtt ClusterLaunchTemplate.LatestVersionNumber
+      InstanceType: !Ref CephInstanceType
+      NetworkInterfaces:
+        - DeviceIndex: 0
+          SubnetId: !Ref ClusterSubnet
+          GroupSet:
+            - !GetAtt ClusterSecurityGroup.GroupId
+          PrivateIpAddress: 10.111.0.11
+      Tags:
+       - Key: stack-description
+         Value: !Sub "ADO ansible dev build: ${AdoBuildId}"
+       - Key: Name
+         Value: !Sub "eucalytpus-devel-${DeploymentName}-ceph1"
+
+  CephInstance2:
+    Type: AWS::EC2::Instance
+    DependsOn: PublicRoute
+    Properties:
+      LaunchTemplate:
+        LaunchTemplateId: !Ref ClusterLaunchTemplate
+        Version: !GetAtt ClusterLaunchTemplate.LatestVersionNumber
+      InstanceType: !Ref CephInstanceType
+      NetworkInterfaces:
+        - DeviceIndex: 0
+          SubnetId: !Ref ClusterSubnet
+          GroupSet:
+            - !GetAtt ClusterSecurityGroup.GroupId
+          PrivateIpAddress: 10.111.0.12
+      Tags:
+       - Key: stack-description
+         Value: !Sub "ADO ansible dev build: ${AdoBuildId}"
+       - Key: Name
+         Value: !Sub "eucalytpus-devel-${DeploymentName}-ceph2"
+
+  CephInstance3:
+    Type: AWS::EC2::Instance
+    DependsOn: PublicRoute
+    Properties:
+      LaunchTemplate:
+        LaunchTemplateId: !Ref ClusterLaunchTemplate
+        Version: !GetAtt ClusterLaunchTemplate.LatestVersionNumber
+      InstanceType: !Ref CephInstanceType
+      NetworkInterfaces:
+        - DeviceIndex: 0
+          SubnetId: !Ref ClusterSubnet
+          GroupSet:
+            - !GetAtt ClusterSecurityGroup.GroupId
+          PrivateIpAddress: 10.111.0.13
+      Tags:
+       - Key: stack-description
+         Value: !Sub "ADO ansible dev build: ${AdoBuildId}"
+       - Key: Name
+         Value: !Sub "eucalytpus-devel-${DeploymentName}-ceph3"
+
+  ZoneInstance:
+    Type: AWS::EC2::Instance
+    DependsOn: PublicRoute
+    Properties:
+      LaunchTemplate:
+        LaunchTemplateId: !Ref ClusterLaunchTemplate
+        Version: !GetAtt ClusterLaunchTemplate.LatestVersionNumber
+      InstanceType: !Ref ZoneInstanceType
+      NetworkInterfaces:
+        - DeviceIndex: 0
+          SubnetId: !Ref ClusterSubnet
+          GroupSet:
+            - !GetAtt ClusterSecurityGroup.GroupId
+          PrivateIpAddress: 10.111.0.20
+      Tags:
+       - Key: stack-description
+         Value: !Sub "ADO ansible dev build: ${AdoBuildId}"
+       - Key: Name
+         Value: !Sub "eucalytpus-devel-${DeploymentName}-zone"
+
+  NodeLaunchTemplate:
+    Type: AWS::EC2::LaunchTemplate
+    Properties:
+      LaunchTemplateData:
+        ImageId: !FindInMap
+          - AWSRegion2AMI
+          - !Ref AWS::Region
+          - CentOS7
+        InstanceType: !Ref NodeInstanceType
+        BlockDeviceMappings:
+          - DeviceName: /dev/sda1
+            Ebs:
+              VolumeSize: 20
+        KeyName: !If
+          - UseKeyNameParameter
+          - !Ref KeyName
+          - !Ref AWS::NoValue
+        InstanceMarketOptions:
+          MarketType: spot
+          SpotOptions:
+            MaxPrice: !Ref NodeInstanceTypeSpotMaxPrice
+            SpotInstanceType: one-time
+        UserData:
+          Fn::Base64: !Sub |
+            #cloud-config
+            disable_root: no
+            ssh_pwauth: yes
+            packages:
+             - lvm2
+             - nvme-cli
+            write_files:
+             - path: /root/setup.sh
+               permissions: 0755
+               content: |
+                 #!/bin/bash
+                 set -eux
+                 
+                 WAITCONDURL="${HostsWaitConditionHandle}"
+                 SEED_META="${AWS::StackId}${Vpc}${Subnet}"
+                 SEED_SKEY=$(curl -sX PUT -H "X-aws-ec2-metadata-token-ttl-seconds: 21600" "http://169.254.169.254/latest/api/token" | xargs -ITOKENHERE -r curl -sH "X-aws-ec2-metadata-token: TOKENHERE" http://169.254.169.254/latest/meta-data/public-keys/0/openssh-key)
+                 ROOT_PASSWORD=$(echo "${!SEED_META}${!SEED_SKEY}" | sha384sum | head -c 32)
+                 echo "${!ROOT_PASSWORD}" | passwd --stdin root
+                 
+                 DISK_DEVICE=""
+                 if [ -e /dev/nvme4n1 ] ; then
+                   DISK_DEVICE="/dev/disk_vg/disk_lv"
+                   vgcreate disk_vg /dev/nvme3n1
+                   vgcreate ceph_vg /dev/nvme4n1
+                   lvcreate --extents "100%FREE" --name disk_lv disk_vg
+                   lvcreate --extents "100%FREE" --name ceph_lv ceph_vg
+                 elif [ -e /dev/nvme1n1 ] ; then
+                   DISK_DEVICE="/dev/ceph_vg/disk_lv"
+                   vgcreate ceph_vg /dev/nvme1n1
+                   lvcreate --size "100G" --name disk_lv ceph_vg
+                   lvcreate --extents "100%FREE" --name ceph_lv ceph_vg
+                 else
+                   DISK_DEVICE="/dev/ceph_vg/disk_lv"
+                   vgcreate ceph_vg /dev/nvme0n1
+                   lvcreate --size "100G" --name disk_lv ceph_vg
+                   lvcreate --extents "100%FREE" --name ceph_lv ceph_vg
+                 fi
+
+                 mkfs -t xfs -L disk-lv ${!DISK_DEVICE}
+                 mkdir -pv /disk
+                 mount ${!DISK_DEVICE} /disk
+                 curl -s -X PUT -H 'Content-Type:' --data-binary \
+                   '{"Status": "SUCCESS", "UniqueId": "'$(hostname)'", "Data": "-", "Reason": "Host up" }' \
+                   "${!WAITCONDURL}"
+            runcmd:
+             - /root/setup.sh &
+
+  NodeInstance:
+    Type: AWS::EC2::Instance
+    DependsOn: PublicRoute
+    Properties:
+      LaunchTemplate:
+        LaunchTemplateId: !Ref NodeLaunchTemplate
+        Version: !GetAtt NodeLaunchTemplate.LatestVersionNumber
+      NetworkInterfaces:
+        - DeviceIndex: 0
+          SubnetId: !Ref ClusterSubnet
+          GroupSet:
+            - !GetAtt ClusterSecurityGroup.GroupId
+          PrivateIpAddress: 10.111.0.21
+      Tags:
+       - Key: stack-description
+         Value: !Sub "ADO ansible dev build: ${AdoBuildId}"
+       - Key: Name
+         Value: !Sub "eucalytpus-devel-${DeploymentName}-node"
+
+Outputs:
+
+  InstanceId:
+    Description: Instance
+    Value: !Ref Instance
+
+  Ip:
+    Description: Instance IP
+    Value: !GetAtt Instance.PublicIp
+
+  Hostname:
+    Description: Instance hostname
+    Value: !GetAtt Instance.PublicDnsName
+

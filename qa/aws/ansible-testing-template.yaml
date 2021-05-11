@@ -1,0 +1,259 @@
+# Template for testing Ansible deployments. Not suitable for running instances unless metal used.
+---
+AWSTemplateFormatVersion: 2010-09-09
+Description: Eucalyptus Cloud deployment testing environment
+
+Parameters:
+
+  DeploymentName:
+    Description: Short deployment description
+    Type: String
+    Default: Deployment testing
+
+  InstanceType:
+    Description: Instance type
+    Type: String
+    AllowedValues:
+      - c5d.2xlarge
+      - c5d.4xlarge
+      - c5d.metal
+      - m5d.metal
+    Default: c5d.2xlarge
+
+  InstanceTypeSpotMaxPrice:
+    Description: Maximum spot price for the instance type
+    Type: String
+    Default: '0.2'
+
+  KeyName:
+    Description: Key Name
+    Type: AWS::EC2::KeyPair::KeyName
+
+  SshCidr:
+    Description: CIDR for source of SSH connections
+    Type: String
+    Default: 0.0.0.0/0
+
+  Zone:
+    Description: Availability zone
+    Type: AWS::EC2::AvailabilityZone::Name
+    Default: us-west-1a
+
+Conditions:
+
+  UseKeyNameParameter: !Not
+    - !Equals
+      - !Ref KeyName
+      - ''
+
+Mappings:
+
+  # https://wiki.centos.org/Cloud/AWS
+  AWSRegion2AMI:
+    us-east-1:
+      CentOS7: ami-00e87074e52e6c9f9
+    us-east-2:
+      CentOS7: ami-00f8e2c955f7ffa9b
+    us-west-1:
+      CentOS7: ami-08d2d8b00f270d03b
+    us-west-2:
+      CentOS7: ami-0686851c4e7b1a8e1
+
+Resources:
+
+  Vpc:
+    Type: AWS::EC2::VPC
+    Properties:
+      EnableDnsSupport: true
+      EnableDnsHostnames: true
+      CidrBlock: 10.111.0.0/16
+      Tags:
+       - Key: stack-description
+         Value: !Sub "Ansible testing deployment: ${DeploymentName}"
+
+  Subnet:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref Vpc
+      AvailabilityZone: !Ref Zone
+      MapPublicIpOnLaunch: yes
+      CidrBlock: 10.111.0.0/16
+      Tags:
+       - Key: stack-description
+         Value: !Sub "Ansible testing deployment: ${DeploymentName}"
+
+  InternetGateway:
+    Type: AWS::EC2::InternetGateway
+    Properties:
+      Tags:
+       - Key: stack-description
+         Value: !Sub "Ansible testing deployment: ${DeploymentName}"
+
+  InternetGatewayAttach:
+    Type: AWS::EC2::VPCGatewayAttachment
+    Properties:
+      VpcId: !Ref Vpc
+      InternetGatewayId: !Ref InternetGateway
+
+  RouteTable:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId: !Ref Vpc
+      Tags:
+       - Key: stack-description
+         Value: !Sub "Ansible testing deployment: ${DeploymentName}"
+
+  RouteTableAssociate:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      RouteTableId: !Ref RouteTable
+      SubnetId: !Ref Subnet
+
+  PublicRoute:
+    Type: AWS::EC2::Route
+    DependsOn: InternetGatewayAttach
+    Properties:
+      RouteTableId: !Ref RouteTable
+      DestinationCidrBlock: 0.0.0.0/0
+      GatewayId: !Ref InternetGateway
+
+  SecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: !Sub "Ansible testing deployment: ${DeploymentName}"
+      VpcId: !Ref Vpc
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 22
+          ToPort: 22
+          CidrIp: !Ref SshCidr
+      Tags:
+       - Key: stack-description
+         Value: !Sub "Ansible testing deployment: ${DeploymentName}"
+
+  LaunchTemplate:
+    Type: AWS::EC2::LaunchTemplate
+    Properties:
+      LaunchTemplateData:
+        ImageId: !FindInMap
+          - AWSRegion2AMI
+          - !Ref AWS::Region
+          - CentOS7
+        InstanceType: !Ref InstanceType
+        KeyName: !If
+          - UseKeyNameParameter
+          - !Ref 'KeyName'
+          - !Ref 'AWS::NoValue'
+        NetworkInterfaces:
+          - AssociatePublicIpAddress: yes
+            DeleteOnTermination: yes
+            DeviceIndex: 0
+            Groups:
+              - !GetAtt SecurityGroup.GroupId
+            PrivateIpAddress: 10.111.0.10
+            SubnetId: !Ref Subnet
+        InstanceMarketOptions:
+          MarketType: spot
+          SpotOptions:
+            MaxPrice: !Ref InstanceTypeSpotMaxPrice
+            SpotInstanceType: one-time
+
+  Instance:
+    Type: AWS::EC2::Instance
+    DependsOn: PublicRoute
+    Properties:
+      LaunchTemplate:
+        LaunchTemplateId: !Ref LaunchTemplate
+        Version: !GetAtt LaunchTemplate.LatestVersionNumber
+      UserData:
+        Fn::Base64: !Sub |
+          #cloud-config
+          packages:
+           - epel-release
+           - git
+           - lvm2
+          write_files:
+           - path: /root/setup.sh
+             permissions: 0755
+             content: |
+               #!/bin/bash
+               set -eu
+               
+               vgcreate ceph_vg /dev/nvme1n1
+               lvcreate --size "150G" --name disk_lv ceph_vg
+               lvcreate --extents "100%FREE" --name ceph_lv ceph_vg
+               mkfs -t xfs -L disk-lv /dev/ceph_vg/disk_lv
+               mkdir -pv /disk
+               mount /dev/ceph_vg/disk_lv /disk
+               
+               ssh-keygen -q -t rsa -f "/root/.ssh/id_rsa" -N ""
+               cat /root/.ssh/id_rsa.pub >> /root/.ssh/authorized_keys
+               
+               yum --assumeyes install ansible
+               git -C /root clone https://github.com/AppScale/ats-deploy.git
+           - path: /root/inventory.yml
+             permissions: 0644
+             content: |
+               all:
+               
+                  hosts:
+               
+                    host10:
+                      ansible_connection: local
+                      host_cluster_ipv4: 10.111.0.10
+                      host_public_ipv4: 10.111.0.10
+                      host_zone_key: 1
+               
+                  vars:
+               
+                    eucalyptus_yum_baseurl: https://downloads.eucalyptus.cloud/software/eucalyptus/5/rhel/7/x86_64/
+               
+                    eucalyptus_console_cloud_deploy: no
+                    eucalyptus_console_certbot_enable: no
+                    eucalyptus_services_certbot_enable: no
+               
+                    cloud_service_image_rpm: yes
+                    cloud_firewalld_configure: no
+                    cloud_firewalld_always_reload: no
+                    cloud_firewalld_cluster_cidr: 10.111.0.0/16
+                    cloud_firewalld_cluster_interface: "{{ eucalyptus_host_cluster_interface }}"
+               
+                    cloud_public_port: 8773
+                    cloud_region_name: us-euca-1
+                    cloud_system_dns_dnsdomain: cloud-10-111-0-10.euca.me
+               
+                    cloud_opts_mem: "-Xmx4g"
+                    cloud_instances_state_dir: /disk/eucalyptus/instances
+               
+                    ceph_release: nautilus
+                    ceph_osd_data_path: ceph_vg/ceph_lv
+                    ceph_public_network: 10.111.0.0/16
+               
+                    vpcmido_public_ip_range: 10.111.100.100-10.111.100.200
+                    vpcmido_public_ip_cidr: 10.111.100.0/24
+               
+                  children:
+               
+                    ceph:
+                      hosts:
+                        host10:
+               
+                    console:
+                      hosts:
+                        host10:
+               
+                    cloud:
+                      hosts:
+                        host10:
+               
+                    zone:
+                      hosts:
+                        host10:
+               
+                    node:
+                      hosts:
+                        host10:
+      Tags:
+       - Key: stack-description
+         Value: !Sub "Ansible testing deployment: ${DeploymentName}"
+

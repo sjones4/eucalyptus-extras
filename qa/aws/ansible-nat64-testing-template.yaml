@@ -1,0 +1,820 @@
+# Template for testing Ansible deployments with public access via NAT64 DNS64. Not suitable for running instances unless metal used.
+---
+AWSTemplateFormatVersion: 2010-09-09
+Description: Eucalyptus Cloud deployment testing environment
+
+Metadata:
+
+  AWS::CloudFormation::Interface:
+    ParameterGroups:
+      - Label:
+          default: Deployment Details
+        Parameters: [DeploymentName, CloudDomain, Zone, HostedZoneId]
+      - Label:
+          default: Test Targets
+        Parameters: [AtsDeployRepoUrl, AtsDeployRepoBranch, EucalyptusYumBaseEnabled, EucalyptusYumBaseUrl]
+      - Label:
+          default: Deployment Customization
+        Parameters: [InstanceType, InstanceTypeSpotMaxPrice, CephConverged, CertbotEnabledConsole, CertbotEnabledServices, ConsoleCloudDeploy, FirewallEnabled]
+      - Label:
+          default: Deployment Access
+        Parameters: [KeyName, SshCidr]
+
+Parameters:
+
+  DeploymentName:
+    Description: Short deployment description (used in DNS)
+    Type: String
+    AllowedPattern: "[a-z0-9-]{1,32}"
+    Default: ansdev
+
+  CloudDomain:
+    Description: DNS domain to use
+    Type: String
+    AllowedValues:
+      - "cloud-{{ cloud_deployment_name }}.qa.eucalyptuscloud.net"
+      - "cloud-{{ cloud_external_ip_dash }}.euca.me"
+    Default: "cloud-{{ cloud_deployment_name }}.qa.eucalyptuscloud.net"
+
+  AtsDeployRepoUrl:
+    Description: URL of the ats-deploy repository to test
+    Type: String
+    Default: https://github.com/AppScale/ats-deploy.git
+
+  AtsDeployRepoBranch:
+    Description: Branch to use in the ats-deploy repository
+    Type: String
+    Default: master
+
+  EucalyptusYumBaseUrl:
+    Description: Eucalyptus YUM repository to test
+    Type: String
+    Default: https://downloads.eucalyptus.cloud/software/eucalyptus/5/rhel/7/x86_64/
+
+  EucalyptusYumBaseEnabled:
+    Description: Enable separate third-party yum repository
+    Type: String
+    AllowedValues:
+      - "yes"
+      - "no"
+    Default: "no"
+
+  InstanceType:
+    Description: Instance type
+    Type: String
+    AllowedValues:
+      - c5d.2xlarge
+      - c5d.4xlarge
+      - c5d.metal
+      - m5d.metal
+    Default: c5d.2xlarge
+
+  InstanceTypeSpotMaxPrice:
+    Description: Maximum spot price for the instance type
+    Type: String
+    Default: '0.2'
+
+  KeyName:
+    Description: Key Name
+    Type: AWS::EC2::KeyPair::KeyName
+
+  SshCidr:
+    Description: CIDR for source of SSH connections
+    Type: String
+    Default: 0.0.0.0/0
+
+  CephConverged:
+    Description: Deploy using ceph converged storage
+    Type: String
+    AllowedValues:
+      - "yes"
+      - "no"
+    Default: "no"
+
+  CertbotEnabledConsole:
+    Description: Provision console HTTPS certificate using certbot
+    Type: String
+    AllowedValues:
+      - "yes"
+      - "no"
+    Default: "no"
+
+  CertbotEnabledServices:
+    Description: Provision services HTTPS certificate using certbot
+    Type: String
+    AllowedValues:
+      - "yes"
+      - "no"
+    Default: "no"
+
+  ConsoleCloudDeploy:
+    Description: Deploy management console in the cloud
+    Type: String
+    AllowedValues:
+      - "yes"
+      - "no"
+    Default: "no"
+
+  FirewallEnabled:
+    Description: Deploy with firewalld
+    Type: String
+    AllowedValues:
+      - "yes"
+      - "no"
+    Default: "no"
+
+  Zone:
+    Description: Availability zone
+    Type: AWS::EC2::AvailabilityZone::Name
+    Default: us-west-1a
+
+  HostedZoneId:
+    Description: Route53 hosted zone to use
+    Type: String
+    Default: Z03669683K9LKCWCNN3BJ
+
+Conditions:
+
+  UseKeyNameParameter: !Not
+    - !Equals
+      - !Ref KeyName
+      - ''
+
+Mappings:
+
+  # https://wiki.centos.org/Cloud/AWS
+  AWSRegion2AMI:
+    us-east-1:
+      CentOS7: ami-00e87074e52e6c9f9
+    us-east-2:
+      CentOS7: ami-00f8e2c955f7ffa9b
+    us-west-1:
+      CentOS7: ami-08d2d8b00f270d03b
+    us-west-2:
+      CentOS7: ami-0686851c4e7b1a8e1
+
+Resources:
+
+  RecordSetGroup:
+    Type: AWS::Route53::RecordSetGroup
+    Properties:
+      HostedZoneId: !Ref HostedZoneId
+      RecordSets:
+      - Name: !Sub "cloud-${DeploymentName}.qa.eucalyptuscloud.net."
+        Type: NS
+        TTL: 300
+        ResourceRecords:
+        - !Sub "ns1.cloud-${DeploymentName}.qa.eucalyptuscloud.net."
+      - Name: !Sub "ns1.cloud-${DeploymentName}.qa.eucalyptuscloud.net."
+        Type: AAAA
+        TTL: 300
+        ResourceRecords:
+        - !Join ["", [!Select [0, !Split ["/", !Select [0, !GetAtt Subnet.Ipv6CidrBlocks]]], "b"]]
+
+  Vpc:
+    Type: AWS::EC2::VPC
+    Properties:
+      EnableDnsSupport: true
+      EnableDnsHostnames: true
+      CidrBlock: 10.111.10.0/24
+      Tags:
+       - Key: stack-description
+         Value: !Sub "Ansible testing deployment: ${DeploymentName}"
+
+  VpcCidrBlock:
+    Type: AWS::EC2::VPCCidrBlock
+    Properties:
+      AmazonProvidedIpv6CidrBlock: yes
+      VpcId: !Ref Vpc
+
+  DhcpOptions:
+    Type: AWS::EC2::DHCPOptions
+    Properties:
+      DomainName: !Sub "cloud-${DeploymentName}.qa.eucalyptuscloud.net"
+      DomainNameServers:
+       - 1.1.1.1
+       - 1.0.0.1
+      Tags:
+       - Key: stack-description
+         Value: !Sub "Ansible testing deployment: ${DeploymentName}"
+
+  VpcDhcpOptionsAssociation:
+    Type: AWS::EC2::VPCDHCPOptionsAssociation
+    Properties:
+      DhcpOptionsId: !Ref DhcpOptions
+      VpcId: !Ref Vpc
+
+  Subnet:
+    Type: AWS::EC2::Subnet
+    DependsOn: VpcCidrBlock
+    Properties:
+      VpcId: !Ref Vpc
+      AvailabilityZone: !Ref Zone
+      MapPublicIpOnLaunch: yes
+      CidrBlock: 10.111.10.0/24
+      Ipv6CidrBlock: !Select [0, !Cidr [!Select [0, !GetAtt Vpc.Ipv6CidrBlocks], 1, 64]]
+      Tags:
+       - Key: stack-description
+         Value: !Sub "Ansible testing deployment: ${DeploymentName}"
+
+  InternetGateway:
+    Type: AWS::EC2::InternetGateway
+    Properties:
+      Tags:
+       - Key: stack-description
+         Value: !Sub "Ansible testing deployment: ${DeploymentName}"
+
+  InternetGatewayAttach:
+    Type: AWS::EC2::VPCGatewayAttachment
+    Properties:
+      VpcId: !Ref Vpc
+      InternetGatewayId: !Ref InternetGateway
+
+  RouteTable:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId: !Ref Vpc
+      Tags:
+       - Key: stack-description
+         Value: !Sub "Ansible testing deployment: ${DeploymentName}"
+
+  RouteTableAssociate:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      RouteTableId: !Ref RouteTable
+      SubnetId: !Ref Subnet
+
+  PublicRoute4:
+    Type: AWS::EC2::Route
+    DependsOn:
+     - InternetGatewayAttach
+     - VpcDhcpOptionsAssociation
+    Properties:
+      RouteTableId: !Ref RouteTable
+      DestinationCidrBlock: 0.0.0.0/0
+      GatewayId: !Ref InternetGateway
+
+  PublicRoute6:
+    Type: AWS::EC2::Route
+    DependsOn: PublicRoute4
+    Properties:
+      RouteTableId: !Ref RouteTable
+      DestinationIpv6CidrBlock: ::/0
+      GatewayId: !Ref InternetGateway
+
+  CloudPublicRoute:
+    Type: AWS::EC2::Route
+    Properties:
+      RouteTableId: !Ref RouteTable
+      DestinationCidrBlock: 10.111.20.0/26
+      NetworkInterfaceId: !Ref NetworkInterface
+
+  NatRoute:
+    Type: AWS::EC2::Route
+    Properties:
+      RouteTableId: !Ref RouteTable
+      DestinationCidrBlock: 10.111.30.0/24
+      NetworkInterfaceId: !Ref NetworkInterface6
+
+  SecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    DependsOn: VpcCidrBlock
+    Properties:
+      GroupDescription: !Sub "Ansible testing deployment: ${DeploymentName}"
+      VpcId: !Ref Vpc
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 8773
+          ToPort: 8773
+          CidrIp: 0.0.0.0/0
+        - IpProtocol: tcp
+          FromPort: 80
+          ToPort: 80
+          CidrIp: 0.0.0.0/0
+        - IpProtocol: tcp
+          FromPort: 443
+          ToPort: 443
+          CidrIp: 0.0.0.0/0
+        - IpProtocol: tcp
+          FromPort: 22
+          ToPort: 22
+          CidrIp: !Ref SshCidr
+        - IpProtocol: tcp
+          FromPort: 22
+          ToPort: 22
+          CidrIp: 10.111.10.0/24
+        - IpProtocol: tcp
+          FromPort: 53
+          ToPort: 53
+          CidrIp: 0.0.0.0/0
+        - IpProtocol: udp
+          FromPort: 53
+          ToPort: 53
+          CidrIp: 0.0.0.0/0
+        - IpProtocol: tcp
+          FromPort: 53
+          ToPort: 53
+          CidrIpv6: ::/0
+        - IpProtocol: udp
+          FromPort: 53
+          ToPort: 53
+          CidrIpv6: ::/0
+        - IpProtocol: 1
+          FromPort: -1
+          ToPort: -1
+          CidrIp: 10.111.10.0/24
+        - IpProtocol: 1
+          FromPort: -1
+          ToPort: -1
+          CidrIp: 10.111.20.0/26
+        - IpProtocol: 1
+          FromPort: -1
+          ToPort: -1
+          CidrIp: 10.111.30.0/24
+        - IpProtocol: 58
+          FromPort: -1
+          ToPort: -1
+          CidrIpv6: !Select [0, !GetAtt Vpc.Ipv6CidrBlocks]
+      Tags:
+       - Key: stack-description
+         Value: !Sub "Ansible testing deployment: ${DeploymentName}"
+
+  CloudSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: !Sub "Ansible testing deployment: ${DeploymentName}"
+      VpcId: !Ref Vpc
+      SecurityGroupIngress:
+        - IpProtocol: -1
+          CidrIp: 0.0.0.0/0
+        - IpProtocol: -1
+          CidrIpv6: ::/0
+      Tags:
+       - Key: stack-description
+         Value: !Sub "Ansible testing deployment: ${DeploymentName}"
+
+  NetworkInterface:
+    Type: AWS::EC2::NetworkInterface
+    Properties:
+      GroupSet:
+        - !GetAtt SecurityGroup.GroupId
+      PrivateIpAddress: 10.111.10.10
+      SubnetId: !Ref Subnet
+      SourceDestCheck: no
+      Tags:
+       - Key: stack-description
+         Value: !Sub "Ansible testing deployment: ${DeploymentName}"
+
+  InstanceIp:
+    Type: AWS::EC2::EIP
+    Properties:
+      Domain: vpc
+      Tags:
+       - Key: stack-description
+         Value: !Sub "Ansible testing deployment: ${DeploymentName}"
+
+  InstanceIpAssociation:
+    Type: AWS::EC2::EIPAssociation
+    Properties:
+      AllocationId: !GetAtt InstanceIp.AllocationId
+      NetworkInterfaceId: !Ref NetworkInterface
+
+  LaunchTemplate:
+    Type: AWS::EC2::LaunchTemplate
+    Properties:
+      LaunchTemplateData:
+        ImageId: !FindInMap
+          - AWSRegion2AMI
+          - !Ref AWS::Region
+          - CentOS7
+        BlockDeviceMappings:
+          - DeviceName: /dev/sda1
+            Ebs:
+              VolumeSize: 20
+        InstanceType: !Ref InstanceType
+        KeyName: !If
+          - UseKeyNameParameter
+          - !Ref 'KeyName'
+          - !Ref 'AWS::NoValue'
+        NetworkInterfaces:
+          - DeviceIndex: 0
+            NetworkInterfaceId: !Ref NetworkInterface
+        InstanceMarketOptions:
+          MarketType: spot
+          SpotOptions:
+            MaxPrice: !Ref InstanceTypeSpotMaxPrice
+            SpotInstanceType: one-time
+
+  Instance:
+    Type: AWS::EC2::Instance
+    DependsOn: PublicRoute4
+    Properties:
+      LaunchTemplate:
+        LaunchTemplateId: !Ref LaunchTemplate
+        Version: !GetAtt LaunchTemplate.LatestVersionNumber
+      UserData:
+        Fn::Base64: !Sub |
+          #cloud-config
+          packages:
+           - bind-utils
+           - epel-release
+           - git
+           - lvm2
+          runcmd:
+           - /root/setup.sh &> /root/setup.log
+          write_files:
+           - path: /root/setup.sh
+             permissions: 0755
+             content: |
+               #!/bin/bash
+               set -eux
+               
+               iptables -t nat -A POSTROUTING -s 10.111.20.0/26 -o eth0 -j MASQUERADE
+               
+               vgcreate ceph_vg /dev/nvme1n1
+               lvcreate --size "100G" --name disk_lv ceph_vg
+               lvcreate --extents "100%FREE" --name ceph_lv ceph_vg
+               mkfs -t xfs -L disk-lv /dev/ceph_vg/disk_lv
+               mkdir -pv /disk
+               mount /dev/ceph_vg/disk_lv /disk
+               
+               ssh-keygen -q -t rsa -f "/root/.ssh/id_rsa" -N ""
+               cat /root/.ssh/id_rsa.pub >> /root/.ssh/authorized_keys
+               
+               yum --assumeyes install ansible
+               cd /root
+               git clone --branch ${AtsDeployRepoBranch} ${AtsDeployRepoUrl} ats-deploy
+               
+               while ! dig +short AAAA ns1.cloud-${DeploymentName}.qa.eucalyptuscloud.net @10.111.10.11; do sleep 30; done
+               ansible-playbook --inventory /root/inventory.yml /root/ats-deploy/playbook_vpcmido.yml
+           - path: /root/inventory.yml
+             permissions: 0644
+             content: |
+               all:
+               
+                  hosts:
+               
+                    host10:
+                      ansible_connection: local
+                      host_cluster_ipv4: 10.111.10.10
+                      host_public_ipv4: 10.111.10.10
+                      host_zone_key: 1
+               
+                  vars:
+               
+                    eucalyptus_yum_baseurl: ${EucalyptusYumBaseUrl}
+                    eucalyptus_base_yum_enabled: ${EucalyptusYumBaseEnabled}
+               
+                    eucalyptus_console_cloud_deploy: ${ConsoleCloudDeploy}
+                    eucalyptus_console_certbot_enable: ${CertbotEnabledConsole}
+                    eucalyptus_services_certbot_enable: ${CertbotEnabledServices}
+                    eucaconsole_certbot_configure: ${CertbotEnabledConsole}
+                    eucalyptus_console_ipv4_cloud_deploy_yes: Null
+                    eucalyptus_console_ipv4_cloud_deploy_no: "{{ cloud_external_ip }}"
+                    eucalyptus_console_ipv4: "{{ eucalyptus_console_ipv4_cloud_deploy_${ConsoleCloudDeploy} }}"
+               
+                    cloud_service_image_rpm: yes
+                    cloud_firewalld_configure: ${FirewallEnabled}
+                    cloud_firewalld_always_reload: ${FirewallEnabled}
+                    cloud_firewalld_cluster_cidr: 10.111.10.0/24
+               
+                    cloud_public_port: 8773
+                    cloud_deployment_name: ${DeploymentName}
+                    cloud_external_ip: ${InstanceIp}
+                    cloud_external_ip_dash: "{{ cloud_external_ip | replace('.','-') }}"
+                    cloud_region_name: us-euca-1
+                    cloud_system_dns_dnsdomain: "${CloudDomain}"
+               
+                    cloud_opts_mem: "-Xmx4g"
+                    cloud_instances_state_dir: /disk/eucalyptus/instances
+               
+                    ceph_release: nautilus
+                    ceph_osd_data_path: ceph_vg/ceph_lv
+                    ceph_public_network: 10.111.10.0/24
+                    ceph_converged: ${CephConverged}
+               
+                    vpcmido_public_ip_range: 10.111.20.10-10.111.20.39
+                    vpcmido_public_ip_cidr: 10.111.20.0/26
+               
+                  children:
+               
+                    consoleyes:
+                      hosts:
+               
+                    consoleno:
+                      hosts:
+                        host10:
+               
+                    console:
+                      children:
+                        console${ConsoleCloudDeploy}:
+               
+                    cloud:
+                      hosts:
+                        host10:
+               
+                    zone:
+                      hosts:
+                        host10:
+               
+                    node:
+                      hosts:
+                        host10:
+      Tags:
+       - Key: stack-description
+         Value: !Sub "Ansible testing deployment: ${DeploymentName}"
+
+  NetworkInterface6:
+    Type: AWS::EC2::NetworkInterface
+    Properties:
+      GroupSet:
+        - !GetAtt SecurityGroup.GroupId
+      PrivateIpAddresses:
+        - Primary: yes
+          PrivateIpAddress: 10.111.10.11
+      Ipv6Addresses:
+        - Ipv6Address: !Join ["", [!Select [0, !Split ["/", !Select [0, !GetAtt Subnet.Ipv6CidrBlocks]]], "b"]]
+      SubnetId: !Ref Subnet
+      SourceDestCheck: no
+      Tags:
+       - Key: stack-description
+         Value: !Sub "Ansible testing deployment: ${DeploymentName}"
+
+  NetworkInterface6Pub1:
+    Type: AWS::EC2::NetworkInterface
+    Properties:
+      GroupSet:
+        - !GetAtt CloudSecurityGroup.GroupId
+      SubnetId: !Ref Subnet
+      Ipv6Addresses:
+        - Ipv6Address: !Join ["", [!Select [0, !Split ["/", !Select [0, !GetAtt Subnet.Ipv6CidrBlocks]]], "c"]]
+        - Ipv6Address: !Join ["", [!Select [0, !Split ["/", !Select [0, !GetAtt Subnet.Ipv6CidrBlocks]]], "cafe:10.111.10.10"]]
+        - Ipv6Address: !Join ["", [!Select [0, !Split ["/", !Select [0, !GetAtt Subnet.Ipv6CidrBlocks]]], "cafe:10.111.30.1"]]
+        - Ipv6Address: !Join ["", [!Select [0, !Split ["/", !Select [0, !GetAtt Subnet.Ipv6CidrBlocks]]], "cafe:10.111.20.10"]]
+        - Ipv6Address: !Join ["", [!Select [0, !Split ["/", !Select [0, !GetAtt Subnet.Ipv6CidrBlocks]]], "cafe:10.111.20.11"]]
+        - Ipv6Address: !Join ["", [!Select [0, !Split ["/", !Select [0, !GetAtt Subnet.Ipv6CidrBlocks]]], "cafe:10.111.20.12"]]
+        - Ipv6Address: !Join ["", [!Select [0, !Split ["/", !Select [0, !GetAtt Subnet.Ipv6CidrBlocks]]], "cafe:10.111.20.13"]]
+        - Ipv6Address: !Join ["", [!Select [0, !Split ["/", !Select [0, !GetAtt Subnet.Ipv6CidrBlocks]]], "cafe:10.111.20.14"]]
+        - Ipv6Address: !Join ["", [!Select [0, !Split ["/", !Select [0, !GetAtt Subnet.Ipv6CidrBlocks]]], "cafe:10.111.20.15"]]
+        - Ipv6Address: !Join ["", [!Select [0, !Split ["/", !Select [0, !GetAtt Subnet.Ipv6CidrBlocks]]], "cafe:10.111.20.16"]]
+        - Ipv6Address: !Join ["", [!Select [0, !Split ["/", !Select [0, !GetAtt Subnet.Ipv6CidrBlocks]]], "cafe:10.111.20.17"]]
+        - Ipv6Address: !Join ["", [!Select [0, !Split ["/", !Select [0, !GetAtt Subnet.Ipv6CidrBlocks]]], "cafe:10.111.20.18"]]
+        - Ipv6Address: !Join ["", [!Select [0, !Split ["/", !Select [0, !GetAtt Subnet.Ipv6CidrBlocks]]], "cafe:10.111.20.19"]]
+      Tags:
+       - Key: stack-description
+         Value: !Sub "Ansible testing deployment: ${DeploymentName}"
+
+  NetworkInterface6Pub2:
+    Type: AWS::EC2::NetworkInterface
+    Properties:
+      GroupSet:
+        - !GetAtt CloudSecurityGroup.GroupId
+      SubnetId: !Ref Subnet
+      Ipv6Addresses:
+        - Ipv6Address: !Join ["", [!Select [0, !Split ["/", !Select [0, !GetAtt Subnet.Ipv6CidrBlocks]]], "cafe:10.111.20.20"]]
+        - Ipv6Address: !Join ["", [!Select [0, !Split ["/", !Select [0, !GetAtt Subnet.Ipv6CidrBlocks]]], "cafe:10.111.20.21"]]
+        - Ipv6Address: !Join ["", [!Select [0, !Split ["/", !Select [0, !GetAtt Subnet.Ipv6CidrBlocks]]], "cafe:10.111.20.22"]]
+        - Ipv6Address: !Join ["", [!Select [0, !Split ["/", !Select [0, !GetAtt Subnet.Ipv6CidrBlocks]]], "cafe:10.111.20.23"]]
+        - Ipv6Address: !Join ["", [!Select [0, !Split ["/", !Select [0, !GetAtt Subnet.Ipv6CidrBlocks]]], "cafe:10.111.20.24"]]
+        - Ipv6Address: !Join ["", [!Select [0, !Split ["/", !Select [0, !GetAtt Subnet.Ipv6CidrBlocks]]], "cafe:10.111.20.25"]]
+        - Ipv6Address: !Join ["", [!Select [0, !Split ["/", !Select [0, !GetAtt Subnet.Ipv6CidrBlocks]]], "cafe:10.111.20.26"]]
+        - Ipv6Address: !Join ["", [!Select [0, !Split ["/", !Select [0, !GetAtt Subnet.Ipv6CidrBlocks]]], "cafe:10.111.20.27"]]
+        - Ipv6Address: !Join ["", [!Select [0, !Split ["/", !Select [0, !GetAtt Subnet.Ipv6CidrBlocks]]], "cafe:10.111.20.28"]]
+        - Ipv6Address: !Join ["", [!Select [0, !Split ["/", !Select [0, !GetAtt Subnet.Ipv6CidrBlocks]]], "cafe:10.111.20.29"]]
+      Tags:
+       - Key: stack-description
+         Value: !Sub "Ansible testing deployment: ${DeploymentName}"
+
+  NetworkInterface6Pub3:
+    Type: AWS::EC2::NetworkInterface
+    Properties:
+      GroupSet:
+        - !GetAtt CloudSecurityGroup.GroupId
+      SubnetId: !Ref Subnet
+      Ipv6Addresses:
+        - Ipv6Address: !Join ["", [!Select [0, !Split ["/", !Select [0, !GetAtt Subnet.Ipv6CidrBlocks]]], "cafe:10.111.20.30"]]
+        - Ipv6Address: !Join ["", [!Select [0, !Split ["/", !Select [0, !GetAtt Subnet.Ipv6CidrBlocks]]], "cafe:10.111.20.31"]]
+        - Ipv6Address: !Join ["", [!Select [0, !Split ["/", !Select [0, !GetAtt Subnet.Ipv6CidrBlocks]]], "cafe:10.111.20.32"]]
+        - Ipv6Address: !Join ["", [!Select [0, !Split ["/", !Select [0, !GetAtt Subnet.Ipv6CidrBlocks]]], "cafe:10.111.20.33"]]
+        - Ipv6Address: !Join ["", [!Select [0, !Split ["/", !Select [0, !GetAtt Subnet.Ipv6CidrBlocks]]], "cafe:10.111.20.34"]]
+        - Ipv6Address: !Join ["", [!Select [0, !Split ["/", !Select [0, !GetAtt Subnet.Ipv6CidrBlocks]]], "cafe:10.111.20.35"]]
+        - Ipv6Address: !Join ["", [!Select [0, !Split ["/", !Select [0, !GetAtt Subnet.Ipv6CidrBlocks]]], "cafe:10.111.20.36"]]
+        - Ipv6Address: !Join ["", [!Select [0, !Split ["/", !Select [0, !GetAtt Subnet.Ipv6CidrBlocks]]], "cafe:10.111.20.37"]]
+        - Ipv6Address: !Join ["", [!Select [0, !Split ["/", !Select [0, !GetAtt Subnet.Ipv6CidrBlocks]]], "cafe:10.111.20.38"]]
+        - Ipv6Address: !Join ["", [!Select [0, !Split ["/", !Select [0, !GetAtt Subnet.Ipv6CidrBlocks]]], "cafe:10.111.20.39"]]
+      Tags:
+       - Key: stack-description
+         Value: !Sub "Ansible testing deployment: ${DeploymentName}"
+
+  Instance6:
+    Type: AWS::EC2::Instance
+    DependsOn: PublicRoute6
+    Properties:
+      ImageId: !FindInMap
+        - AWSRegion2AMI
+        - !Ref AWS::Region
+        - CentOS7
+      InstanceType: c5.xlarge
+      KeyName: !If
+        - UseKeyNameParameter
+        - !Ref KeyName
+        - !Ref AWS::NoValue
+      NetworkInterfaces:
+        - DeviceIndex: 0
+          NetworkInterfaceId: !Ref NetworkInterface6
+        - DeviceIndex: 1
+          NetworkInterfaceId: !Ref NetworkInterface6Pub1
+        - DeviceIndex: 2
+          NetworkInterfaceId: !Ref NetworkInterface6Pub2
+        - DeviceIndex: 3
+          NetworkInterfaceId: !Ref NetworkInterface6Pub3
+      UserData:
+        Fn::Base64: !Sub
+        - |
+          #cloud-config
+          runcmd:
+           - /root/init-net.sh  &>  /root/setup.log
+           - /root/install.sh   &>> /root/setup.log
+           - /root/setup-srv.sh &>> /root/setup.log
+           - /root/setup-net.sh &>> /root/setup.log
+          write_files:
+           - path: /etc/resolv.conf
+             permissions: 0644
+             content: |
+               # Generated by /etc/dhcp/dhclient-enter-hooks
+               nameserver 2606:4700:4700::1111
+               nameserver 2606:4700:4700::1001
+           - path: /etc/dhcp/dhclient-enter-hooks
+             permissions: 0755
+             content: |
+               make_resolv_conf() {
+               cat >/etc/resolv.conf<<EOF
+               # Generated by /etc/dhcp/dhclient-enter-hooks
+               nameserver 2606:4700:4700::1111
+               nameserver 2606:4700:4700::1001
+               EOF
+               }
+           - path: /etc/sysctl.d/90-enable-forwarding.conf
+             permissions: 0644
+             content: |
+               net.ipv4.conf.all.forwarding=1
+           - path: /etc/sysctl.d/91-enable-ipv6-ra.conf
+             permissions: 0644
+             content: |
+               net.ipv6.conf.eth0.accept_ra=1
+           - path: /root/init-net.sh
+             permissions: 0755
+             content: |
+               #!/bin/bash
+               set -eux
+               sysctl -p /etc/sysctl.d/90-enable-forwarding.conf /etc/sysctl.d/91-enable-ipv6-ra.conf
+               while ! ping6 -c 1 mirrorlist.centos.org; do sleep 30; done
+           - path: /root/install.sh
+             permissions: 0755
+             content: |
+               #!/bin/bash
+               set -eux
+               yum --assumeyes clean metadata
+               yum --assumeyes install epel-release
+               yum --assumeyes install epel-release-7-13 # from epel ...
+               yum --assumeyes install bind-utils dnsdist pdns-recursor tayga
+           - path: /root/setup-srv.sh
+             permissions: 0755
+             content: |
+               #!/bin/bash
+               set -eux
+               cp -fv /root/tayga.conf    /etc/tayga/aws.conf
+               cp -fv /root/dnsdist.conf  /etc/dnsdist/dnsdist-aws.conf
+               cp -fv /root/recursor.conf /etc/pdns-recursor/recursor.conf
+               cp -fv /root/dns64.lua     /etc/pdns-recursor/dns64.lua
+               systemctl start dnsdist@aws.service
+               systemctl start pdns-recursor.service
+               systemctl start tayga@aws.service
+           - path: /root/setup-net.sh
+             permissions: 0755
+             content: |
+               #!/bin/bash
+               set -eux
+               while ! ip link show dev nat64; do sleep 30; done
+               ip link set nat64 up
+               ip link set eth1 up
+               ip link set eth2 up
+               ip link set eth3 up
+               ip addr add 10.111.30.1/24 dev nat64
+               ip addr add ${TaygaIpv6}/128 dev nat64
+               ip route add 10.111.30.0/24 dev nat64 || true
+               ip route add ${Prefix}/96 dev nat64
+           - path: /root/tayga.conf
+             permissions: 0644
+             content: |
+               tun-device nat64
+               ipv4-addr 10.111.30.1
+               #ipv6-addr ${TaygaIpv6}
+               prefix ${Prefix}/96
+               dynamic-pool 10.111.30.0/24
+               data-dir /var/lib/tayga/default
+           - path: /root/dnsdist.conf
+             permissions: 0644
+             content: |
+               newServer({address="[::1]:5353", checkName="ec2.cloud-${DeploymentName}.qa.eucalyptuscloud.net"})
+               setLocal("[::]:53", {reusePort=true})
+               addLocal("0.0.0.0:53", {reusePort=true})
+               setACL({"0.0.0.0/0", "::/0"})
+               -- addAction("ns1.cloud-${DeploymentName}.qa.eucalyptuscloud.net", SpoofAction({"${InstanceIp}", "${PrimaryIpv6}"}))
+               addAction("ns1.cloud-${DeploymentName}.qa.eucalyptuscloud.net", SpoofAction({"${PrimaryIpv6}"}))
+               addAction("ns1.cloud-${DeploymentName}.qa.eucalyptuscloud.net", RCodeAction(dnsdist.NOERROR))
+           - path: /root/recursor.conf
+             permissions: 0644
+             content: |
+               allow-from=::1/128
+               query-local-address=10.111.10.11
+               query-local-address6=${PrimaryIpv6}
+               local-address=[::1]:5353
+               lua-dns-script=/etc/pdns-recursor/dns64.lua
+               security-poll-suffix=
+               setgid=pdns-recursor
+               setuid=pdns-recursor
+               forward-zones=cloud-${DeploymentName}.qa.eucalyptuscloud.net=10.111.10.10:53
+           - path: /root/dns64.lua
+             permissions: 0644
+             content: |
+               --
+               prefix = "${Prefix}"
+               
+               function prefarpa( prefix )
+                 matches = {string.match(prefix, '([%a%d]+):([%a%d]+):([%a%d]+):([%a%d]+):([%a%d]+):([%a%d]+):([%a%d]+):([%a%d]+)')}
+                 expanded = ""
+                 for index=1,6 do
+                   padded = string.rep("0", 4) .. matches[index]
+                   trimmed = string.sub(padded, string.len(padded) - 3, string.len(padded))
+                   expanded = expanded .. trimmed
+                 end
+                 reversed = string.reverse(expanded)
+                 arpa = ""
+                 for index=1,string.len(reversed) do
+                   arpa = arpa .. string.sub(reversed,index,index) .. "."
+                 end
+                 arpa = arpa .. "ip6.arpa."
+                 return arpa
+               end
+               
+               prefix_arpa = prefarpa(prefix)
+               
+               function nodata ( dq )
+                 if dq.qtype ~= pdns.AAAA then
+                   return false
+                 end
+               
+                 if dq.validationState == pdns.validationstates.Bogus then
+                   return false
+                 end
+               
+                 dq.followupFunction = "getFakeAAAARecords"
+                 dq.followupPrefix = prefix
+                 dq.followupName = dq.qname
+                 return true
+               end
+               
+               function preresolve ( dq )
+                 if dq.qtype == pdns.PTR and dq.qname:isPartOf(newDN(prefix_arpa)) then
+                   dq.followupFunction = "getFakePTRRecords"
+                   dq.followupPrefix = prefix
+                   dq.followupName = dq.qname
+                   return true
+                 end
+                 return false
+               end
+        - Prefix: !Join
+            - ""
+            - - !Select [0, !Split ["::", !Select [0, !GetAtt Subnet.Ipv6CidrBlocks]]]
+              - ":0:cafe:0:0"
+          PrimaryIpv6: !Join
+            - ""
+            - - !Select [0, !Split ["/", !Select [0, !GetAtt Subnet.Ipv6CidrBlocks]]]
+              - "b"
+          TaygaIpv6: !Join
+            - ""
+            - - !Select [0, !Split ["::", !Select [0, !GetAtt Subnet.Ipv6CidrBlocks]]]
+              - ":0:cafe:10.111.30.1"
+      Tags:
+       - Key: stack-description
+         Value: !Sub "Ansible testing deployment: ${DeploymentName}"
+
+Outputs:
+
+  InstanceId:
+    Description: Instance
+    Value: !Ref Instance
+
+  Ip:
+    Description: Instance IP
+    Value: !GetAtt Instance.PublicIp
+
+  Hostname:
+    Description: Instance hostname
+    Value: !GetAtt Instance.PublicDnsName
+
+  Instance6Id:
+    Description: Instance6
+    Value: !Ref Instance6
+

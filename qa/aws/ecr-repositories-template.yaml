@@ -1,0 +1,67 @@
+# Template for creating ECR repositories for QA test containers
+---
+AWSTemplateFormatVersion: 2010-09-09
+Description: Eucalyptus Cloud deployment testing environment
+
+Resources:
+
+  N4jRepository:
+    Type: AWS::ECR::Repository
+    Properties:
+      RepositoryName: eucalyptus/n4j
+      LifecyclePolicy:
+        LifecyclePolicyText: |
+          {
+            "rules": [
+              {
+                "rulePriority": 1,
+                "description": "Expire all but one untagged image",
+                "selection": {
+                  "tagStatus": "untagged",
+                  "countType": "imageCountMoreThan",
+                  "countNumber": 1
+                },
+                "action": {
+                  "type": "expire"
+                }
+              }
+            ]
+          }
+
+  NephoriaRepository:
+    Type: AWS::ECR::Repository
+    Properties:
+      RepositoryName: eucalyptus/nephoria
+      LifecyclePolicy:
+        LifecyclePolicyText: |
+          {
+            "rules": [
+              {
+                "rulePriority": 1,
+                "description": "Expire all but one untagged image",
+                "selection": {
+                  "tagStatus": "untagged",
+                  "countType": "imageCountMoreThan",
+                  "countNumber": 1
+                },
+                "action": {
+                  "type": "expire"
+                }
+              }
+            ]
+          }
+
+Outputs:
+
+  N4jRepositoryArn:
+    Description: Resource ARN for the N4J repository
+    Value: !GetAtt N4jRepository.Arn
+    Export:
+      Name: EucalyptusQaRepoN4jArn
+
+  NephoriaRepositoryArn:
+    Description: Resource ARN for the Nephoria repository
+    Value: !GetAtt NephoriaRepository.Arn
+    Export:
+      Name: EucalyptusQaRepoNephoriaArn
+
