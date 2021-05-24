@@ -28,21 +28,21 @@
       "image-format": "qcow2"
     },
     {
-      "description": "Ubuntu 20.10/Groovy",
+      "description": "Ubuntu 21.04/Hirsute",
       "login": "ubuntu",
-      "url": "https://cloud-images.ubuntu.com/groovy/current/groovy-server-cloudimg-amd64.img",
+      "url": "https://cloud-images.ubuntu.com/hirsute/current/hirsute-server-cloudimg-amd64.img",
       "updates": "yes",
       "architecture": "x86_64",
-      "os": "ubuntu-groovy",
+      "os": "ubuntu-hirsute",
       "image-format": "qcow2"
     },
     {
-      "description": "Fedora 33",
+      "description": "Fedora 34",
       "login": "fedora",
-      "url": "https://download.fedoraproject.org/pub/fedora/linux/releases/33/Cloud/x86_64/images/Fedora-Cloud-Base-33-1.2.x86_64.raw.xz",
+      "url": "https://download.fedoraproject.org/pub/fedora/linux/releases/34/Cloud/x86_64/images/Fedora-Cloud-Base-34-1.2.x86_64.raw.xz",
       "updates": "no",
       "architecture": "x86_64",
-      "os": "fedora-33",
+      "os": "fedora-34",
       "image-format": "raw"
     },
     {
