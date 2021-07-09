@@ -23,6 +23,12 @@ EUCALYPTUS_BUILD_REPO_DIR="${EUCALYPTUS_BUILD_REPO_DIR:-""}"
 EUCALYPTUS_BUILD_REPO_IP=${EUCALYPTUS_BUILD_REPO_IP:-""}
 EUCALYPTUS_MIRROR="${EUCALYPTUS_MIRROR:-https://downloads.eucalyptus.cloud/software/eucalyptus/base/5/rhel/7/x86_64/}"
 EUCA2OOLS_MIRROR="${EUCA2OOLS_MIRROR:-http://downloads.eucalyptus.cloud/software/euca2ools/3.3/rhel/7/x86_64/}"
+EUCA_SIM_INSTALL_TREE="${EUCA_SIM_INSTALL_TREE:-http://linux.mirrors.es.net/centos/7/os/x86_64/}"
+EUCA_SIM_BASE_MIRROR="${EUCA_SIM_BASE_MIRROR:-${EUCA_SIM_INSTALL_TREE}}"
+EUCA_SIM_UPDATES_MIRROR="${EUCA_SIM_UPDATES_MIRROR:-http://linux.mirrors.es.net/centos/7/updates/x86_64/}"
+EUCA_SIM_EPEL_MIRROR="${EUCA_SIM_EPEL_MIRROR:-http://linux.mirrors.es.net/epel/7/x86_64/}"
+
+
 REQUIRE=(
     "autoconf"
     "createrepo"
@@ -179,6 +185,10 @@ export CPUS=2       # override make defined CPUS=1
 export DISK=2       # override make defined DISK=2
 export MEMORY=2048  # override make defined MEMORY=1024
 export EUCA_SIM_CONFIGURE_OPTS="
+  --with-install-tree=${EUCA_SIM_INSTALL_TREE}
+  --with-base-mirror=${EUCA_SIM_BASE_MIRROR}
+  --with-updates-mirror=${EUCA_SIM_UPDATES_MIRROR}
+  --with-epel-mirror=${EUCA_SIM_EPEL_MIRROR}
   --with-eucalyptus-mirror=http://${EUCALYPTUS_BUILD_REPO_IP}/eucalyptus-local-packages/
   --with-euca2ools-mirror=${EUCA2OOLS_MIRROR}
 "
